@@ -1,0 +1,4 @@
+/* UI replaced by dat.GUI. Keep canvas full-bleed. */
+html,body{height:100%;}
+body{margin:0;}
+canvas{display:block;}
