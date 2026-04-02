@@ -215,8 +215,8 @@
       <div>
         <div class="panel-label">Arrangement</div>
         <div class="arr-preset-row" style="margin-bottom:4px;">
-          <button onclick="setArrangement('stack')"   class="cp active" id="arr-stack">Stack</button>
-          <button onclick="setArrangement('fan')"     class="cp" id="arr-fan">Fan</button>
+          <button onclick="setArrangement('stack')"   class="cp" id="arr-stack">Stack</button>
+          <button onclick="setArrangement('fan')"     class="cp active" id="arr-fan">Fan</button>
           <button onclick="setArrangement('line')"    class="cp" id="arr-line">Line</button>
           <button onclick="setArrangement('ring')"    class="cp" id="arr-ring">Ring</button>
           <button onclick="setArrangement('cascade')" class="cp" id="arr-cascade">Cascade</button>
@@ -226,9 +226,9 @@
       <div>
         <div class="slider-header">
           <div class="section-title">Spread X</div>
-          <span class="slider-val" id="val-spreadX">0.0</span>
+          <span class="slider-val" id="val-spreadX">1.7</span>
         </div>
-        <input type="range" min="0" max="40" value="0" step="1" id="spreadX" oninput="updateSpread()">
+        <input type="range" min="0" max="40" value="17" step="1" id="spreadX" oninput="updateSpread()">
       </div>
       <div>
         <div class="slider-header">
@@ -240,9 +240,9 @@
       <div>
         <div class="slider-header">
           <div class="section-title">Spread Z</div>
-          <span class="slider-val" id="val-spreadZ">0.0</span>
+          <span class="slider-val" id="val-spreadZ">2.8</span>
         </div>
-        <input type="range" min="0" max="40" value="0" step="1" id="spreadZ" oninput="updateSpread()">
+        <input type="range" min="0" max="40" value="28" step="1" id="spreadZ" oninput="updateSpread()">
       </div>
 
       <div class="divider"></div>
@@ -376,7 +376,7 @@ let targetX  = -0.26;
 
 let t = 0, bgColor = '#f0f0f4';
 let cards = [], activeCardIdx = 0, cardCount = 0;
-let currentArrangement = 'stack';
+let currentArrangement = 'fan';
 
 /* ════════════════════════════════════
    INIT
@@ -405,6 +405,12 @@ function init(){
   addCard();
   setLight('beauty');
   setFinish('matte');
+  // Apply defaults from preset screenshots
+  currentArrangement = 'fan';
+  // Add 6 more cards (screenshot shows 7 total)
+  for(let i=0;i<6;i++) addCard();
+  setActiveCard(6);
+  applyPositions();
   applyBg();
   setupEvents(canvas);
   animate();
