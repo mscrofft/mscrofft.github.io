@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Card Studio 3D</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body {
+      background: #0a0a14;
+      font-family: 'Helvetica Neue', sans-serif;
+      display: flex;
+      align-items: stretch;
+      min-height: 100vh;
+    }
+    /* ── app fills full viewport width, panels flush to edges ── */
+    .app {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      min-height: 100vh;
+      background: #0a0a14;
+    }
+    .main { display: flex; flex: 1; min-height: 560px; }
+
+    /* ── panels ── */
+    .panel {
+      width: 156px;
+      background: #111118;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 11px;
+      flex-shrink: 0;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: #2a2a3a transparent;
+    }
+    .panel-left  { border-right: 1px solid #1e1e26; }
+    .panel-right { border-left:  1px solid #1e1e26; }
+
+    /* ── canvas ── */
+    .canvas-wrap {
+      flex: 1;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f0f0f4; /* white default */
+      overflow: hidden;
+    }
+    #c3d { width: 100%; height: 100%; touch-action: none; display: block; }
+    .hint {
+      position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%);
+      color: #aaaacc; font-size: 11px; pointer-events: none;
+      letter-spacing: .04em; white-space: nowrap;
+    }
+
+    /* ── bottom bar ── */
+    .bottom-bar {
+      background: #111118;
+      padding: 10px 18px;
+      display: flex; align-items: center; justify-content: space-between;
+      border-top: 1px solid #1e1e26;
+      gap: 8px; flex-wrap: wrap;
+    }
+    .mode-btn {
+      background: #1a1a2a; border: 1px solid #2a2a3a; color: #666;
+      padding: 6px 14px; border-radius: 20px; font-size: 12px;
+      cursor: pointer; font-family: inherit; transition: all .15s;
+    }
+    .mode-btn.active { background: #2e2e88; border-color: #5555cc; color: #fff; }
+    .export-btn {
+      background: #4444cc; border: none; color: #fff;
+      padding: 8px 18px; border-radius: 8px; font-size: 12px;
+      cursor: pointer; font-weight: 600; font-family: inherit; transition: background .15s;
+    }
+    .export-btn:hover { background: #5555ee; }
+    .mode-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+
+    /* ── panel typography & controls ── */
+    .panel-label {
+      color: #555; font-size: 10px; letter-spacing: .12em;
+      text-transform: uppercase; margin-bottom: 4px;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .panel-label span { color: #444; font-size: 10px; font-weight: 400; letter-spacing: 0; text-transform: none; }
+    .section-title { color: #555; font-size: 10px; letter-spacing: .10em; text-transform: uppercase; }
+    .slider-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px; }
+    .slider-val { color: #5566aa; font-size: 10px; min-width: 28px; text-align: right; }
+    .divider { height: 1px; background: #1a1a22; margin: 1px 0; flex-shrink: 0; }
+
+    /* buttons */
+    .fp, .lp, .cp {
+      background: transparent; border: 1px solid #252530; color: #777;
+      padding: 6px 10px; border-radius: 7px; font-size: 12px; cursor: pointer;
+      text-align: left; width: 100%; transition: all .15s; font-family: inherit;
+    }
+    .fp:hover, .lp:hover, .cp:hover { border-color: #444; color: #ccc; }
+    .fp.active, .lp.active, .cp.active { background: #1e1e38; border-color: #5555cc; color: #fff; }
+
+    input[type=range]  { width: 100%; accent-color: #5555cc; cursor: pointer; }
+    input[type=color]  { width: 100%; height: 30px; border: none; border-radius: 7px; cursor: pointer; background: none; padding: 0; }
+
+    .upload-label {
+      display: block; background: #18182a; border: 1px dashed #2e2e44; color: #555;
+      padding: 8px; border-radius: 7px; font-size: 11px; cursor: pointer;
+      text-align: center; transition: border-color .15s; line-height: 1.4;
+    }
+    .upload-label:hover { border-color: #5555cc; color: #aaa; }
+    .upload-label.has-file { border-color: #3a3a88; color: #8888ff; background: #14142a; }
+
+    .clear-btn {
+      display: none; margin-top: 4px; width: 100%; background: transparent;
+      border: 1px solid #3a2222; color: #995555; padding: 5px; border-radius: 6px;
+      font-size: 11px; cursor: pointer; font-family: inherit; transition: background .15s;
+    }
+    .clear-btn:hover { background: #2a1414; color: #cc6666; }
+
+    .add-card-btn {
+      width: 100%; background: #16162a; border: 1px dashed #333366; color: #5555aa;
+      padding: 8px; border-radius: 7px; font-size: 12px; cursor: pointer;
+      font-family: inherit; transition: all .15s; text-align: center;
+    }
+    .add-card-btn:hover { border-color: #5555cc; color: #9999ee; background: #1a1a38; }
+
+    .card-list { display: flex; flex-direction: column; gap: 4px; }
+    .card-item {
+      display: flex; align-items: center; gap: 6px; padding: 5px 8px;
+      border: 1px solid #252530; border-radius: 6px; cursor: pointer;
+      transition: all .15s; font-size: 11px; color: #666;
+    }
+    .card-item:hover { border-color: #444; color: #bbb; }
+    .card-item.active { border-color: #5555cc; color: #aaaaee; background: #16163a; }
+    .card-item-dot { width: 9px; height: 9px; border-radius: 3px; flex-shrink: 0; }
+    .card-item-del {
+      margin-left: auto; color: #333; background: none; border: none;
+      cursor: pointer; font-size: 15px; line-height: 1; padding: 0 2px;
+      transition: color .15s; font-family: inherit;
+    }
+    .card-item-del:hover { color: #cc4444; }
+
+    .arr-preset-row { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+    .rot-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; }
+    .rot-btn {
+      background: #16162a; border: 1px solid #2a2a44; color: #6677aa;
+      padding: 5px 0; border-radius: 6px; font-size: 13px; cursor: pointer;
+      font-family: inherit; transition: all .15s; text-align: center;
+    }
+    .rot-btn:hover { border-color: #5555cc; color: #aaaaee; background: #1a1a3a; }
+    .rot-btn:active { transform: scale(0.93); }
+  </style>
+</head>
+<body>
+<div class="app">
+  <div class="main">
+
+    <!-- ── Left Panel ── -->
+    <div class="panel panel-left">
+      <div>
+        <div class="panel-label"><b>CARD STUDIO 3D</b></div>
+      </br>
+        <div class="panel-label">Finish</div>
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <button onclick="setFinish('matte')"  class="fp active" id="f-matte">Matte</button>
+          <button onclick="setFinish('glossy')" class="fp" id="f-glossy">Glossy</button>
+          <button onclick="setFinish('metal')"  class="fp" id="f-metal">Metal</button>
+          <button onclick="setFinish('gold')"   class="fp" id="f-gold">Gold</button>
+          <button onclick="setFinish('holo')"   class="fp" id="f-holo">Holo</button>
+          <button onclick="setFinish('chrome')" class="fp" id="f-chrome">Chrome</button>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div>
+        <div class="panel-label">Card Color</div>
+        <input type="color" id="cardColor" value="#e85d26" onchange="updateCardColor(this.value)">
+      </div>
+      <div class="divider"></div>
+      <div>
+        <div class="panel-label">Front Texture</div>
+        <label class="upload-label" id="lbl-front">
+          + Gradient / Image
+          <input type="file" accept="image/*" onchange="loadFrontImage(event)" style="display:none;">
+        </label>
+        <button class="clear-btn" id="clear-front" onclick="clearFrontImage()">✕ Clear front</button>
+      </div>
+      <div>
+        <div class="panel-label">Back Texture</div>
+        <label class="upload-label" id="lbl-back">
+          + Back image
+          <input type="file" accept="image/*" onchange="loadBackImage(event)" style="display:none;">
+        </label>
+        <button class="clear-btn" id="clear-back" onclick="clearBackImage()">✕ Clear back</button>
+      </div>
+    </div>
+
+    <!-- ── Canvas ── -->
+    <div class="canvas-wrap" id="canvasWrap">
+      <canvas id="c3d"></canvas>
+      <div class="hint">drag to rotate · scroll to zoom</div>
+    </div>
+
+    <!-- ── Right Panel ── -->
+    <div class="panel panel-right">
+
+      <div>
+        <div class="panel-label">Cards</div>
+        <div class="card-list" id="card-list"></div>
+        <button class="add-card-btn" onclick="addCard()" style="margin-top:6px;">+ Add Card</button>
+      </div>
+
+      <div class="divider"></div>
+
+      <div>
+        <div class="panel-label">Arrangement</div>
+        <div class="arr-preset-row" style="margin-bottom:4px;">
+          <button onclick="setArrangement('stack')"   class="cp active" id="arr-stack">Stack</button>
+          <button onclick="setArrangement('fan')"     class="cp" id="arr-fan">Fan</button>
+          <button onclick="setArrangement('line')"    class="cp" id="arr-line">Line</button>
+          <button onclick="setArrangement('ring')"    class="cp" id="arr-ring">Ring</button>
+          <button onclick="setArrangement('cascade')" class="cp" id="arr-cascade">Cascade</button>
+        </div>
+      </div>
+
+      <div>
+        <div class="slider-header">
+          <div class="section-title">Spread X</div>
+          <span class="slider-val" id="val-spreadX">0.0</span>
+        </div>
+        <input type="range" min="0" max="40" value="0" step="1" id="spreadX" oninput="updateSpread()">
+      </div>
+      <div>
+        <div class="slider-header">
+          <div class="section-title">Spread Y</div>
+          <span class="slider-val" id="val-spreadY">0.0</span>
+        </div>
+        <input type="range" min="0" max="40" value="0" step="1" id="spreadY" oninput="updateSpread()">
+      </div>
+      <div>
+        <div class="slider-header">
+          <div class="section-title">Spread Z</div>
+          <span class="slider-val" id="val-spreadZ">0.0</span>
+        </div>
+        <input type="range" min="0" max="40" value="0" step="1" id="spreadZ" oninput="updateSpread()">
+      </div>
+
+      <div class="divider"></div>
+
+      <div>
+        <div class="panel-label">Card Rotation <span id="active-card-lbl">Card 1</span></div>
+        <div>
+          <div class="slider-header">
+            <div class="section-title">Rot X</div>
+            <span class="slider-val" id="val-crotX">0°</span>
+          </div>
+          <input type="range" min="-180" max="180" value="0" step="1" id="crotX" oninput="updateCardRot()">
+        </div>
+        <div style="margin-top:6px;">
+          <div class="slider-header">
+            <div class="section-title">Rot Y</div>
+            <span class="slider-val" id="val-crotY">0°</span>
+          </div>
+          <input type="range" min="-180" max="180" value="0" step="1" id="crotY" oninput="updateCardRot()">
+        </div>
+        <div style="margin-top:6px;">
+          <div class="slider-header">
+            <div class="section-title">Rot Z</div>
+            <span class="slider-val" id="val-crotZ">0°</span>
+          </div>
+          <input type="range" min="-180" max="180" value="0" step="1" id="crotZ" oninput="updateCardRot()">
+        </div>
+        <div style="margin-top:8px;">
+          <div class="section-title" style="margin-bottom:5px;">Quick Rotate</div>
+          <div class="rot-grid">
+            <button class="rot-btn" onclick="nudgeRot('x',-90)"  title="-90° X">↑X</button>
+            <button class="rot-btn" onclick="nudgeRot('y',180)"  title="Flip Y">⟳Y</button>
+            <button class="rot-btn" onclick="nudgeRot('x',90)"   title="+90° X">↓X</button>
+            <button class="rot-btn" onclick="nudgeRot('z',-45)"  title="-45° Z">↺</button>
+            <button class="rot-btn" onclick="resetCardRot()"     title="Reset" style="font-size:10px;">Reset</button>
+            <button class="rot-btn" onclick="nudgeRot('z',45)"   title="+45° Z">↻</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div>
+        <div class="panel-label">Background</div>
+        <input type="color" id="bgColor" value="#f0f0f4" onchange="updateBg()" style="margin-bottom:6px;">
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <button onclick="setBgPreset('white')"  class="cp active" id="bg-white">White</button>
+          <button onclick="setBgPreset('dark')"   class="cp" id="bg-dark">Dark</button>
+          <button onclick="setBgPreset('blue')"   class="cp" id="bg-blue">Deep Blue</button>
+          <button onclick="setBgPreset('studio')" class="cp" id="bg-studio">Studio</button>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div>
+        <div class="panel-label">Light</div>
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <button onclick="setLight('natural')" class="lp" id="l-natural">Natural</button>
+          <button onclick="setLight('beauty')"  class="lp active" id="l-beauty">Beauty</button>
+          <button onclick="setLight('glow')"    class="lp" id="l-glow">Glow</button>
+          <button onclick="setLight('amber')"   class="lp" id="l-amber">Amber</button>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div>
+        <div class="slider-header">
+          <div class="section-title">Tilt X</div>
+          <span class="slider-val" id="val-tiltX">-15°</span>
+        </div>
+        <input type="range" min="-60" max="60" value="-15" id="rotX" oninput="updateTilt()">
+      </div>
+      <div>
+        <div class="slider-header">
+          <div class="section-title">Tilt Y</div>
+          <span class="slider-val" id="val-tiltY">25°</span>
+        </div>
+        <input type="range" min="-60" max="60" value="25" id="rotY" oninput="updateTilt()">
+      </div>
+      <div>
+        <div class="slider-header">
+          <div class="section-title">Depth</div>
+        </div>
+        <input type="range" min="1" max="30" value="10" id="depth" oninput="updateDepth()">
+      </div>
+
+    </div><!-- /panel-right -->
+  </div><!-- /main -->
+
+  <div class="bottom-bar">
+    <div class="mode-btns">
+      <button onclick="setMode('orbit')"  class="mode-btn" id="m-orbit">Orbit</button>
+      <button onclick="setMode('rotate')" class="mode-btn active" id="m-rotate">Auto Rotate</button>
+    </div>
+    <button onclick="exportPNG()" class="export-btn">↓ Export 4K</button>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+/* ════════════════════════════════════
+   GLOBALS
+════════════════════════════════════ */
+let scene, camera, renderer, pivot, lights = [], autoRotate = true;
+let isDragging = false, lastX = 0, lastY = 0;
+let currentFinish = 'matte', currentLight = 'beauty';
+
+/*
+  FIX for the "jump" bug on Y-orbit:
+  We separate the auto-rotate angle (always accumulates) from the
+  user-controlled drag angles (lerped to target on drag/tilt sliders).
+
+  orbitY   – continuously incremented for auto-rotate (no lerp source)
+  targetX  – drag / tilt-slider target for X
+  currentX – smoothly lerped X applied to all cards
+
+  In animate():
+    if autoRotate  → orbitY += speed  (no lerp, direct, no wrap)
+    else           → orbitY lerps toward targetY
+
+  This removes the lerp on Y when auto-rotating, which was the root cause
+  of the jump: targetY accumulated to a large number, and when currentY
+  caught up via lerp the per-frame delta would momentarily spike.
+*/
+let orbitY = 0.44;        // current Y angle (used directly)
+let targetY = 0.44;       // target for drag / tilt-slider lerp on Y
+let currentX = -0.26;
+let targetX  = -0.26;
+
+let t = 0, bgColor = '#f0f0f4';
+let cards = [], activeCardIdx = 0, cardCount = 0;
+let currentArrangement = 'stack';
+
+/* ════════════════════════════════════
+   INIT
+════════════════════════════════════ */
+function init(){
+  const canvas = document.getElementById('c3d');
+  const W = canvas.parentElement.clientWidth  || 600;
+  const H = canvas.parentElement.clientHeight || 500;
+
+  renderer = new THREE.WebGLRenderer({canvas, antialias:true, alpha:true, preserveDrawingBuffer:true});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setSize(W, H);
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.2;
+
+  scene  = new THREE.Scene();
+  camera = new THREE.PerspectiveCamera(40, W/H, 0.1, 100);
+  camera.position.set(0, 0, 5.5);
+
+  // All card groups live inside pivot; orbital rotation applied to pivot only
+  pivot = new THREE.Group();
+  scene.add(pivot);
+
+  addCard();
+  setLight('beauty');
+  setFinish('matte');
+  applyBg();
+  setupEvents(canvas);
+  animate();
+  window.addEventListener('resize', onResize);
+}
+
+/* ════════════════════════════════════
+   CARD GEOMETRY
+════════════════════════════════════ */
+function makeCardShape(){
+  const s = new THREE.Shape(), w = 1.7, h = 1.07, r = 0.07;
+  s.moveTo(-w+r,-h); s.lineTo(w-r,-h); s.quadraticCurveTo(w,-h,w,-h+r);
+  s.lineTo(w,h-r);   s.quadraticCurveTo(w,h,w-r,h);
+  s.lineTo(-w+r,h);  s.quadraticCurveTo(-w,h,-w,h-r);
+  s.lineTo(-w,-h+r); s.quadraticCurveTo(-w,-h,-w+r,-h);
+  return s;
+}
+
+function makeMaterial(finish, colorHex, frontTex){
+  const col = new THREE.Color(colorHex || '#e85d26');
+  const p = {
+    matte:  {color:col, metalness:0,    roughness:0.9,  clearcoat:0},
+    glossy: {color:col, metalness:0.1,  roughness:0.1,  clearcoat:1,   clearcoatRoughness:0.05},
+    metal:  {color:col, metalness:0.95, roughness:0.15, clearcoat:0.5, clearcoatRoughness:0.1},
+    gold:   {color:new THREE.Color(0xd4af37), metalness:1, roughness:0.1, clearcoat:0.3},
+    holo:   {color:col, metalness:0.8,  roughness:0.05, clearcoat:1,   clearcoatRoughness:0},
+    chrome: {color:new THREE.Color(0xeeeeff), metalness:1, roughness:0.02, clearcoat:1, clearcoatRoughness:0}
+  }[finish] || {color:col, metalness:0, roughness:0.9};
+  const mat = new THREE.MeshPhysicalMaterial({...p});
+  if(frontTex){ mat.map = frontTex; mat.color.set(0xffffff); }
+  return mat;
+}
+
+function buildCardGroup(state){
+  const group = new THREE.Group();
+  const d = parseFloat(document.getElementById('depth').value) / 1000;
+  const ext = {depth:d, bevelEnabled:true, bevelThickness:0.01, bevelSize:0.01, bevelSegments:4};
+  const mesh = new THREE.Mesh(
+    new THREE.ExtrudeGeometry(makeCardShape(), ext),
+    makeMaterial(state.finish, state.color, state.frontTex)
+  );
+  mesh.castShadow = true; mesh.receiveShadow = true;
+  group.add(mesh);
+
+  // Chip
+  const chip = new THREE.Mesh(
+    new THREE.BoxGeometry(0.22, 0.16, 0.02),
+    new THREE.MeshStandardMaterial({color:0xd4af37, metalness:0.9, roughness:0.2})
+  );
+  chip.position.set(-0.8, 0.15, d+0.01); group.add(chip);
+  for(let i=0;i<3;i++){
+    const stripe = new THREE.Mesh(
+      new THREE.BoxGeometry(0.22, 0.01, 0.001),
+      new THREE.MeshStandardMaterial({color:0xaa8800, metalness:0.95, roughness:0.1})
+    );
+    stripe.position.set(-0.8, 0.1+i*0.04, d+0.025); group.add(stripe);
+  }
+
+  // Brand label
+  const tc = document.createElement('canvas'); tc.width=512; tc.height=80;
+  const ctx = tc.getContext('2d'); ctx.clearRect(0,0,512,80);
+  ctx.font = 'bold 48px Helvetica Neue, Arial';
+  ctx.fillStyle = 'rgba(255,255,255,0.5)';
+  ctx.textAlign = 'right'; ctx.fillText('STUDIO', 500, 56);
+  const tp = new THREE.Mesh(
+    new THREE.PlaneGeometry(1.4, 0.22),
+    new THREE.MeshBasicMaterial({map: new THREE.CanvasTexture(tc), transparent:true, depthWrite:false})
+  );
+  tp.position.set(0.3, 0.7, d+0.012); group.add(tp);
+
+  // Back texture
+  if(state.backTex){
+    const bp = new THREE.Mesh(
+      new THREE.PlaneGeometry(3.4, 2.14),
+      new THREE.MeshBasicMaterial({map:state.backTex, transparent:true})
+    );
+    bp.rotation.y = Math.PI; bp.position.set(0,0,-0.01); group.add(bp);
+  }
+
+  // Number dots
+  for(let i=0;i<4;i++){
+    const dot = new THREE.Mesh(
+      new THREE.CircleGeometry(0.02,8),
+      new THREE.MeshStandardMaterial({color:0xffffff, opacity:0.4, transparent:true})
+    );
+    dot.position.set(-1.2+i*0.38, -0.4, d+0.012); group.add(dot);
+  }
+  return group;
+}
+
+/* ════════════════════════════════════
+   ARRANGEMENT & SPREAD
+════════════════════════════════════ */
+function getSpread(){
+  return {
+    x: parseInt(document.getElementById('spreadX').value) / 10,
+    y: parseInt(document.getElementById('spreadY').value) / 10,
+    z: parseInt(document.getElementById('spreadZ').value) / 10
+  };
+}
+
+function computeArrangementPositions(){
+  const n = cards.length, sp = getSpread();
+  cards.forEach((s, i)=>{
+    const frac = n > 1 ? (i/(n-1) - 0.5) : 0;
+    let bx=0, by=0, bz=0, brx=0, bry=0, brz=0;
+
+    if(currentArrangement === 'stack'){
+      bz = -i * (0.08 + sp.z * 0.25);
+      bx =  frac * sp.x * 0.5;
+      by =  frac * sp.y * 0.4;
+    }
+    else if(currentArrangement === 'fan'){
+      const angle = frac * (sp.x * 10 + 20) * Math.PI / 180;
+      brz = angle;
+      bx  = Math.sin(angle) * (1.0 + sp.x * 0.4);
+      by  = -Math.abs(Math.cos(angle)) * (0.1 + sp.y * 0.15) + 0.05;
+      bz  = -i * (0.05 + sp.z * 0.2);
+    }
+    else if(currentArrangement === 'line'){
+      bx = frac * (3.6 + sp.x * 1.2);
+      by = frac *  sp.y * 0.3;
+      bz = -i  * (0.05 + sp.z * 0.2);
+    }
+    else if(currentArrangement === 'ring'){
+      // Each card evenly distributed around a circle in the XZ plane,
+      // facing outward (bry) so the front always points away from centre.
+      const radius = 2.2 + sp.x * 0.5;
+      const tilt   = sp.y * 0.15;          // optional vertical tilt per step
+      const theta  = (i / n) * Math.PI * 2; // full 360° split evenly
+      bx  = Math.sin(theta) * radius;
+      bz  = Math.cos(theta) * radius - radius; // offset so centre stays at 0
+      by  = i * tilt;
+      bry = theta;   // rotate each card to face outward
+      bz += sp.z * -i * 0.05;
+    }
+    else if(currentArrangement === 'cascade'){
+      bx  =  frac * (1.5 + sp.x * 0.8);
+      by  = -frac * (0.6 + sp.y * 0.4);
+      bz  = -i    * (0.12 + sp.z * 0.3);
+      brz =  frac * (-8 * Math.PI / 180);
+    }
+
+    s.basePos       = new THREE.Vector3(bx, by, bz);
+    s.baseRotOffset = new THREE.Euler(brx, bry, brz);
+  });
+}
+
+function applyPositions(){
+  computeArrangementPositions();
+  cards.forEach(s => {
+    if(!s.group) return;
+    s.group.position.copy(s.basePos);
+    const ux = s.userRot.x * Math.PI / 180;
+    const uy = s.userRot.y * Math.PI / 180;
+    const uz = s.userRot.z * Math.PI / 180;
+    s.group.rotation.set(
+      s.baseRotOffset.x + ux,
+      s.baseRotOffset.y + uy,
+      s.baseRotOffset.z + uz
+    );
+  });
+}
+
+function setArrangement(name){
+  currentArrangement = name;
+  document.querySelectorAll('[id^="arr-"]').forEach(b=>b.classList.remove('active'));
+  const btn = document.getElementById('arr-'+name); if(btn) btn.classList.add('active');
+  applyPositions();
+}
+
+function updateSpread(){
+  const sx = parseInt(document.getElementById('spreadX').value)/10;
+  const sy = parseInt(document.getElementById('spreadY').value)/10;
+  const sz = parseInt(document.getElementById('spreadZ').value)/10;
+  document.getElementById('val-spreadX').textContent = sx.toFixed(1);
+  document.getElementById('val-spreadY').textContent = sy.toFixed(1);
+  document.getElementById('val-spreadZ').textContent = sz.toFixed(1);
+  applyPositions();
+}
+
+/* ════════════════════════════════════
+   PER-CARD ROTATION
+════════════════════════════════════ */
+function updateCardRot(){
+  const s = cards[activeCardIdx]; if(!s) return;
+  const rx = parseInt(document.getElementById('crotX').value);
+  const ry = parseInt(document.getElementById('crotY').value);
+  const rz = parseInt(document.getElementById('crotZ').value);
+  document.getElementById('val-crotX').textContent = rx+'°';
+  document.getElementById('val-crotY').textContent = ry+'°';
+  document.getElementById('val-crotZ').textContent = rz+'°';
+  s.userRot = {x:rx, y:ry, z:rz};
+  applyPositions();
+}
+
+function nudgeRot(axis, deg){
+  const s = cards[activeCardIdx]; if(!s) return;
+  s.userRot[axis] = (s.userRot[axis]||0) + deg;
+  s.userRot[axis] = ((s.userRot[axis]+180)%360+360)%360 - 180;
+  syncRotSliders(); applyPositions();
+}
+
+function resetCardRot(){
+  const s = cards[activeCardIdx]; if(!s) return;
+  s.userRot = {x:0,y:0,z:0};
+  syncRotSliders(); applyPositions();
+}
+
+function syncRotSliders(){
+  const s = cards[activeCardIdx]; if(!s) return;
+  ['x','y','z'].forEach(ax=>{
+    const v = Math.round(s.userRot[ax]||0);
+    document.getElementById('crot'+ax.toUpperCase()).value = v;
+    document.getElementById('val-crot'+ax.toUpperCase()).textContent = v+'°';
+  });
+}
+
+/* ════════════════════════════════════
+   MULTI-CARD MANAGEMENT
+════════════════════════════════════ */
+const PALETTE = ['#e85d26','#2255cc','#22aa66','#cc2266','#aaaa22','#8822cc','#cc8822','#2288aa'];
+
+function addCard(){
+  cardCount++;
+  const idx = cards.length;
+  const state = {
+    finish: 'matte', color: PALETTE[idx % PALETTE.length],
+    frontTex: null, backTex: null,
+    basePos: new THREE.Vector3(),
+    baseRotOffset: new THREE.Euler(),
+    userRot: {x:0, y:0, z:0},
+    label: 'Card '+cardCount, group: null
+  };
+  const group = buildCardGroup(state);
+  pivot.add(group); state.group = group;
+  cards.push(state);
+  applyPositions();
+  setActiveCard(idx);
+  renderCardList();
+}
+
+function rebuildCard(idx){
+  const s = cards[idx]; if(!s) return;
+  const old = s.group;
+  const ng  = buildCardGroup(s);
+  pivot.add(ng); pivot.remove(old);
+  s.group = ng;
+  applyPositions();
+}
+
+function removeCard(idx){
+  if(cards.length <= 1) return;
+  pivot.remove(cards[idx].group); cards.splice(idx, 1);
+  if(activeCardIdx >= cards.length) activeCardIdx = cards.length-1;
+  applyPositions(); renderCardList(); syncPanel();
+}
+
+function setActiveCard(idx){
+  activeCardIdx = idx;
+  renderCardList(); syncPanel(); syncRotSliders();
+  document.getElementById('active-card-lbl').textContent = cards[idx]?.label || '';
+}
+
+function syncPanel(){
+  const s = cards[activeCardIdx]; if(!s) return;
+  document.getElementById('cardColor').value = s.color;
+  document.querySelectorAll('.fp').forEach(b=>b.classList.remove('active'));
+  const fb = document.getElementById('f-'+s.finish); if(fb) fb.classList.add('active');
+  currentFinish = s.finish;
+}
+
+function renderCardList(){
+  const list = document.getElementById('card-list'); list.innerHTML = '';
+  cards.forEach((c,i)=>{
+    const el = document.createElement('div');
+    el.className = 'card-item'+(i===activeCardIdx?' active':'');
+    el.innerHTML = `<div class="card-item-dot" style="background:${c.color}"></div>
+      <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.label}</span>
+      ${cards.length>1?`<button class="card-item-del" onclick="event.stopPropagation();removeCard(${i})">×</button>`:''}`;
+    el.addEventListener('click', ()=>setActiveCard(i));
+    list.appendChild(el);
+  });
+}
+
+/* ════════════════════════════════════
+   FINISH / COLOR / TEXTURE
+════════════════════════════════════ */
+function setFinish(name){
+  currentFinish = name;
+  document.querySelectorAll('.fp').forEach(b=>b.classList.remove('active'));
+  const btn = document.getElementById('f-'+name); if(btn) btn.classList.add('active');
+  const s = cards[activeCardIdx]; if(!s) return;
+  s.finish = name;
+  const mesh = s.group.children[0];
+  if(mesh) mesh.material = makeMaterial(name, s.color, s.frontTex);
+}
+
+function updateCardColor(val){
+  const s = cards[activeCardIdx]; if(!s) return;
+  s.color = val;
+  const mesh = s.group.children[0];
+  if(mesh) mesh.material = makeMaterial(s.finish, val, s.frontTex);
+  renderCardList();
+}
+
+function loadFrontImage(ev){
+  const file = ev.target.files[0]; if(!file) return;
+  new THREE.TextureLoader().load(URL.createObjectURL(file), tex=>{
+    const s = cards[activeCardIdx]; if(!s) return;
+    s.frontTex = tex;
+    const mesh = s.group.children[0];
+    if(mesh) mesh.material = makeMaterial(s.finish, s.color, tex);
+    const lbl = document.getElementById('lbl-front');
+    lbl.classList.add('has-file');
+    lbl.childNodes[0].textContent = '✓ '+file.name.slice(0,16);
+    document.getElementById('clear-front').style.display = 'block';
+  });
+}
+function clearFrontImage(){
+  const s = cards[activeCardIdx]; if(!s) return;
+  s.frontTex = null;
+  const mesh = s.group.children[0];
+  if(mesh) mesh.material = makeMaterial(s.finish, s.color, null);
+  const lbl = document.getElementById('lbl-front');
+  lbl.classList.remove('has-file');
+  lbl.childNodes[0].textContent = '+ Gradient / Image';
+  document.getElementById('clear-front').style.display = 'none';
+}
+
+function loadBackImage(ev){
+  const file = ev.target.files[0]; if(!file) return;
+  new THREE.TextureLoader().load(URL.createObjectURL(file), tex=>{
+    const s = cards[activeCardIdx]; if(!s) return;
+    s.backTex = tex; rebuildCard(activeCardIdx);
+    const lbl = document.getElementById('lbl-back');
+    lbl.classList.add('has-file');
+    lbl.childNodes[0].textContent = '✓ '+file.name.slice(0,16);
+    document.getElementById('clear-back').style.display = 'block';
+  });
+}
+function clearBackImage(){
+  const s = cards[activeCardIdx]; if(!s) return;
+  s.backTex = null; rebuildCard(activeCardIdx);
+  const lbl = document.getElementById('lbl-back');
+  lbl.classList.remove('has-file');
+  lbl.childNodes[0].textContent = '+ Back image';
+  document.getElementById('clear-back').style.display = 'none';
+}
+
+/* ════════════════════════════════════
+   BACKGROUND
+════════════════════════════════════ */
+const bgPresets = {white:'#f0f0f4', dark:'#0a0a14', blue:'#060e2a', studio:'#1a0a2e'};
+function setBgPreset(name){
+  document.querySelectorAll('[id^="bg-"]').forEach(b=>b.classList.remove('active'));
+  const btn = document.getElementById('bg-'+name); if(btn) btn.classList.add('active');
+  bgColor = bgPresets[name];
+  document.getElementById('bgColor').value = bgColor;
+  applyBg();
+}
+function updateBg(){
+  bgColor = document.getElementById('bgColor').value;
+  document.querySelectorAll('[id^="bg-"]').forEach(b=>b.classList.remove('active'));
+  applyBg();
+}
+function applyBg(){
+  const wrap = document.getElementById('canvasWrap');
+  wrap.style.background = bgColor;
+  if(scene) scene.background = new THREE.Color(bgColor);
+  const r=parseInt(bgColor.slice(1,3),16), g=parseInt(bgColor.slice(3,5),16), b=parseInt(bgColor.slice(5,7),16);
+  const isDark = (r*299+g*587+b*114)/1000 < 128;
+  document.querySelector('.hint').style.color = isDark ? '#3a3a55' : '#aaaacc';
+}
+
+/* ════════════════════════════════════
+   LIGHTS
+════════════════════════════════════ */
+function getLightConfigs(){
+  return {
+    natural: {ambient:0xffffff, ambI:0.5, lights:[
+      {col:0xffffff, i:1.8, pos:[4,5,4]},
+      {col:0xccdeff, i:0.5, pos:[-3,-1,3]}
+    ]},
+    beauty: {ambient:0x8866ff, ambI:0.4, lights:[
+      {col:0xff5533, i:2.2, pos:[3,4,4]},
+      {col:0xff88cc, i:1.0, pos:[-3,2,3]},
+      {col:0x4433ff, i:0.7, pos:[0,-3,2]}
+    ]},
+    glow: {ambient:0x002244, ambI:0.25, lights:[
+      {col:0x00ffcc, i:2.0, pos:[3,2,4]},
+      {col:0xff00ff, i:1.4, pos:[-3,2,3]},
+      {col:0xffffff, i:0.4, pos:[0,4,2]}
+    ]},
+    amber: {ambient:0x441100, ambI:0.35, lights:[
+      {col:0xff9933, i:2.8, pos:[4,3,4]},
+      {col:0xffcc44, i:0.9, pos:[-2,1,3]}
+    ]}
+  };
+}
+function setLight(name){
+  currentLight = name;
+  document.querySelectorAll('.lp').forEach(b=>b.classList.remove('active'));
+  const btn = document.getElementById('l-'+name); if(btn) btn.classList.add('active');
+  lights.forEach(l=>scene.remove(l)); lights = [];
+  const cfg = getLightConfigs()[name] || getLightConfigs().beauty;
+  const amb = new THREE.AmbientLight(cfg.ambient, cfg.ambI);
+  scene.add(amb); lights.push(amb);
+  cfg.lights.forEach((ld, i)=>{
+    const dl = new THREE.DirectionalLight(ld.col, ld.i);
+    dl.position.set(...ld.pos);
+    // Only the first (key) light casts shadows
+    if(i === 0){
+      dl.castShadow = true;
+      dl.shadow.mapSize.width  = 2048;
+      dl.shadow.mapSize.height = 2048;
+      dl.shadow.camera.near = 0.5;
+      dl.shadow.camera.far  = 30;
+      dl.shadow.camera.left   = -6;
+      dl.shadow.camera.right  =  6;
+      dl.shadow.camera.top    =  6;
+      dl.shadow.camera.bottom = -6;
+      dl.shadow.bias = -0.001;
+    }
+    scene.add(dl); lights.push(dl);
+  });
+}
+
+/* ════════════════════════════════════
+   TILT / DEPTH / MODE
+════════════════════════════════════ */
+function updateTilt(){
+  targetX = parseFloat(document.getElementById('rotX').value) * Math.PI/180;
+  targetY = parseFloat(document.getElementById('rotY').value) * Math.PI/180;
+  document.getElementById('val-tiltX').textContent = document.getElementById('rotX').value+'°';
+  document.getElementById('val-tiltY').textContent = document.getElementById('rotY').value+'°';
+}
+function updateDepth(){ cards.forEach((_,i)=>rebuildCard(i)); }
+function setMode(m){
+  autoRotate = (m === 'rotate');
+  /* sync targetY so lerp starts from current position – prevents jump on mode switch */
+  if(!autoRotate) targetY = orbitY;
+  document.getElementById('m-orbit').classList.toggle('active', !autoRotate);
+  document.getElementById('m-rotate').classList.toggle('active',  autoRotate);
+}
+
+/* ════════════════════════════════════
+   EVENTS
+════════════════════════════════════ */
+function setupEvents(canvas){
+  canvas.addEventListener('mousedown', e=>{
+    isDragging = true; lastX = e.clientX; lastY = e.clientY;
+    autoRotate = false; setMode('orbit');
+  });
+  window.addEventListener('mouseup', ()=>isDragging = false);
+  window.addEventListener('mousemove', e=>{
+    if(!isDragging) return;
+    targetY += (e.clientX - lastX) * 0.01;
+    targetX += (e.clientY - lastY) * 0.01;
+    lastX = e.clientX; lastY = e.clientY;
+  });
+  canvas.addEventListener('wheel', e=>{
+    e.preventDefault();
+    camera.position.z = Math.min(12, Math.max(2, camera.position.z + e.deltaY*0.01));
+  },{passive:false});
+  let ltx=0, lty=0;
+  canvas.addEventListener('touchstart', e=>{
+    ltx=e.touches[0].clientX; lty=e.touches[0].clientY;
+    autoRotate=false; setMode('orbit');
+  },{passive:true});
+  canvas.addEventListener('touchmove', e=>{
+    targetY += (e.touches[0].clientX - ltx)*0.01;
+    targetX += (e.touches[0].clientY - lty)*0.01;
+    ltx=e.touches[0].clientX; lty=e.touches[0].clientY;
+  },{passive:true});
+}
+
+/* ════════════════════════════════════
+   ANIMATION LOOP
+   KEY FIX: orbitY accumulates directly when auto-rotating.
+   No lerp on Y during auto-rotate → no jump ever.
+════════════════════════════════════ */
+function animate(){
+  requestAnimationFrame(animate);
+  t += 0.005;
+
+  if(autoRotate){
+    orbitY += 0.007;
+  } else {
+    orbitY += (targetY - orbitY) * 0.08;
+  }
+  currentX += (targetX - currentX) * 0.08;
+
+  // Orbital rotation lives entirely on the pivot — all cards move as one rigid body
+  pivot.rotation.x = currentX;
+  pivot.rotation.y = orbitY;
+  // Gentle float on the whole deck
+  pivot.position.y = Math.sin(t * 0.8) * 0.04;
+
+  // Each card only handles its local arrangement position + per-card user rotation
+  cards.forEach((s, i)=>{
+    if(!s.group) return;
+    const ux = s.userRot.x * Math.PI/180;
+    const uy = s.userRot.y * Math.PI/180;
+    const uz = s.userRot.z * Math.PI/180;
+    s.group.position.copy(s.basePos);
+    s.group.rotation.set(
+      s.baseRotOffset.x + ux,
+      s.baseRotOffset.y + uy,
+      s.baseRotOffset.z + uz
+    );
+    // holo shimmer
+    if(s.finish === 'holo' && s.group.children[0]){
+      s.group.children[0].material.color.setHSL((Math.sin(t*2+i)*0.5+0.5), 0.85, 0.55);
+    }
+  });
+  renderer.render(scene, camera);
+}
+
+function onResize(){
+  const canvas = document.getElementById('c3d');
+  const W = canvas.parentElement.clientWidth;
+  const H = canvas.parentElement.clientHeight;
+  camera.aspect = W/H; camera.updateProjectionMatrix(); renderer.setSize(W,H);
+}
+
+function exportPNG(){
+  const W4K = 3840, H4K = 2160;
+  // Save current size
+  const canvas = document.getElementById('c3d');
+  const prevW = canvas.parentElement.clientWidth;
+  const prevH = canvas.parentElement.clientHeight;
+  // Upscale to 4K
+  renderer.setSize(W4K, H4K);
+  camera.aspect = W4K / H4K;
+  camera.updateProjectionMatrix();
+  renderer.render(scene, camera);
+  const a = document.createElement('a');
+  a.href = renderer.domElement.toDataURL('image/png');
+  a.download = 'card-studio-4k.png';
+  a.click();
+  // Restore
+  renderer.setSize(prevW, prevH);
+  camera.aspect = prevW / prevH;
+  camera.updateProjectionMatrix();
+}
+
+/* ════════════════════════════════════
+   EXPOSE GLOBALS
+════════════════════════════════════ */
+window.setFinish=setFinish; window.setLight=setLight; window.updateCardColor=updateCardColor;
+window.updateTilt=updateTilt; window.updateDepth=updateDepth; window.setMode=setMode;
+window.loadFrontImage=loadFrontImage; window.clearFrontImage=clearFrontImage;
+window.loadBackImage=loadBackImage;   window.clearBackImage=clearBackImage;
+window.exportPNG=exportPNG; window.addCard=addCard; window.removeCard=removeCard;
+window.setActiveCard=setActiveCard; window.updateBg=updateBg; window.setBgPreset=setBgPreset;
+window.updateSpread=updateSpread; window.setArrangement=setArrangement;
+window.updateCardRot=updateCardRot; window.nudgeRot=nudgeRot; window.resetCardRot=resetCardRot;
+
+init();
+</script>
+</body>
+</html>
