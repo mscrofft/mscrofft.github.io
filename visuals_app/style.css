@@ -1,4 +1,197 @@
-/* UI replaced by dat.GUI. Keep canvas full-bleed. */
-html,body{height:100%;}
-body{margin:0;}
-canvas{display:block;}
+/* ── Reset / base ── */
+*, *::before, *::after { box-sizing: border-box; }
+html, body {
+  height: 100%; margin: 0;
+  background: #000;
+  overflow: hidden;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+canvas { display: block; }
+
+/* ── Swatch bar ── */
+#swatchesBar {
+  position: fixed; left: 12px; bottom: 12px;
+  display: flex; gap: 6px; flex-wrap: wrap;
+  padding: 8px; border-radius: 12px;
+  background: rgba(0,0,0,.55); backdrop-filter: blur(6px);
+  z-index: 10;
+  /* on very small phones keep it out of the FAB way */
+  max-width: calc(100vw - 80px);
+}
+#swatchesBar .sw {
+  width: 22px; height: 14px;
+  border-radius: 4px;
+  border: 1px solid rgba(255,255,255,.25);
+}
+
+/* ── Debug box ── */
+#debugBox {
+  position: fixed; left: 12px; top: 12px;
+  max-width: min(520px, calc(100vw - 24px));
+  z-index: 10; font-size: 11px; line-height: 1.3;
+  color: #9ef; background: rgba(0,0,0,.55);
+  padding: 8px 10px; border-radius: 12px;
+  display: none; white-space: pre-wrap; word-break: break-word;
+}
+
+/* ── dat.GUI: hide on mobile, show on desktop ── */
+.dg.ac {
+  display: none;
+}
+@media (min-width: 768px) {
+  .dg.ac { display: block !important; }
+  #fabMenu  { display: none !important; }
+  #mobileSheet, #mobileOverlay { display: none !important; }
+}
+
+/* ── FAB (mobile only) ── */
+#fabMenu {
+  position: fixed; right: 16px; bottom: 20px;
+  width: 52px; height: 52px; border-radius: 50%;
+  background: rgba(255,255,255,.15);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,.25);
+  color: #fff; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  z-index: 100;
+  transition: background .2s;
+  padding: 0;
+}
+#fabMenu:active { background: rgba(255,255,255,.28); }
+#fabMenu svg { width: 22px; height: 22px; }
+
+/* ── Overlay ── */
+#mobileOverlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.5);
+  z-index: 200;
+  opacity: 0; pointer-events: none;
+  transition: opacity .3s;
+}
+#mobileOverlay.open { opacity: 1; pointer-events: all; }
+
+/* ── Bottom Sheet ── */
+#mobileSheet {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  height: 82vh;
+  background: #1a1a1a;
+  border-radius: 20px 20px 0 0;
+  z-index: 201;
+  display: flex; flex-direction: column;
+  transform: translateY(100%);
+  transition: transform .35s cubic-bezier(.4,0,.2,1);
+  overflow: hidden;
+}
+#mobileSheet.open { transform: translateY(0); }
+
+#sheetHandle {
+  width: 40px; height: 4px; border-radius: 2px;
+  background: rgba(255,255,255,.2);
+  margin: 10px auto 0;
+  flex-shrink: 0;
+}
+
+#sheetHeader {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 20px 6px;
+  flex-shrink: 0;
+}
+#sheetHeader h2 {
+  margin: 0; font-size: 16px; font-weight: 600; color: #fff;
+}
+#sheetClose {
+  background: none; border: none; color: rgba(255,255,255,.5);
+  font-size: 18px; cursor: pointer; padding: 4px 8px; line-height: 1;
+}
+#sheetClose:active { color: #fff; }
+
+#sheetBody {
+  flex: 1; overflow-y: auto;
+  padding: 8px 16px 40px;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+/* ── Controls inside sheet ── */
+.ctrl-section {
+  border-bottom: 1px solid rgba(255,255,255,.08);
+  padding: 14px 0;
+}
+.ctrl-section:last-child { border-bottom: none; }
+.ctrl-section h3 {
+  margin: 0 0 10px; font-size: 11px; font-weight: 600;
+  letter-spacing: .08em; text-transform: uppercase;
+  color: rgba(255,255,255,.4);
+}
+
+select {
+  width: 100%;
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
+.ctrl-row {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 10px; margin-bottom: 10px;
+}
+.ctrl-row label {
+  font-size: 13px; color: rgba(255,255,255,.75);
+  white-space: nowrap; flex-shrink: 0;
+  min-width: 120px;
+}
+.ctrl-row .val {
+  font-variant-numeric: tabular-nums;
+  color: rgba(255,255,255,.5); font-size: 12px;
+}
+
+.checkbox-row { justify-content: space-between; }
+.checkbox-row label { min-width: unset; flex: 1; }
+
+/* Range inputs */
+input[type="range"] {
+  flex: 1; height: 4px;
+  accent-color: #7eb8f7;
+  cursor: pointer;
+  min-width: 0;
+}
+
+/* Color input */
+input[type="color"] {
+  width: 36px; height: 36px;
+  border: none; border-radius: 8px;
+  padding: 0; cursor: pointer;
+  background: none;
+}
+
+/* Checkbox */
+input[type="checkbox"] {
+  width: 20px; height: 20px;
+  accent-color: #7eb8f7;
+  cursor: pointer; flex-shrink: 0;
+}
+
+/* Buttons */
+.ctrl-btn {
+  flex: 1;
+  padding: 10px 8px; border-radius: 8px;
+  background: rgba(255,255,255,.1);
+  border: 1px solid rgba(255,255,255,.15);
+  color: #fff; font-size: 13px; cursor: pointer;
+  transition: background .15s;
+}
+.ctrl-btn:active { background: rgba(255,255,255,.22); }
+.ctrl-btn.full { width: 100%; margin-top: 2px; }
+
+.btn-group {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+/* ── Safe area for notched phones ── */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  #mobileSheet { padding-bottom: env(safe-area-inset-bottom); }
+  #fabMenu { bottom: calc(20px + env(safe-area-inset-bottom)); }
+  #swatchesBar { bottom: calc(12px + env(safe-area-inset-bottom)); }
+}

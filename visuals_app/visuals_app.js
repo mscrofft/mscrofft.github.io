@@ -574,3 +574,200 @@ function startRecording(){
   recorder.start(100); isRecording=true; if (btn) btn.textContent="⏹ Stop Recording";
 }
 function stopRecording(){ const btn=document.getElementById("btnRecord"); if (recorder && isRecording) recorder.stop(); isRecording=false; if (btn) btn.textContent="🎥 Start Recording"; }
+
+// ─────────────────────────────────────────────────────────────
+// MOBILE UI — Bottom-sheet controls
+// Runs after p5 setup(); syncs with guiState bidirectionally.
+// ─────────────────────────────────────────────────────────────
+
+(function initMobileUI(){
+  // Wait for DOM + p5 setup to finish
+  document.addEventListener("DOMContentLoaded", () => {
+    // Small delay so p5 setup() can run first and populate paletas/customShapes
+    setTimeout(bindMobileUI, 120);
+  });
+})();
+
+function bindMobileUI(){
+  const isMobile = () => window.innerWidth < 768;
+
+  // ── Canvas: fill screen on mobile, fixed res on desktop ──
+  function adaptCanvas(){
+    if (isMobile()){
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      W = w; H = h;
+      if (cnv){ resizeCanvas(W, H); }
+    }
+  }
+  adaptCanvas();
+  window.addEventListener("resize", adaptCanvas);
+
+  // ── Sheet open/close ──
+  const fab     = document.getElementById("fabMenu");
+  const sheet   = document.getElementById("mobileSheet");
+  const overlay = document.getElementById("mobileOverlay");
+  const closeBtn= document.getElementById("sheetClose");
+
+  function openSheet(){
+    sheet.classList.add("open");
+    overlay.classList.add("open");
+    document.body.style.overflow = "hidden";
+  }
+  function closeSheet(){
+    sheet.classList.remove("open");
+    overlay.classList.remove("open");
+    document.body.style.overflow = "";
+  }
+
+  if (fab)     fab.addEventListener("click", openSheet);
+  if (closeBtn)closeBtn.addEventListener("click", closeSheet);
+  if (overlay) overlay.addEventListener("click", closeSheet);
+
+  // Swipe-down to close
+  let touchStartY = 0;
+  if (sheet){
+    sheet.addEventListener("touchstart", e => { touchStartY = e.touches[0].clientY; }, {passive:true});
+    sheet.addEventListener("touchend",   e => {
+      if (e.changedTouches[0].clientY - touchStartY > 60) closeSheet();
+    }, {passive:true});
+  }
+
+  // ── Helper: bind range + display value ──
+  function bindRange(id, stateKey, decimals=0, onchange=null){
+    const el  = document.getElementById(id);
+    const val = document.getElementById(id + "-val");
+    if (!el) return;
+    el.value = guiState[stateKey];
+    if (val) val.textContent = Number(guiState[stateKey]).toFixed(decimals);
+    el.addEventListener("input", () => {
+      const v = parseFloat(el.value);
+      guiState[stateKey] = v;
+      if (val) val.textContent = v.toFixed(decimals);
+      if (onchange) onchange(v);
+    });
+  }
+
+  function bindSelect(id, stateKey, onchange=null){
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.value = guiState[stateKey];
+    el.addEventListener("change", () => {
+      guiState[stateKey] = el.value;
+      if (onchange) onchange(el.value);
+    });
+  }
+
+  function bindCheckbox(id, stateKey, onchange=null){
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.checked = !!guiState[stateKey];
+    el.addEventListener("change", () => {
+      guiState[stateKey] = el.checked;
+      if (onchange) onchange(el.checked);
+    });
+  }
+
+  function bindColor(id, stateKey){
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.value = guiState[stateKey];
+    el.addEventListener("input", () => { guiState[stateKey] = el.value; });
+  }
+
+  // ── Populate Forma dropdown ──
+  function buildFormaSelect(){
+    const sel = document.getElementById("m-forma");
+    if (!sel) return;
+    const opts = [
+      "circulo","retangulo","triangulo","estrela","poligono:5","estrelaK:7",
+      "losango","capsula","anel","fatia","coracao","engrenagem:12","squircle",
+      ...Object.keys(customShapes||{}).map(k=>`custom:${k}`)
+    ];
+    const labels = {
+      "circulo":"Círculo","retangulo":"Retângulo","triangulo":"Triângulo",
+      "estrela":"Estrela 5pts","poligono:5":"Polígono","estrelaK:7":"Estrela 7pts",
+      "losango":"Losango","capsula":"Cápsula","anel":"Anel","fatia":"Fatia",
+      "coracao":"Coração","engrenagem:12":"Engrenagem","squircle":"Squircle"
+    };
+    sel.innerHTML = "";
+    opts.forEach(o => {
+      const opt = document.createElement("option");
+      opt.value = o;
+      opt.textContent = labels[o] || o;
+      sel.appendChild(opt);
+    });
+    sel.value = guiState.forma;
+    sel.addEventListener("change", () => { guiState.forma = sel.value; });
+  }
+  buildFormaSelect();
+
+  // ── Populate Paleta dropdown ──
+  function buildPaletaSelect(){
+    const sel = document.getElementById("m-paletaIndex");
+    if (!sel) return;
+    sel.innerHTML = "";
+    (paletas||[]).forEach((p, i) => {
+      const opt = document.createElement("option");
+      opt.value = i;
+      opt.textContent = `Paleta ${i+1}`;
+      sel.appendChild(opt);
+    });
+    sel.value = guiState.paletaIndex;
+    sel.addEventListener("change", () => {
+      guiState.paletaIndex = +sel.value;
+      updateSwatchesBar();
+      regenerateColorGrid();
+    });
+  }
+  buildPaletaSelect();
+
+  // ── Gerar paleta button ──
+  const btnGerar = document.getElementById("m-gerarPaleta");
+  if (btnGerar) btnGerar.addEventListener("click", () => {
+    guiState.gerarPaleta();
+    buildPaletaSelect();
+  });
+
+  // ── Shape params ──
+  bindRange("m-diametro",   "diametro",  0);
+  bindRange("m-fatiaAng",   "fatiaAng",  0);
+  bindRange("m-gearTeeth",  "gearTeeth", 0);
+
+  // ── Palette ──
+  bindSelect("m-tipoPaleta", "tipoPaleta");
+  bindCheckbox("m-stableColors", "stableColors", ()=>regenerateColorGrid());
+  bindRange("m-seed", "seed", 0, ()=>regenerateColorGrid());
+
+  // ── Grid ──
+  bindRange("m-colunas",   "colunas",   0, ()=>regenerateColorGrid());
+  bindRange("m-linhas",    "linhas",    0, ()=>regenerateColorGrid());
+  bindRange("m-espacoCol", "espacoCol", 0);
+  bindRange("m-espacoLin", "espacoLin", 0);
+  bindRange("m-rotacao",   "rotacao",   0);
+
+  // ── Wave ──
+  bindRange("m-waveSize",   "waveSize",   0);
+  bindRange("m-waveLength", "waveLength", 2);
+  bindRange("m-waveOffset", "waveOffset", 2);
+  bindRange("m-waveSpeed",  "waveSpeed",  3);
+
+  // ── Colors ──
+  bindColor("m-bgHex", "bgHex");
+
+  // ── Export ──
+  const btnPNG = document.getElementById("m-salvarPNG");
+  if (btnPNG) btnPNG.addEventListener("click", () => { guiState.salvarPNG(); });
+
+  const btnSVG = document.getElementById("m-exportarSVG");
+  if (btnSVG) btnSVG.addEventListener("click", () => { guiState.exportarSVG(); });
+
+  const btnRec = document.getElementById("m-record");
+  if (btnRec) btnRec.addEventListener("click", () => {
+    guiState.record();
+    btnRec.textContent = isRecording ? "⏹ Parar" : "🎥 Gravar";
+  });
+
+  const btnUpSVG = document.getElementById("m-uploadSVG");
+  if (btnUpSVG) btnUpSVG.addEventListener("click", () => { guiState.uploadSVG(); });
+}
