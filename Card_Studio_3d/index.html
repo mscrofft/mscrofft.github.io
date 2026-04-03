@@ -574,14 +574,23 @@ function init(){
   camera = new THREE.PerspectiveCamera(40, W/H, 0.1, 100);
   camera.position.set(0, 0, 5.5);
 
-  // All card groups live inside pivot; orbital rotation applied to pivot only
   pivot = new THREE.Group();
   scene.add(pivot);
 
+  // 👉 DEFAULT STATE
+  currentArrangement = 'fan';
+
   addCard();
+  for(let i=0;i<6;i++) addCard(); // total = 7
+
+  setActiveCard(6);
+
   setLight('beauty');
   setFinish('matte');
+
+  applyPositions();
   applyBg();
+
   setupEvents(canvas);
   setupPinch(canvas);
   animate();
