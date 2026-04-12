@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sistema de Partículas</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{width:100%;height:100%;overflow:hidden;background:#0e0e12;font-family:sans-serif}
+
+  #canvas-wrap{position:fixed;inset:0;cursor:crosshair}
+  canvas{display:block}
+
+  #toggle{
+    position:fixed;top:14px;right:14px;z-index:20;
+    width:34px;height:34px;border-radius:8px;
+    background:rgba(20,20,26,0.85);border:1px solid #2e2e3a;
+    color:#aaa;font-size:18px;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    transition:background 0.15s;
+    backdrop-filter:blur(6px);
+  }
+  #toggle:hover{background:rgba(35,35,48,0.95)}
+
+  #panel{
+    position:fixed;top:0;right:0;bottom:0;z-index:10;
+    width:240px;
+    background:rgba(14,14,18,0.92);
+    border-left:1px solid #1e1e28;
+    backdrop-filter:blur(8px);
+    transform:translateX(0);
+    transition:transform 0.28s cubic-bezier(.4,0,.2,1);
+    overflow-y:auto;
+    padding:14px 14px 20px;
+    display:flex;flex-direction:column;gap:14px;
+  }
+  #panel.hidden{transform:translateX(100%)}
+
+  .panel-title{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#444;margin-bottom:2px}
+  .group{display:flex;flex-direction:column;gap:7px}
+  .row{display:flex;align-items:center;gap:6px;font-size:12px;color:#777}
+  .row label{flex:1;min-width:0}
+  .row input[type=range]{width:80px;flex-shrink:0;accent-color:#5c8ee0}
+  .row span.v{font-size:11px;font-weight:500;color:#bbb;min-width:32px;text-align:right}
+  .sep{height:1px;background:#1e1e28}
+  #btn-row{display:flex;gap:6px}
+  button{flex:1;padding:5px 0;font-size:12px;cursor:pointer;border:1px solid #2a2a35;background:#1a1a22;color:#aaa;border-radius:6px;transition:background 0.15s}
+  button:hover{background:#252530}
+  #hint{font-size:11px;color:#3a3a4a;line-height:1.6}
+  #hint b{color:#4a4a60}
+  #pcount-wrap{font-size:11px;color:#3a3a4a}
+  #pcount,#icount{color:#555}
+</style>
+</head>
+<body>
+
+<div id="canvas-wrap"><canvas id="c"></canvas></div>
+<button id="toggle" title="Painel">⚙</button>
+
+<div id="panel">
+
+  <div>
+    <div class="panel-title">Mundo</div>
+    <div class="group">
+      <div class="row"><label>Gravidade</label>      <input type="range" id="grav"  min="0"   max="3"   step="0.05" value="0.35"> <span class="v" id="grav-v">0.35</span></div>
+      <div class="row"><label>Bounce paredes</label>  <input type="range" id="bnc"   min="0"   max="1"   step="0.05" value="1">    <span class="v" id="bnc-v">1</span></div>
+      <div class="row"><label>Atrito chão</label>     <input type="range" id="frict" min="0.5" max="1"   step="0.01" value="0.67"> <span class="v" id="frict-v">0.67</span></div>
+    </div>
+  </div>
+
+  <div class="sep"></div>
+
+  <div>
+    <div class="panel-title">Spawn</div>
+    <div class="group">
+      <div class="row"><label>Qtd por clique</label>  <input type="range" id="qty"  min="1"  max="40"  step="1"   value="1">   <span class="v" id="qty-v">1</span></div>
+      <div class="row"><label>Tamanho base</label>    <input type="range" id="sz"   min="16" max="400" step="2"   value="190"> <span class="v" id="sz-v">190</span></div>
+      <div class="row"><label>Impulso lateral</label> <input type="range" id="vxsp" min="0"  max="12"  step="0.1" value="3.4"> <span class="v" id="vxsp-v">3.4</span></div>
+      <div class="row"><label>Impulso vertical</label><input type="range" id="vysp" min="0"  max="20"  step="0.1" value="4.6"> <span class="v" id="vysp-v">4.6</span></div>
+    </div>
+  </div>
+
+  <div class="sep"></div>
+
+  <div>
+    <div class="panel-title">Rotação</div>
+    <div class="group">
+      <div class="row"><label>Vel. inicial</label>   <input type="range" id="rotv" min="0"   max="0.3" step="0.005" value="0.03"> <span class="v" id="rotv-v">0.03</span></div>
+      <div class="row"><label>Atrito rotação</label> <input type="range" id="rotf" min="0.5" max="1"   step="0.01"  value="0.8">  <span class="v" id="rotf-v">0.8</span></div>
+    </div>
+  </div>
+
+  <div class="sep"></div>
+
+  <div>
+    <div class="panel-title">Vida</div>
+    <div class="group">
+      <div class="row"><label>Duração (s)</label>  <input type="range" id="life" min="0.5" max="20"  step="0.5" value="20">   <span class="v" id="life-v">20</span></div>
+      <div class="row"><label>Fade out (%)</label> <input type="range" id="fade" min="0"   max="0.9" step="0.05" value="0.25"> <span class="v" id="fade-v">0.25</span></div>
+    </div>
+  </div>
+
+  <div class="sep"></div>
+
+  <div>
+    <div class="panel-title">Cursor</div>
+    <div class="group">
+      <div class="row"><label>Força atr/rep</label> <input type="range" id="cf" min="0" max="12" step="0.2" value="3"> <span class="v" id="cf-v">3</span></div>
+    </div>
+  </div>
+
+  <div class="sep"></div>
+
+  <div id="btn-row">
+    <button id="clear-btn">Limpar</button>
+    <button id="reset-btn">Reset</button>
+  </div>
+
+  <div class="sep"></div>
+
+  <div id="hint">
+    <b>Clique / arraste</b> para spawnar<br>
+    <b>Shift</b> = atrair cursor<br>
+    <b>Alt</b> = repelir cursor
+  </div>
+
+  <div id="pcount-wrap">
+    Partículas: <span id="pcount">0</span><br>
+    Imagens: <span id="icount">carregando…</span>
+  </div>
+
+</div>
+
+<script>
+const canvas = document.getElementById('c');
+const ctx    = canvas.getContext('2d');
+let W, H;
+
+function resize() {
+  W = canvas.width  = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+// ── panel toggle ─────────────────────────────────────────────────
+const panel  = document.getElementById('panel');
+const toggle = document.getElementById('toggle');
+toggle.addEventListener('click', () => {
+  panel.classList.toggle('hidden');
+  toggle.textContent = panel.classList.contains('hidden') ? '⚙' : '✕';
+});
+
+// ── params ───────────────────────────────────────────────────────
+const P = {
+  gravity:     0.35,
+  bounce:      1,
+  friction:    0.67,
+  spawnQty:    1,
+  baseSize:    190,
+  vxSpread:    3.4,
+  vyImpulse:   4.6,
+  rotVMax:     0.03,
+  rotFriction: 0.8,
+  lifetime:    20,    // seconds — exact, measured by performance.now()
+  fadeRatio:   0.25,
+  cursorForce: 3,
+};
+const DEFAULTS = { ...P };
+
+const SLIDERS = [
+  ['grav',  'gravity'],
+  ['bnc',   'bounce'],
+  ['frict', 'friction'],
+  ['qty',   'spawnQty'],
+  ['sz',    'baseSize'],
+  ['vxsp',  'vxSpread'],
+  ['vysp',  'vyImpulse'],
+  ['rotv',  'rotVMax'],
+  ['rotf',  'rotFriction'],
+  ['life',  'lifetime'],
+  ['fade',  'fadeRatio'],
+  ['cf',    'cursorForce'],
+];
+SLIDERS.forEach(([id, key]) => {
+  document.getElementById(id).addEventListener('input', function () {
+    P[key] = parseFloat(this.value);
+    document.getElementById(id + '-v').textContent = this.value;
+  });
+});
+document.getElementById('reset-btn').addEventListener('click', () => {
+  SLIDERS.forEach(([id, key]) => {
+    const el = document.getElementById(id);
+    el.value = DEFAULTS[key];
+    document.getElementById(id + '-v').textContent = DEFAULTS[key];
+    P[key] = DEFAULTS[key];
+  });
+});
+
+// ── images ───────────────────────────────────────────────────────
+let images = [];
+
+function makeShape(color, shape) {
+  const oc = document.createElement('canvas'); oc.width = oc.height = 64;
+  const c  = oc.getContext('2d'); c.clearRect(0, 0, 64, 64);
+  c.fillStyle = color;
+  if (shape === 'circle') {
+    c.beginPath(); c.arc(32, 32, 28, 0, Math.PI * 2); c.fill();
+    c.fillStyle = 'rgba(255,255,255,0.25)';
+    c.beginPath(); c.arc(22, 18, 10, 0, Math.PI * 2); c.fill();
+  } else if (shape === 'star') {
+    c.beginPath();
+    for (let i = 0; i < 5; i++) {
+      const a = i * 2 * Math.PI / 5 - Math.PI / 2, b = a + Math.PI / 5;
+      i === 0 ? c.moveTo(32 + 26*Math.cos(a), 32 + 26*Math.sin(a))
+              : c.lineTo(32 + 26*Math.cos(a), 32 + 26*Math.sin(a));
+      c.lineTo(32 + 11*Math.cos(b), 32 + 11*Math.sin(b));
+    }
+    c.closePath(); c.fill();
+  } else {
+    c.beginPath();
+    [[32,6],[58,32],[32,58],[6,32]].forEach(([x,y],i) => i===0 ? c.moveTo(x,y) : c.lineTo(x,y));
+    c.closePath(); c.fill();
+  }
+  const img = new Image(); img.src = oc.toDataURL(); return img;
+}
+
+async function loadImages() {
+  const loaded = [];
+  await Promise.all(
+    Array.from({length:100}, (_,i) => i+1).map(i => new Promise(resolve => {
+      const name = String(i).padStart(2,'0') + '.png';
+      const img  = new Image();
+      img.onload  = () => { loaded.push({img, name}); resolve(); };
+      img.onerror = () => resolve();
+      img.src = 'data/' + name;
+    }))
+  );
+  loaded.sort((a,b) => a.name.localeCompare(b.name));
+  images = loaded.map(o => o.img);
+
+  const ct = document.getElementById('icount');
+  if (images.length === 0) {
+    ct.textContent = '0 — formas padrão';
+    [['#e06c5c','circle'],['#5c8ee0','star'],['#5ce07a','square'],
+     ['#e0c05c','circle'],['#a05ce0','star'],['#5ccce0','square']]
+    .forEach(([c,s]) => images.push(makeShape(c,s)));
+  } else {
+    ct.textContent = images.length + ' PNG(s)';
+  }
+}
+loadImages();
+
+// ── particles ────────────────────────────────────────────────────
+let particles = [];
+let shakeX = 0, shakeY = 0;
+const mouse = { x:0, y:0, down:false, px:0, py:0, attract:false, repel:false };
+
+function rnd(a,b){ return a + Math.random()*(b-a); }
+
+function spawn(x, y, vx=0, vy=0) {
+  if (!images.length) return;
+  for (let i=0; i<P.spawnQty; i++) {
+    const img   = images[Math.floor(Math.random()*images.length)];
+    const born  = performance.now();                 // ms timestamp
+    const ttlMs = P.lifetime * 1000;                 // exact ms, no random floor
+
+    const nw = img.naturalWidth  || 1;
+    const nh = img.naturalHeight || 1;
+    const aspect = nw / nh;
+    const baseScale = P.baseSize * rnd(0.7, 1.4);
+    let drawW, drawH;
+    if (aspect >= 1) { drawW = baseScale; drawH = baseScale / aspect; }
+    else             { drawH = baseScale; drawW = baseScale * aspect; }
+    const r = (drawW + drawH) / 4;
+
+    particles.push({
+      x, y,
+      vx: vx + rnd(-P.vxSpread, P.vxSpread),
+      vy: vy - rnd(0.5, P.vyImpulse),
+      drawW, drawH, r,
+      mass: drawW * drawH,
+      img,
+      rot:  rnd(0, Math.PI*2),
+      rotV: rnd(-P.rotVMax, P.rotVMax),
+      born,
+      ttlMs,
+    });
+  }
+}
+
+function resolveCollision(a, b) {
+  const dx=b.x-a.x, dy=b.y-a.y;
+  const dist=Math.sqrt(dx*dx+dy*dy);
+  const minD=a.r+b.r;
+  if (dist>=minD || dist<0.001) return;
+  const nx=dx/dist, ny=dy/dist;
+  const overlap=(minD-dist)/2;
+  a.x-=nx*overlap; a.y-=ny*overlap;
+  b.x+=nx*overlap; b.y+=ny*overlap;
+  const dvx=a.vx-b.vx, dvy=a.vy-b.vy;
+  const dot=dvx*nx+dvy*ny;
+  if (dot>0) return;
+  const total=a.mass+b.mass;
+  const imp=2*dot/total;
+  const e=P.bounce*0.85;
+  a.vx=(a.vx - imp*b.mass*nx)*e; a.vy=(a.vy - imp*b.mass*ny)*e;
+  b.vx=(b.vx + imp*a.mass*nx)*e; b.vy=(b.vy + imp*a.mass*ny)*e;
+  a.rotV+=dot*0.008; b.rotV-=dot*0.008;
+}
+
+function getAlpha(p, now) {
+  const elapsed  = now - p.born;                     // ms lived
+  const progress = elapsed / p.ttlMs;                // 0 → 1
+  const fadeStart = 1 - P.fadeRatio;
+  if (progress < fadeStart) return 1;
+  return Math.max(0, 1 - (progress - fadeStart) / P.fadeRatio);
+}
+
+function update(now) {
+  // remove expired particles
+  for (let i = particles.length-1; i >= 0; i--) {
+    if (now - particles[i].born >= particles[i].ttlMs)
+      particles.splice(i, 1);
+  }
+
+  for (const p of particles) {
+    p.vy += P.gravity;
+
+    if (mouse.attract || mouse.repel) {
+      const dx=mouse.x-p.x, dy=mouse.y-p.y;
+      const d=Math.sqrt(dx*dx+dy*dy)||1;
+      const str=P.cursorForce*200/(d*d+200);
+      const dir=mouse.attract?1:-1;
+      p.vx+=dir*dx/d*str; p.vy+=dir*dy/d*str;
+    }
+
+    p.x+=p.vx; p.y+=p.vy;
+    p.rot+=p.rotV;
+    p.rotV*=P.rotFriction;
+
+    if (p.y+p.r > H) {
+      const impact=Math.abs(p.vy);
+      if (impact>3){ shakeX+=rnd(-1,1)*impact*0.12; shakeY+=impact*0.18; }
+      p.y=H-p.r; p.vy*=-P.bounce;
+      p.vx*=P.friction;
+      if (Math.abs(p.vy)<0.4) p.vy=0;
+    }
+    if (p.x-p.r < 0) { p.x=p.r;   p.vx= Math.abs(p.vx)*P.bounce; }
+    if (p.x+p.r > W) { p.x=W-p.r; p.vx=-Math.abs(p.vx)*P.bounce; }
+    if (p.y-p.r < 0) { p.y=p.r;   p.vy= Math.abs(p.vy)*P.bounce; }
+  }
+
+  if (particles.length > 200) particles.splice(0, particles.length-200);
+
+  for (let i=0; i<particles.length; i++)
+    for (let j=i+1; j<particles.length; j++)
+      resolveCollision(particles[i], particles[j]);
+
+  shakeX*=0.8; shakeY*=0.8;
+  if (Math.abs(shakeX)<0.05) shakeX=0;
+  if (Math.abs(shakeY)<0.05) shakeY=0;
+}
+
+let frame=0;
+function loop(now) {
+  ctx.clearRect(0,0,W,H);
+  update(now);
+
+  ctx.save();
+  ctx.translate(shakeX, shakeY);
+
+  if (particles.length===0){
+    ctx.fillStyle='rgba(255,255,255,0.04)';
+    ctx.font='14px sans-serif'; ctx.textAlign='center';
+    ctx.fillText('Clique para lançar partículas', W/2, H/2);
+  }
+
+  if (mouse.attract||mouse.repel){
+    const col=mouse.attract?'rgba(80,180,255,':'rgba(255,100,80,';
+    ctx.strokeStyle=col+'0.45)'; ctx.fillStyle=col+'0.08)';
+    ctx.lineWidth=1; ctx.setLineDash([4,4]);
+    ctx.beginPath(); ctx.arc(mouse.x,mouse.y,44,0,Math.PI*2);
+    ctx.stroke(); ctx.fill(); ctx.setLineDash([]);
+  }
+
+  for (const p of particles){
+    ctx.save();
+    ctx.globalAlpha = getAlpha(p, now);
+    ctx.translate(p.x, p.y);
+    ctx.rotate(p.rot);
+    if (p.img.complete && p.img.naturalWidth>0){
+      ctx.drawImage(p.img, -p.drawW/2, -p.drawH/2, p.drawW, p.drawH);
+    } else {
+      ctx.fillStyle='rgba(255,255,255,0.4)';
+      ctx.beginPath(); ctx.arc(0,0,p.r,0,Math.PI*2); ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  ctx.restore();
+  if (frame++%30===0) document.getElementById('pcount').textContent=particles.length;
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+
+// ── input ────────────────────────────────────────────────────────
+canvas.addEventListener('mousedown', e=>{
+  mouse.down=true; mouse.px=mouse.x=e.clientX; mouse.py=mouse.y=e.clientY;
+  spawn(mouse.x, mouse.y);
+});
+canvas.addEventListener('mousemove', e=>{
+  mouse.px=mouse.x; mouse.py=mouse.y; mouse.x=e.clientX; mouse.y=e.clientY;
+  if(mouse.down){
+    const dx=mouse.x-mouse.px, dy=mouse.y-mouse.py;
+    if(Math.sqrt(dx*dx+dy*dy)>12) spawn(mouse.x,mouse.y,dx*0.5,dy*0.5);
+  }
+});
+canvas.addEventListener('mouseup',    ()=>mouse.down=false);
+canvas.addEventListener('mouseleave', ()=>mouse.down=false);
+canvas.addEventListener('touchstart', e=>{
+  e.preventDefault();
+  const t=e.touches[0]; spawn(t.clientX,t.clientY);
+},{passive:false});
+canvas.addEventListener('touchmove', e=>{
+  e.preventDefault();
+  const t=e.touches[0]; mouse.x=t.clientX; mouse.y=t.clientY;
+},{passive:false});
+
+window.addEventListener('keydown', e=>{ if(e.shiftKey) mouse.attract=true;  if(e.altKey) mouse.repel=true;  });
+window.addEventListener('keyup',   e=>{ if(!e.shiftKey) mouse.attract=false; if(!e.altKey) mouse.repel=false; });
+
+document.getElementById('clear-btn').addEventListener('click', ()=>particles=[]);
+</script>
+</body>
+</html>
