@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Español Vivo — Entrar</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --coral: #E8622A;
+  --coral-light: #FDF0EB;
+  --green: #2A6B4A;
+  --green-light: #EEF6F1;
+  --ink: #1A1612;
+  --ink2: #6B6259;
+  --ink3: #B0A89E;
+  --bg: #F4F1EC;
+  --white: #FDFAF7;
+  --shadow: 0 4px 24px rgba(26,22,18,0.08);
+  --shadow-lg: 0 12px 48px rgba(26,22,18,0.14);
+  --r: 12px;
+  --r-lg: 20px;
+}
+body {
+  font-family: 'Outfit', sans-serif;
+  background: var(--bg);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  position: relative;
+  overflow: hidden;
+}
+/* Decorative bg blobs */
+body::before {
+  content: '';
+  position: fixed; top: -120px; right: -120px;
+  width: 400px; height: 400px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(232,98,42,0.12) 0%, transparent 70%);
+  pointer-events: none;
+}
+body::after {
+  content: '';
+  position: fixed; bottom: -100px; left: -100px;
+  width: 350px; height: 350px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(42,107,74,0.1) 0%, transparent 70%);
+  pointer-events: none;
+}
+.card {
+  background: var(--white);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-lg);
+  padding: 3rem 2.5rem;
+  width: 100%;
+  max-width: 420px;
+  position: relative;
+  z-index: 1;
+  animation: fadeUp 0.4s cubic-bezier(.4,0,.2,1) both;
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.logo-area { text-align: center; margin-bottom: 2.5rem; }
+.logo-mark {
+  width: 64px; height: 64px; border-radius: 18px;
+  background: linear-gradient(135deg, var(--coral), #c04a18);
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 28px; margin-bottom: 1rem;
+  box-shadow: 0 8px 24px rgba(232,98,42,0.3);
+}
+.logo-name { font-size: 26px; font-weight: 800; color: var(--ink); letter-spacing: -0.5px; }
+.logo-sub { font-size: 14px; color: var(--ink3); margin-top: 4px; font-weight: 400; }
+.form-group { margin-bottom: 1.25rem; }
+label { display: block; font-size: 13px; font-weight: 600; color: var(--ink2); margin-bottom: 6px; letter-spacing: 0.02em; }
+.inp {
+  width: 100%; padding: 13px 16px; font-size: 15px;
+  border: 1.5px solid #E8E2DA; border-radius: var(--r);
+  background: var(--bg); color: var(--ink);
+  font-family: 'Outfit', sans-serif; transition: all 0.2s;
+  outline: none;
+}
+.inp:focus { border-color: var(--coral); background: var(--white); box-shadow: 0 0 0 3px rgba(232,98,42,0.1); }
+.inp::placeholder { color: var(--ink3); }
+.btn-login {
+  width: 100%; padding: 14px; border-radius: var(--r);
+  background: linear-gradient(135deg, var(--coral), #c04a18);
+  color: #fff; font-size: 16px; font-weight: 700;
+  font-family: 'Outfit', sans-serif; border: none; cursor: pointer;
+  transition: all 0.2s; margin-top: 0.5rem;
+  box-shadow: 0 4px 16px rgba(232,98,42,0.35);
+  letter-spacing: 0.01em;
+}
+.btn-login:hover { transform: translateY(-1px); box-shadow: 0 6px 24px rgba(232,98,42,0.4); }
+.btn-login:active { transform: translateY(0); }
+.btn-login:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+.err-msg {
+  background: #FDF0EB; border: 1px solid rgba(232,98,42,0.3);
+  border-radius: var(--r); padding: 10px 14px;
+  font-size: 13px; color: var(--coral); margin-top: 12px;
+  display: none; font-weight: 500;
+}
+.err-msg.show { display: block; }
+.hint {
+  text-align: center; font-size: 13px; color: var(--ink3);
+  margin-top: 1.5rem; line-height: 1.6;
+}
+.spinner-inline {
+  display: inline-block; width: 16px; height: 16px;
+  border: 2px solid rgba(255,255,255,0.4); border-top-color: #fff;
+  border-radius: 50%; animation: spin 0.7s linear infinite;
+  vertical-align: middle; margin-right: 6px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo-area">
+    <div class="logo-mark">🌍</div>
+    <div class="logo-name">Español Vivo</div>
+    <div class="logo-sub">Insira seu código de acesso</div>
+  </div>
+  <div class="form-group">
+    <label>Código de acesso</label>
+    <input class="inp" type="text" id="codigo" placeholder="ex: ana2024" autocomplete="off" autocapitalize="off" onkeydown="if(event.key==='Enter')entrar()">
+  </div>
+  <button class="btn-login" id="btn-entrar" onclick="entrar()">Entrar</button>
+  <div class="err-msg" id="err-msg">Código não encontrado. Verifique com sua professora.</div>
+  <div class="hint">Não tem um código? Entre em contato com sua professora.</div>
+</div>
+
+<script>
+const SB_URL = localStorage.getItem('sb_url') || '';
+const SB_KEY = localStorage.getItem('sb_key') || '';
+let sb = null;
+
+if (!SB_URL || !SB_KEY) {
+  document.getElementById('err-msg').textContent = 'Sistema não configurado. Contate a professora.';
+  document.getElementById('err-msg').classList.add('show');
+  document.getElementById('btn-entrar').disabled = true;
+} else {
+  sb = supabase.createClient(SB_URL, SB_KEY);
+}
+
+// Check if already logged in
+const saved = localStorage.getItem('ev_codigo');
+if (saved) window.location.href = 'index.html';
+
+async function entrar() {
+  const codigo = document.getElementById('codigo').value.trim().toLowerCase();
+  if (!codigo) return;
+  const btn = document.getElementById('btn-entrar');
+  const err = document.getElementById('err-msg');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner-inline"></span>Verificando...';
+  err.classList.remove('show');
+  try {
+    const { data, error } = await sb.from('alunos').select('*').eq('codigo', codigo).eq('ativo', true).single();
+    if (error || !data) {
+      err.textContent = 'Código não encontrado. Verifique com sua professora.';
+      err.classList.add('show');
+      btn.disabled = false;
+      btn.textContent = 'Entrar';
+      return;
+    }
+    localStorage.setItem('ev_codigo', codigo);
+    localStorage.setItem('ev_aluno', JSON.stringify(data));
+    window.location.href = 'index.html';
+  } catch(e) {
+    err.textContent = 'Erro de conexão. Tente novamente.';
+    err.classList.add('show');
+    btn.disabled = false;
+    btn.textContent = 'Entrar';
+  }
+}
+</script>
+</body>
+</html>

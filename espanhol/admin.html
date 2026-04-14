@@ -183,25 +183,6 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.6; }
 .status-dot.on { background: var(--green); }
 .status-dot.off { background: var(--red); }
 
-/* Media previews */
-.img-preview {
-  width: 100%; max-height: 140px; object-fit: cover;
-  border-radius: var(--r); margin-top: 8px; display: none;
-  border: 1px solid var(--border2);
-}
-.img-preview.show { display: block; }
-.video-preview-wrap {
-  position: relative; padding-bottom: 42%; height: 0; overflow: hidden;
-  border-radius: var(--r); margin-top: 8px; display: none; background: #000;
-}
-.video-preview-wrap.show { display: block; }
-.video-preview-wrap iframe { position: absolute; top:0; left:0; width:100%; height:100%; border:0; }
-.media-thumb {
-  width: 48px; height: 36px; object-fit: cover; border-radius: 4px;
-  border: 1px solid var(--border2); vertical-align: middle;
-}
-.media-icon { font-size: 18px; vertical-align: middle; }
-
 /* Frases list */
 .frase-row {
   display: flex; align-items: flex-start; gap: 10px;
@@ -233,6 +214,9 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.6; }
     <div class="aside-link active" onclick="goTo('aulas',this)"><span class="aside-icon">📚</span> Aulas</div>
     <div class="aside-link" onclick="goTo('vocabulario',this)"><span class="aside-icon">🗂️</span> Vocabulário</div>
     <div class="aside-link" onclick="goTo('frases',this)"><span class="aside-icon">💬</span> Frases</div>
+    <div class="aside-section">Alunos</div>
+    <div class="aside-link" onclick="goTo('alunos',this)"><span class="aside-icon">👥</span> Alunos</div>
+    <div class="aside-link" onclick="goTo('progresso',this)"><span class="aside-icon">📊</span> Progresso</div>
     <div class="aside-section">Sistema</div>
     <div class="aside-link" onclick="goTo('config',this)"><span class="aside-icon">⚙️</span> Configuração</div>
   </aside>
@@ -299,16 +283,6 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.6; }
             <div class="field">
               <label class="field-label">Observações para o professor</label>
               <textarea class="inp" id="aula-obs" placeholder="Dicas pedagógicas, pontos de atenção..."></textarea>
-            </div>
-            <div class="field">
-              <label class="field-label">🎬 Vídeo da aula (URL do YouTube ou Vimeo)</label>
-              <input class="inp" type="text" id="aula-video" placeholder="https://www.youtube.com/watch?v=..." oninput="previewVideo('aula-video','aula-video-preview')">
-              <div class="video-preview-wrap" id="aula-video-preview"></div>
-            </div>
-            <div class="field">
-              <label class="field-label">🖼️ Imagem de capa da aula (URL)</label>
-              <input class="inp" type="text" id="aula-imagem" placeholder="https://exemplo.com/imagem.jpg" oninput="previewImg('aula-imagem','aula-img-preview')">
-              <img class="img-preview" id="aula-img-preview" alt="preview">
             </div>
             <div class="btn-row">
               <button class="btn btn-accent" onclick="salvarAula()">Salvar aula</button>
@@ -387,11 +361,6 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.6; }
             <button class="btn" onclick="toggleVocabForm()">Cancelar</button>
           </div>
         </div>
-        <div class="field" style="margin-top:8px;">
-          <label class="field-label">🖼️ Imagem ilustrativa (URL — opcional)</label>
-          <input class="inp" type="text" id="vocab-img" placeholder="https://exemplo.com/cachorro.jpg" oninput="previewImg('vocab-img','vocab-img-preview')">
-          <img class="img-preview" id="vocab-img-preview" alt="preview">
-        </div>
       </div>
 
       <!-- Tabela vocab -->
@@ -459,16 +428,85 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.6; }
           <button class="btn btn-green" onclick="salvarFrase()">Salvar frase</button>
           <button class="btn" onclick="toggleFraseForm()">Cancelar</button>
         </div>
-        <div class="field" style="margin-top:8px;">
-          <label class="field-label">🖼️ Imagem de contexto (URL — opcional)</label>
-          <input class="inp" type="text" id="frase-img" placeholder="https://exemplo.com/imagem.jpg" oninput="previewImg('frase-img','frase-img-preview')">
-          <img class="img-preview" id="frase-img-preview" alt="preview">
-        </div>
       </div>
 
       <div class="card">
         <div id="frases-list-wrap"><div class="loading"><div class="spinner"></div>Carregando...</div></div>
       </div>
+    </div>
+
+    <!-- ===== ALUNOS ===== -->
+    <div class="page" id="page-alunos">
+      <div class="page-hd">
+        <div class="page-title">Alunos</div>
+        <div class="page-sub">Cadastre alunos e envie o acesso por email</div>
+      </div>
+      <div class="grid2" style="align-items:start;">
+        <div>
+          <div class="card-header" style="margin-bottom:10px;">
+            <span class="card-title">Alunos cadastrados</span>
+            <button class="btn btn-accent btn-sm" onclick="showNovoAluno()">+ Novo aluno</button>
+          </div>
+          <div id="alunos-list"><div class="loading"><div class="spinner"></div>Carregando...</div></div>
+        </div>
+        <div id="aluno-form-wrap">
+          <div class="card">
+            <div class="card-header"><span class="card-title" id="aluno-form-title">Novo aluno</span></div>
+            <input type="hidden" id="aluno-id">
+            <div class="field">
+              <label class="field-label">Nome completo</label>
+              <input class="inp" type="text" id="aluno-nome" placeholder="Ana Silva">
+            </div>
+            <div class="field">
+              <label class="field-label">Email</label>
+              <input class="inp" type="email" id="aluno-email" placeholder="ana@email.com">
+            </div>
+            <div class="field">
+              <label class="field-label">Código de acesso</label>
+              <div style="display:flex; gap:6px;">
+                <input class="inp" type="text" id="aluno-codigo" placeholder="ex: ana2024" autocomplete="off" style="flex:1;">
+                <button class="btn" onclick="gerarCodigo()" style="white-space:nowrap;">Gerar</button>
+              </div>
+              <div style="font-size:11px; color:var(--ink3); margin-top:4px;">O aluno usa este código para fazer login</div>
+            </div>
+            <div class="field">
+              <label class="field-label">Status</label>
+              <select class="inp" id="aluno-ativo">
+                <option value="true">Ativo</option>
+                <option value="false">Inativo</option>
+              </select>
+            </div>
+            <div class="btn-row">
+              <button class="btn btn-accent" onclick="salvarAluno()">Salvar aluno</button>
+              <button class="btn btn-green" id="btn-enviar-email" onclick="enviarEmailAcesso()" style="display:none;">📧 Enviar acesso por email</button>
+              <button class="btn" onclick="limparFormAluno()">Cancelar</button>
+            </div>
+            <div id="email-status" style="margin-top:10px; font-size:13px;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== PROGRESSO ===== -->
+    <div class="page" id="page-progresso">
+      <div class="page-hd">
+        <div class="page-title">Progresso dos alunos</div>
+        <div class="page-sub">Acompanhe o desempenho de cada aluno</div>
+      </div>
+      <div class="card" style="margin-bottom:1rem;">
+        <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:flex-end;">
+          <div class="field" style="margin:0; flex:1; min-width:180px;">
+            <label class="field-label">Filtrar por aluno</label>
+            <select class="inp" id="prog-aluno-filter" onchange="loadProgresso()">
+              <option value="">Todos os alunos</option>
+            </select>
+          </div>
+          <div class="field" style="margin:0; display:flex; align-items:flex-end;">
+            <button class="btn btn-accent" onclick="loadProgresso()">Atualizar</button>
+          </div>
+        </div>
+      </div>
+      <div id="progresso-wrap"><div class="loading"><div class="spinner"></div>Carregando...</div></div>
     </div>
 
     <!-- ===== CONFIG ===== -->
@@ -511,7 +549,87 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.6; }
         </div>
       </div>
 
+      <div class="card" style="margin-top:12px;">
+        <div class="card-header"><span class="card-title">Email — Resend API</span></div>
+        <div style="font-size:13px; color:var(--ink2); margin-bottom:10px; line-height:1.6;">
+          Usado para enviar o código de acesso aos alunos. Obtenha sua chave em <strong>resend.com</strong>.
+        </div>
+        <div class="field">
+          <label class="field-label">Resend API Key</label>
+          <input class="inp" type="text" id="cfg-resend" placeholder="re_...">
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-accent" onclick="saveResendKey()">Salvar chave</button>
+        </div>
+      </div>
+
       <div class="card" id="sql-card" style="display:none;">
+        <div class="card-header">
+          <span class="card-title">Criar tabelas no banco</span>
+          <span class="badge badge-gold">Execute uma vez</span>
+        </div>
+        <div style="font-size:13px; color:var(--ink2); margin-bottom:12px; line-height:1.6;">
+          Copie o SQL abaixo, vá em <strong>SQL Editor</strong> no painel do Supabase, cole e execute.
+        </div>
+        <pre style="background:var(--surface2); border:1px solid var(--border); border-radius:var(--r); padding:1rem; font-size:12px; color:var(--ink2); line-height:1.7; overflow-x:auto; white-space:pre-wrap;">-- Tabelas principais
+CREATE TABLE IF NOT EXISTS aulas (
+  id BIGSERIAL PRIMARY KEY, numero INTEGER NOT NULL, titulo TEXT NOT NULL,
+  nivel TEXT DEFAULT 'A1', tema TEXT, verbos TEXT[], observacoes TEXT,
+  video_url TEXT, imagem_url TEXT, criado_em TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE TABLE IF NOT EXISTS vocabulario (
+  id BIGSERIAL PRIMARY KEY, aula_id BIGINT REFERENCES aulas(id) ON DELETE CASCADE,
+  espanhol TEXT NOT NULL, portugues TEXT NOT NULL, categoria TEXT DEFAULT 'geral',
+  exemplo TEXT, imagem_url TEXT, criado_em TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE TABLE IF NOT EXISTS frases (
+  id BIGSERIAL PRIMARY KEY, aula_id BIGINT REFERENCES aulas(id) ON DELETE CASCADE,
+  espanhol TEXT NOT NULL, portugues TEXT NOT NULL, categoria TEXT DEFAULT 'geral',
+  imagem_url TEXT, criado_em TIMESTAMPTZ DEFAULT NOW()
+);
+-- Alunos
+CREATE TABLE IF NOT EXISTS alunos (
+  id BIGSERIAL PRIMARY KEY, nome TEXT NOT NULL, email TEXT NOT NULL UNIQUE,
+  codigo TEXT NOT NULL UNIQUE, ativo BOOLEAN DEFAULT TRUE, criado_em TIMESTAMPTZ DEFAULT NOW()
+);
+-- Progresso
+CREATE TABLE IF NOT EXISTS progresso (
+  id BIGSERIAL PRIMARY KEY, aluno_id BIGINT REFERENCES alunos(id) ON DELETE CASCADE,
+  aula_id BIGINT REFERENCES aulas(id) ON DELETE CASCADE,
+  concluida BOOLEAN DEFAULT FALSE, melhor_pontuacao INTEGER DEFAULT 0,
+  tentativas INTEGER DEFAULT 0, concluida_em TIMESTAMPTZ,
+  UNIQUE(aluno_id, aula_id)
+);
+-- Badges
+CREATE TABLE IF NOT EXISTS badges (
+  id BIGSERIAL PRIMARY KEY, aluno_id BIGINT REFERENCES alunos(id) ON DELETE CASCADE,
+  tipo TEXT NOT NULL, ganho_em TIMESTAMPTZ DEFAULT NOW()
+);
+-- RLS
+ALTER TABLE aulas ENABLE ROW LEVEL SECURITY;
+ALTER TABLE vocabulario ENABLE ROW LEVEL SECURITY;
+ALTER TABLE frases ENABLE ROW LEVEL SECURITY;
+ALTER TABLE alunos ENABLE ROW LEVEL SECURITY;
+ALTER TABLE progresso ENABLE ROW LEVEL SECURITY;
+ALTER TABLE badges ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "pub aulas" ON aulas FOR SELECT USING (true);
+CREATE POLICY "pub vocab" ON vocabulario FOR SELECT USING (true);
+CREATE POLICY "pub frases" ON frases FOR SELECT USING (true);
+CREATE POLICY "pub alunos" ON alunos FOR SELECT USING (true);
+CREATE POLICY "pub progresso" ON progresso FOR SELECT USING (true);
+CREATE POLICY "pub badges" ON badges FOR SELECT USING (true);
+
+CREATE POLICY "write aulas" ON aulas FOR ALL USING (true);
+CREATE POLICY "write vocab" ON vocabulario FOR ALL USING (true);
+CREATE POLICY "write frases" ON frases FOR ALL USING (true);
+CREATE POLICY "write alunos" ON alunos FOR ALL USING (true);
+CREATE POLICY "write progresso" ON progresso FOR ALL USING (true);
+CREATE POLICY "write badges" ON badges FOR ALL USING (true);</pre>
+        <div class="btn-row">
+          <button class="btn" onclick="copySQL()">Copiar SQL</button>
+        </div>
+      </div>
         <div class="card-header">
           <span class="card-title">Criar tabelas no banco</span>
           <span class="badge badge-gold">Execute uma vez</span>
@@ -528,8 +646,6 @@ CREATE TABLE IF NOT EXISTS aulas (
   tema TEXT,
   verbos TEXT[],
   observacoes TEXT,
-  video_url TEXT,
-  imagem_url TEXT,
   criado_em TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -541,7 +657,6 @@ CREATE TABLE IF NOT EXISTS vocabulario (
   portugues TEXT NOT NULL,
   categoria TEXT DEFAULT 'geral',
   exemplo TEXT,
-  imagem_url TEXT,
   criado_em TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -552,15 +667,8 @@ CREATE TABLE IF NOT EXISTS frases (
   espanhol TEXT NOT NULL,
   portugues TEXT NOT NULL,
   categoria TEXT DEFAULT 'geral',
-  imagem_url TEXT,
   criado_em TIMESTAMPTZ DEFAULT NOW()
 );
-
--- Se as tabelas já existem, adicione as colunas de mídia:
--- ALTER TABLE aulas ADD COLUMN IF NOT EXISTS video_url TEXT;
--- ALTER TABLE aulas ADD COLUMN IF NOT EXISTS imagem_url TEXT;
--- ALTER TABLE vocabulario ADD COLUMN IF NOT EXISTS imagem_url TEXT;
--- ALTER TABLE frases ADD COLUMN IF NOT EXISTS imagem_url TEXT;
 
 -- Permissões de leitura pública (para o app dos alunos)
 ALTER TABLE aulas ENABLE ROW LEVEL SECURITY;
@@ -598,11 +706,17 @@ function loadConfig() {
   const key = localStorage.getItem('sb_key') || '';
   document.getElementById('cfg-url').value = url;
   document.getElementById('cfg-key').value = key;
-  if (url && key) {
-    initSupabase(url, key);
-    return true;
-  }
+  const resend = localStorage.getItem('resend_key') || '';
+  document.getElementById('cfg-resend').value = resend;
+  if (url && key) { initSupabase(url, key); return true; }
   return false;
+}
+
+function saveResendKey() {
+  const key = document.getElementById('cfg-resend').value.trim();
+  if (!key) { toast('Cole a chave do Resend.', 'err'); return; }
+  localStorage.setItem('resend_key', key);
+  toast('Chave Resend salva! ✓', 'ok');
 }
 
 function initSupabase(url, key) {
@@ -657,6 +771,8 @@ function goTo(id, el) {
   el.classList.add('active');
   if (id === 'vocabulario') { populateAulaSelects(); loadVocab(); }
   if (id === 'frases') { populateAulaSelects(); loadFrases(); }
+  if (id === 'alunos') loadAlunos();
+  if (id === 'progresso') { populateAlunoFilter(); loadProgresso(); }
 }
 
 // ============================================================
@@ -715,10 +831,6 @@ function editarAula(id) {
   document.getElementById('aula-tema').value = a.tema || '';
   document.getElementById('aula-verbos').value = (a.verbos || []).join(', ');
   document.getElementById('aula-obs').value = a.observacoes || '';
-  document.getElementById('aula-video').value = a.video_url || '';
-  document.getElementById('aula-imagem').value = a.imagem_url || '';
-  previewVideo('aula-video', 'aula-video-preview');
-  previewImg('aula-imagem', 'aula-img-preview');
   document.getElementById('aula-form-title').textContent = 'Editando Aula ' + a.numero;
 }
 
@@ -732,8 +844,6 @@ async function salvarAula() {
     tema: document.getElementById('aula-tema').value.trim() || null,
     verbos: document.getElementById('aula-verbos').value.split(',').map(v => v.trim()).filter(Boolean),
     observacoes: document.getElementById('aula-obs').value.trim() || null,
-    video_url: document.getElementById('aula-video').value.trim() || null,
-    imagem_url: document.getElementById('aula-imagem').value.trim() || null,
   };
   if (!payload.numero || !payload.titulo) { toast('Preencha número e título.', 'err'); return; }
   const { error } = id
@@ -754,12 +864,9 @@ async function deletarAula(id) {
 }
 
 function limparFormAula() {
-  ['aula-id','aula-numero','aula-titulo','aula-tema','aula-verbos','aula-obs','aula-video','aula-imagem'].forEach(id => document.getElementById(id).value = '');
+  ['aula-id','aula-numero','aula-titulo','aula-tema','aula-verbos','aula-obs'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('aula-nivel').value = 'A1';
   document.getElementById('aula-form-title').textContent = 'Nova aula';
-  document.getElementById('aula-video-preview').classList.remove('show');
-  document.getElementById('aula-video-preview').innerHTML = '';
-  document.getElementById('aula-img-preview').classList.remove('show');
   document.querySelectorAll('.aula-item').forEach(el => el.classList.remove('selected'));
 }
 
@@ -791,7 +898,7 @@ async function loadVocab() {
   if (!rows.length) { document.getElementById('vocab-table-wrap').innerHTML = '<div class="empty">Nenhuma palavra encontrada.</div>'; return; }
   document.getElementById('vocab-table-wrap').innerHTML = `
     <table class="vtable">
-      <thead><tr><th>Aula</th><th>Espanhol</th><th>Português</th><th>Categoria</th><th>Exemplo</th><th>Mídia</th><th></th></tr></thead>
+      <thead><tr><th>Aula</th><th>Espanhol</th><th>Português</th><th>Categoria</th><th>Exemplo</th><th></th></tr></thead>
       <tbody>${rows.map(r => `
         <tr>
           <td><span class="badge badge-blue">Aula ${r.aulas?.numero || '?'}</span></td>
@@ -799,7 +906,6 @@ async function loadVocab() {
           <td>${r.portugues}</td>
           <td><span class="badge badge-orange">${r.categoria}</span></td>
           <td style="color:var(--ink3); font-style:italic;">${r.exemplo || '—'}</td>
-          <td>${r.imagem_url ? `<img class="media-thumb" src="${r.imagem_url}" onerror="this.style.display='none'" alt="">` : '<span style="color:var(--ink3);font-size:12px;">—</span>'}</td>
           <td>
             <button class="btn btn-sm" onclick="editarVocab(${r.id})">✏️</button>
             <button class="btn btn-red btn-sm" onclick="deletarVocab(${r.id})" style="margin-left:4px;">✕</button>
@@ -817,10 +923,9 @@ function toggleVocabForm() {
 }
 
 function limparVocabForm() {
-  ['vocab-id','vocab-es','vocab-pt','vocab-ex','vocab-img'].forEach(id => document.getElementById(id).value = '');
+  ['vocab-id','vocab-es','vocab-pt','vocab-ex'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('vocab-cat').value = 'geral';
   document.getElementById('vocab-form-title').textContent = 'Nova palavra';
-  document.getElementById('vocab-img-preview').classList.remove('show');
 }
 
 async function editarVocab(id) {
@@ -833,8 +938,6 @@ async function editarVocab(id) {
   document.getElementById('vocab-pt').value = data.portugues;
   document.getElementById('vocab-cat').value = data.categoria;
   document.getElementById('vocab-ex').value = data.exemplo || '';
-  document.getElementById('vocab-img').value = data.imagem_url || '';
-  previewImg('vocab-img', 'vocab-img-preview');
   document.getElementById('vocab-form-title').textContent = 'Editando palavra';
   document.getElementById('vocab-form').style.display = '';
   document.getElementById('vocab-form').scrollIntoView({ behavior: 'smooth' });
@@ -849,7 +952,6 @@ async function salvarVocab() {
     portugues: document.getElementById('vocab-pt').value.trim(),
     categoria: document.getElementById('vocab-cat').value,
     exemplo: document.getElementById('vocab-ex').value.trim() || null,
-    imagem_url: document.getElementById('vocab-img').value.trim() || null,
   };
   if (!payload.espanhol || !payload.portugues) { toast('Preencha espanhol e português.', 'err'); return; }
   const { error } = id
@@ -894,7 +996,6 @@ async function loadFrases() {
         <div class="frase-es">${r.espanhol}</div>
         <div class="frase-pt">${r.portugues}</div>
       </div>
-      ${r.imagem_url ? `<img class="media-thumb" src="${r.imagem_url}" onerror="this.style.display='none'" alt="" style="align-self:center;">` : ''}
       <div style="display:flex; gap:4px; flex-shrink:0;">
         <button class="btn btn-sm" onclick="editarFrase(${r.id})">✏️</button>
         <button class="btn btn-red btn-sm" onclick="deletarFrase(${r.id})">✕</button>
@@ -909,10 +1010,9 @@ function toggleFraseForm() {
 }
 
 function limparFraseForm() {
-  ['frase-id','frase-es','frase-pt','frase-img'].forEach(id => document.getElementById(id).value = '');
+  ['frase-id','frase-es','frase-pt'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('frase-cat').value = 'geral';
   document.getElementById('frase-form-title').textContent = 'Nova frase';
-  document.getElementById('frase-img-preview').classList.remove('show');
 }
 
 async function editarFrase(id) {
@@ -924,8 +1024,6 @@ async function editarFrase(id) {
   document.getElementById('frase-es').value = data.espanhol;
   document.getElementById('frase-pt').value = data.portugues;
   document.getElementById('frase-cat').value = data.categoria;
-  document.getElementById('frase-img').value = data.imagem_url || '';
-  previewImg('frase-img', 'frase-img-preview');
   document.getElementById('frase-form-title').textContent = 'Editando frase';
   document.getElementById('frase-form').style.display = '';
   document.getElementById('frase-form').scrollIntoView({ behavior: 'smooth' });
@@ -939,7 +1037,6 @@ async function salvarFrase() {
     espanhol: document.getElementById('frase-es').value.trim(),
     portugues: document.getElementById('frase-pt').value.trim(),
     categoria: document.getElementById('frase-cat').value,
-    imagem_url: document.getElementById('frase-img').value.trim() || null,
   };
   if (!payload.espanhol || !payload.portugues) { toast('Preencha espanhol e português.', 'err'); return; }
   const { error } = id
@@ -960,40 +1057,245 @@ async function deletarFrase(id) {
 }
 
 // ============================================================
-// MEDIA PREVIEW HELPERS
+// ALUNOS
 // ============================================================
-function toEmbedUrl(url) {
-  if (!url) return null;
-  const yt = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\s]+)/);
-  if (yt) return `https://www.youtube.com/embed/${yt[1]}?rel=0`;
-  const vm = url.match(/vimeo\.com\/(\d+)/);
-  if (vm) return `https://player.vimeo.com/video/${vm[1]}`;
-  return null;
+let alunosList = [];
+
+async function loadAlunos() {
+  if (!sb) { document.getElementById('alunos-list').innerHTML = '<div class="empty">Configure o Supabase primeiro.</div>'; return; }
+  document.getElementById('alunos-list').innerHTML = '<div class="loading"><div class="spinner"></div>Carregando...</div>';
+  const { data, error } = await sb.from('alunos').select('*').order('criado_em', { ascending: false });
+  if (error) { toast('Erro: ' + error.message, 'err'); return; }
+  alunosList = data || [];
+  renderAlunosList();
 }
 
-function previewVideo(inputId, wrapId) {
-  const url = document.getElementById(inputId).value.trim();
-  const wrap = document.getElementById(wrapId);
-  const embed = toEmbedUrl(url);
-  if (embed) {
-    wrap.innerHTML = `<iframe src="${embed}" allowfullscreen></iframe>`;
-    wrap.classList.add('show');
+function renderAlunosList() {
+  const el = document.getElementById('alunos-list');
+  if (!alunosList.length) { el.innerHTML = '<div class="empty">Nenhum aluno cadastrado.</div>'; return; }
+  el.innerHTML = alunosList.map(a => `
+    <div class="aula-item" onclick="editarAluno(${a.id})" id="aluno-item-${a.id}">
+      <div class="aula-num" style="font-size:16px;">${a.nome.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase()}</div>
+      <div class="aula-info">
+        <div class="aula-titulo">${a.nome}</div>
+        <div class="aula-meta">${a.email} · <code style="font-size:11px;">${a.codigo}</code> · ${a.ativo ? '<span style="color:var(--green)">Ativo</span>' : '<span style="color:var(--red)">Inativo</span>'}</div>
+      </div>
+      <button class="btn btn-red btn-sm" onclick="event.stopPropagation(); deletarAluno(${a.id})">✕</button>
+    </div>`).join('');
+}
+
+function showNovoAluno() {
+  limparFormAluno();
+  document.getElementById('aluno-form-title').textContent = 'Novo aluno';
+  document.getElementById('btn-enviar-email').style.display = 'none';
+}
+
+function editarAluno(id) {
+  const a = alunosList.find(x => x.id === id);
+  if (!a) return;
+  document.querySelectorAll('.aula-item').forEach(el => el.classList.remove('selected'));
+  document.getElementById('aluno-item-' + id)?.classList.add('selected');
+  document.getElementById('aluno-id').value = a.id;
+  document.getElementById('aluno-nome').value = a.nome;
+  document.getElementById('aluno-email').value = a.email;
+  document.getElementById('aluno-codigo').value = a.codigo;
+  document.getElementById('aluno-ativo').value = String(a.ativo);
+  document.getElementById('aluno-form-title').textContent = 'Editando ' + a.nome.split(' ')[0];
+  document.getElementById('btn-enviar-email').style.display = '';
+  document.getElementById('email-status').innerHTML = '';
+}
+
+function gerarCodigo() {
+  const nome = document.getElementById('aluno-nome').value.trim();
+  const base = nome ? nome.split(' ')[0].toLowerCase().replace(/[^a-z]/g,'') : 'aluno';
+  const num = Math.floor(1000 + Math.random() * 9000);
+  document.getElementById('aluno-codigo').value = base + num;
+}
+
+async function salvarAluno() {
+  if (!sb) { toast('Sem conexão.', 'err'); return; }
+  const id = document.getElementById('aluno-id').value;
+  const payload = {
+    nome: document.getElementById('aluno-nome').value.trim(),
+    email: document.getElementById('aluno-email').value.trim().toLowerCase(),
+    codigo: document.getElementById('aluno-codigo').value.trim().toLowerCase(),
+    ativo: document.getElementById('aluno-ativo').value === 'true',
+  };
+  if (!payload.nome || !payload.email || !payload.codigo) { toast('Preencha nome, email e código.', 'err'); return; }
+  const { data, error } = id
+    ? await sb.from('alunos').update(payload).eq('id', id).select().single()
+    : await sb.from('alunos').insert(payload).select().single();
+  if (error) { toast('Erro: ' + error.message, 'err'); return; }
+  toast(id ? 'Aluno atualizado! ✓' : 'Aluno cadastrado! ✓', 'ok');
+  if (!id && data) {
+    // Pre-fill for email sending
+    document.getElementById('aluno-id').value = data.id;
+    document.getElementById('aluno-form-title').textContent = 'Editando ' + data.nome.split(' ')[0];
+    document.getElementById('btn-enviar-email').style.display = '';
+    // Update local list
+    alunosList.unshift(data);
+    renderAlunosList();
   } else {
-    wrap.innerHTML = '';
-    wrap.classList.remove('show');
+    loadAlunos();
   }
 }
 
-function previewImg(inputId, imgId) {
-  const url = document.getElementById(inputId).value.trim();
-  const img = document.getElementById(imgId);
-  if (url) {
-    img.src = url;
-    img.classList.add('show');
-    img.onerror = () => img.classList.remove('show');
-  } else {
-    img.classList.remove('show');
+async function deletarAluno(id) {
+  if (!confirm('Deletar este aluno e todo o seu progresso?')) return;
+  const { error } = await sb.from('alunos').delete().eq('id', id);
+  if (error) { toast('Erro: ' + error.message, 'err'); return; }
+  toast('Aluno removido.', 'ok');
+  loadAlunos();
+}
+
+function limparFormAluno() {
+  ['aluno-id','aluno-nome','aluno-email','aluno-codigo'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('aluno-ativo').value = 'true';
+  document.getElementById('aluno-form-title').textContent = 'Novo aluno';
+  document.getElementById('btn-enviar-email').style.display = 'none';
+  document.getElementById('email-status').innerHTML = '';
+  document.querySelectorAll('.aula-item').forEach(el => el.classList.remove('selected'));
+}
+
+// ============================================================
+// EMAIL — RESEND
+// ============================================================
+async function enviarEmailAcesso() {
+  const resendKey = localStorage.getItem('resend_key') || '';
+  if (!resendKey) { toast('Configure a chave Resend em Configuração.', 'err'); return; }
+  const nome = document.getElementById('aluno-nome').value.trim();
+  const email = document.getElementById('aluno-email').value.trim();
+  const codigo = document.getElementById('aluno-codigo').value.trim();
+  if (!nome || !email || !codigo) { toast('Salve o aluno antes de enviar.', 'err'); return; }
+
+  const statusEl = document.getElementById('email-status');
+  statusEl.innerHTML = '<div class="loading"><div class="spinner"></div>Enviando email...</div>';
+  document.getElementById('btn-enviar-email').disabled = true;
+
+  const firstName = nome.split(' ')[0];
+  const loginUrl = window.location.href.replace('admin.html', 'login.html');
+  const htmlBody = `
+    <div style="font-family:sans-serif; max-width:520px; margin:0 auto; padding:32px; background:#FDFAF7; border-radius:16px;">
+      <div style="text-align:center; margin-bottom:24px;">
+        <div style="width:56px; height:56px; background:#E8622A; border-radius:14px; display:inline-flex; align-items:center; justify-content:center; font-size:26px;">🌍</div>
+        <h1 style="font-size:22px; font-weight:800; color:#1A1612; margin-top:12px;">Español Vivo</h1>
+      </div>
+      <p style="font-size:16px; color:#1A1612; margin-bottom:8px;">Olá, <strong>${firstName}</strong>!</p>
+      <p style="font-size:14px; color:#6B6259; line-height:1.7; margin-bottom:24px;">
+        Sua professora cadastrou você no <strong>Español Vivo</strong>. Use o código abaixo para acessar suas aulas:
+      </p>
+      <div style="background:#F4F1EC; border-radius:12px; padding:20px; text-align:center; margin-bottom:24px;">
+        <div style="font-size:12px; color:#B0A89E; text-transform:uppercase; letter-spacing:0.1em; margin-bottom:6px;">Seu código de acesso</div>
+        <div style="font-size:32px; font-weight:800; color:#E8622A; letter-spacing:2px;">${codigo}</div>
+      </div>
+      <div style="text-align:center; margin-bottom:24px;">
+        <a href="${loginUrl}" style="display:inline-block; background:#E8622A; color:#fff; text-decoration:none; padding:14px 32px; border-radius:12px; font-size:15px; font-weight:700;">Acessar minhas aulas →</a>
+      </div>
+      <p style="font-size:12px; color:#B0A89E; text-align:center; line-height:1.6;">
+        Guarde este email. Você precisará do código toda vez que fizer login.<br>
+        Em caso de dúvidas, fale com sua professora.
+      </p>
+    </div>`;
+
+  try {
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${resendKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        from: 'Español Vivo <onboarding@resend.dev>',
+        to: [email],
+        subject: `Seu acesso ao Español Vivo — código: ${codigo}`,
+        html: htmlBody,
+      })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      statusEl.innerHTML = `<div style="background:var(--green-dim); color:var(--green); padding:10px 14px; border-radius:var(--r); font-size:13px; font-weight:500;">✓ Email enviado para ${email}!</div>`;
+      toast('Email enviado! ✓', 'ok');
+    } else {
+      throw new Error(data.message || 'Erro desconhecido');
+    }
+  } catch(e) {
+    statusEl.innerHTML = `<div style="background:var(--red-dim); color:var(--red); padding:10px 14px; border-radius:var(--r); font-size:13px;">Erro ao enviar: ${e.message}</div>`;
+    toast('Erro ao enviar email.', 'err');
   }
+  document.getElementById('btn-enviar-email').disabled = false;
+}
+
+// ============================================================
+// PROGRESSO
+// ============================================================
+async function populateAlunoFilter() {
+  if (!alunosList.length) {
+    const { data } = await sb.from('alunos').select('id,nome').order('nome');
+    alunosList = data || [];
+  }
+  const el = document.getElementById('prog-aluno-filter');
+  if (!el) return;
+  el.innerHTML = '<option value="">Todos os alunos</option>' +
+    alunosList.map(a => `<option value="${a.id}">${a.nome}</option>`).join('');
+}
+
+async function loadProgresso() {
+  if (!sb) return;
+  const wrap = document.getElementById('progresso-wrap');
+  wrap.innerHTML = '<div class="loading"><div class="spinner"></div>Carregando...</div>';
+  const alunoFilter = document.getElementById('prog-aluno-filter')?.value;
+
+  const [{ data: aulas }, { data: alunos }, { data: prog }, { data: bdgs }] = await Promise.all([
+    sb.from('aulas').select('id,numero,titulo').order('numero'),
+    sb.from('alunos').select('id,nome,email,codigo').order('nome'),
+    sb.from('progresso').select('*'),
+    sb.from('badges').select('aluno_id, tipo'),
+  ]);
+
+  const aulasAll = aulas || [];
+  let alunosAll = alunos || [];
+  if (alunoFilter) alunosAll = alunosAll.filter(a => String(a.id) === alunoFilter);
+  const progAll = prog || [];
+  const bdgsAll = bdgs || [];
+
+  if (!alunosAll.length) { wrap.innerHTML = '<div class="empty">Nenhum aluno encontrado.</div>'; return; }
+
+  wrap.innerHTML = alunosAll.map(aluno => {
+    const alunoProgresso = progAll.filter(p => p.aluno_id === aluno.id);
+    const alunoBadges = bdgsAll.filter(b => b.aluno_id === aluno.id);
+    const concluidas = alunoProgresso.filter(p => p.concluida).length;
+    const total = aulasAll.length;
+    const pct = total ? Math.round(concluidas/total*100) : 0;
+    const initials = aluno.nome.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+
+    return `<div class="card" style="margin-bottom:12px;">
+      <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+        <div class="aula-num" style="font-size:14px; font-weight:700;">${initials}</div>
+        <div style="flex:1;">
+          <div style="font-weight:600; font-size:14px; color:var(--ink);">${aluno.nome}</div>
+          <div style="font-size:12px; color:var(--ink3);">${aluno.email} · código: <code>${aluno.codigo}</code></div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:20px; font-weight:800; color:var(--ink);">${pct}%</div>
+          <div style="font-size:11px; color:var(--ink3);">${concluidas}/${total} aulas</div>
+        </div>
+      </div>
+      <div style="background:var(--surface2); border-radius:99px; height:6px; margin-bottom:12px;">
+        <div style="background:${pct===100?'var(--green)':'var(--accent)'}; height:6px; border-radius:99px; width:${pct}%; transition:width 0.5s;"></div>
+      </div>
+      <div style="display:flex; flex-wrap:wrap; gap:6px;">
+        ${aulasAll.map(aula => {
+          const p = alunoProgresso.find(x => x.aula_id === aula.id);
+          const done = p?.concluida;
+          const score = p?.melhor_pontuacao || 0;
+          return `<div style="padding:5px 10px; border-radius:8px; font-size:12px; font-weight:600;
+            background:${done?'var(--green-dim)':score>0?'var(--gold-dim)':'var(--surface2)'};
+            color:${done?'var(--green)':score>0?'var(--gold)':'var(--ink3)'};"
+            title="${aula.titulo}">
+            Aula ${aula.numero} ${done ? '✓' : score > 0 ? score+'%' : '—'}
+          </div>`;
+        }).join('')}
+      </div>
+      ${alunoBadges.length ? `<div style="margin-top:10px; font-size:13px; color:var(--ink3);">Badges: ${alunoBadges.map(b=>b.tipo).join(', ')}</div>` : ''}
+    </div>`;
+  }).join('');
 }
 
 // ============================================================
@@ -1001,6 +1303,12 @@ function previewImg(inputId, imgId) {
 // ============================================================
 const connected = loadConfig();
 if (connected) loadAulas();
+// Pre-seed Resend key if not set
+if (!localStorage.getItem('resend_key')) {
+  localStorage.setItem('resend_key', 're_CDoToUah_EmWMmuAUCuvcexLu8p9mr4KG');
+  const el = document.getElementById('cfg-resend');
+  if (el) el.value = 're_CDoToUah_EmWMmuAUCuvcexLu8p9mr4KG';
+}
 </script>
 </body>
 </html>

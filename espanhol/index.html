@@ -4,460 +4,887 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Español Vivo</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-:root {
-  --bg: #F5F0E8;
-  --surface: #FDFAF5;
-  --surface2: #EDE8DF;
-  --surface3: #E3DDD4;
-  --ink: #1A1612;
-  --ink2: #5C5449;
-  --ink3: #9C9489;
-  --accent: #D4500A;
-  --accent2: #2A6B4A;
-  --accent3: #1B4E8A;
-  --gold: #C9920A;
-  --border: rgba(26,22,18,0.1);
-  --border2: rgba(26,22,18,0.05);
-  --r: 8px;
-  --r-lg: 14px;
-}
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--ink); min-height: 100vh; }
+:root {
+  --coral: #E8622A;
+  --coral-light: #FDF0EB;
+  --coral-mid: rgba(232,98,42,0.15);
+  --green: #2A6B4A;
+  --green-light: #EEF6F1;
+  --blue: #1B4E8A;
+  --blue-light: #EAF0FA;
+  --gold: #C9920A;
+  --gold-light: #FDF5E0;
+  --purple: #6B4EBF;
+  --purple-light: #F0EBFF;
+  --ink: #1A1612;
+  --ink2: #6B6259;
+  --ink3: #B0A89E;
+  --bg: #F4F1EC;
+  --white: #FDFAF7;
+  --sidebar-w: 280px;
+  --shadow-sm: 0 2px 8px rgba(26,22,18,0.06);
+  --shadow: 0 4px 20px rgba(26,22,18,0.08);
+  --shadow-lg: 0 8px 40px rgba(26,22,18,0.12);
+  --r: 12px;
+  --r-lg: 18px;
+  --r-xl: 24px;
+}
+body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--ink); min-height: 100vh; }
 
-/* Layout */
-.shell { display: flex; min-height: 100vh; }
-.aside {
-  width: 260px; min-width: 260px;
-  background: var(--ink); padding: 1.75rem 0;
+/* ---- SIDEBAR ---- */
+.sidebar {
+  width: var(--sidebar-w); background: var(--white);
   position: fixed; top: 0; left: 0; bottom: 0;
-  overflow-y: auto; z-index: 20;
   display: flex; flex-direction: column;
+  box-shadow: var(--shadow); z-index: 100; overflow-y: auto;
 }
-.main { margin-left: 260px; flex: 1; padding: 2rem; }
-
-/* Sidebar */
-.logo { padding: 0 1.5rem 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.08); margin-bottom: 0.75rem; }
-.logo-name { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800; color: #fff; }
-.logo-sub { font-size: 11px; color: rgba(255,255,255,0.35); letter-spacing: 0.08em; text-transform: uppercase; margin-top: 3px; }
-.aside-section { padding: 0.75rem 1.5rem 0.25rem; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255,255,255,0.2); margin-top: 0.5rem; }
-
-/* Aula accordion */
-.aula-btn {
-  width: 100%; display: flex; align-items: center; gap: 10px;
-  padding: 10px 1.5rem; cursor: pointer; background: transparent;
-  border: none; text-align: left; transition: all 0.15s;
-  border-left: 2px solid transparent;
+.sidebar-top { padding: 1.75rem 1.5rem 1.25rem; border-bottom: 1px solid rgba(26,22,18,0.06); }
+.logo-row { display: flex; align-items: center; gap: 10px; margin-bottom: 1.25rem; }
+.logo-icon {
+  width: 38px; height: 38px; border-radius: 10px;
+  background: linear-gradient(135deg, var(--coral), #c04a18);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(232,98,42,0.3);
 }
-.aula-btn:hover { background: rgba(255,255,255,0.05); }
-.aula-btn.active { background: rgba(255,255,255,0.08); border-left-color: var(--accent); }
-.aula-n {
-  width: 28px; height: 28px; border-radius: 6px;
-  background: rgba(255,255,255,0.1); display: flex; align-items: center;
-  justify-content: center; font-family: 'Syne', sans-serif;
-  font-size: 13px; font-weight: 700; color: rgba(255,255,255,0.7); flex-shrink: 0;
+.logo-text { font-size: 17px; font-weight: 800; color: var(--ink); letter-spacing: -0.3px; }
+/* Student card in sidebar */
+.student-card {
+  background: var(--bg); border-radius: var(--r);
+  padding: 12px; display: flex; align-items: center; gap: 10px;
 }
-.aula-btn.active .aula-n { background: var(--accent); color: #fff; }
-.aula-info { flex: 1; text-align: left; }
-.aula-titulo-sm { font-size: 13px; color: rgba(255,255,255,0.8); font-weight: 500; }
-.aula-nivel-sm { font-size: 11px; color: rgba(255,255,255,0.3); margin-top: 1px; }
-
-/* Video embed */
-.video-wrap {
-  position: relative; padding-bottom: 56.25%; height: 0;
-  overflow: hidden; border-radius: var(--r-lg); margin-bottom: 1.5rem;
-  background: #000;
+.avatar {
+  width: 42px; height: 42px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px; font-weight: 700; color: #fff; flex-shrink: 0;
+  background: linear-gradient(135deg, var(--coral), #c04a18);
 }
-.video-wrap iframe { position: absolute; top:0; left:0; width:100%; height:100%; border:0; }
+.student-name { font-size: 14px; font-weight: 600; color: var(--ink); }
+.student-level { font-size: 12px; color: var(--ink3); margin-top: 1px; }
+.progress-mini { margin-top: 6px; }
+.progress-mini-bar { background: rgba(26,22,18,0.08); border-radius: 99px; height: 4px; }
+.progress-mini-fill { background: var(--coral); height: 4px; border-radius: 99px; transition: width 0.5s; }
+.progress-mini-label { font-size: 11px; color: var(--ink3); margin-top: 3px; }
 
-/* Aula cover image */
-.aula-cover {
-  width: 100%; max-height: 200px; object-fit: cover;
-  border-radius: var(--r-lg); margin-bottom: 1.25rem;
-  border: 1px solid var(--border2);
+/* Nav aulas */
+.sidebar-nav { padding: 1rem 0; flex: 1; }
+.nav-section-label { padding: 0.5rem 1.5rem 0.25rem; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink3); font-weight: 600; }
+.aula-nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 1.5rem; cursor: pointer; transition: all 0.15s;
+  position: relative; border-left: 3px solid transparent;
+  text-decoration: none;
+}
+.aula-nav-item:hover:not(.locked) { background: var(--bg); }
+.aula-nav-item.active { background: var(--coral-light); border-left-color: var(--coral); }
+.aula-nav-item.locked { cursor: not-allowed; opacity: 0.5; }
+.aula-nav-num {
+  width: 30px; height: 30px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 700; flex-shrink: 0;
+  background: var(--bg); color: var(--ink2);
+}
+.aula-nav-item.active .aula-nav-num { background: var(--coral); color: #fff; }
+.aula-nav-item.done .aula-nav-num { background: var(--green-light); color: var(--green); }
+.aula-nav-info { flex: 1; min-width: 0; }
+.aula-nav-title { font-size: 13px; font-weight: 500; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.aula-nav-item.active .aula-nav-title { color: var(--coral); font-weight: 600; }
+.aula-nav-meta { font-size: 11px; color: var(--ink3); margin-top: 1px; }
+.aula-nav-badge { font-size: 14px; flex-shrink: 0; }
+
+/* Sidebar bottom */
+.sidebar-bottom { padding: 1rem 1.5rem; border-top: 1px solid rgba(26,22,18,0.06); }
+.logout-btn {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 13px; color: var(--ink3); cursor: pointer;
+  padding: 8px 0; transition: color 0.15s; font-weight: 500;
+  background: none; border: none; font-family: 'Outfit', sans-serif;
+}
+.logout-btn:hover { color: var(--coral); }
+
+/* ---- MAIN ---- */
+.main { margin-left: var(--sidebar-w); min-height: 100vh; }
+.main-inner { padding: 2rem 2.5rem; max-width: 860px; }
+
+/* ---- DASHBOARD ---- */
+.dash-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.75rem; flex-wrap: wrap; gap: 12px; }
+.dash-greeting { font-size: 26px; font-weight: 800; color: var(--ink); letter-spacing: -0.5px; }
+.dash-date { font-size: 14px; color: var(--ink3); margin-top: 2px; }
+
+/* Stats row */
+.stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 1.75rem; }
+.stat-card {
+  background: var(--white); border-radius: var(--r-lg);
+  padding: 1.25rem; box-shadow: var(--shadow-sm);
+}
+.stat-icon { font-size: 22px; margin-bottom: 8px; }
+.stat-n { font-size: 28px; font-weight: 800; color: var(--ink); line-height: 1; }
+.stat-l { font-size: 12px; color: var(--ink3); margin-top: 4px; font-weight: 500; letter-spacing: 0.02em; }
+
+/* Progress card */
+.progress-card {
+  background: linear-gradient(135deg, var(--coral) 0%, #c04a18 100%);
+  border-radius: var(--r-xl); padding: 1.75rem 2rem;
+  margin-bottom: 1.75rem; color: #fff;
+  box-shadow: 0 8px 32px rgba(232,98,42,0.35);
+  position: relative; overflow: hidden;
+}
+.progress-card::before {
+  content: '🌍';
+  position: absolute; right: 1.5rem; top: 50%; transform: translateY(-50%);
+  font-size: 80px; opacity: 0.15;
+}
+.progress-card-label { font-size: 13px; opacity: 0.8; font-weight: 500; margin-bottom: 6px; }
+.progress-card-title { font-size: 20px; font-weight: 800; margin-bottom: 4px; letter-spacing: -0.3px; }
+.progress-card-sub { font-size: 13px; opacity: 0.75; margin-bottom: 1.25rem; }
+.prog-bar-white { background: rgba(255,255,255,0.25); border-radius: 99px; height: 8px; }
+.prog-bar-white-fill { background: #fff; height: 8px; border-radius: 99px; transition: width 0.7s cubic-bezier(.4,0,.2,1); }
+.prog-pct { font-size: 13px; opacity: 0.85; margin-top: 6px; font-weight: 600; }
+
+/* Section headers */
+.section-hd { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+.section-title { font-size: 17px; font-weight: 700; color: var(--ink); }
+.section-link { font-size: 13px; color: var(--coral); font-weight: 600; cursor: pointer; }
+
+/* Badges grid */
+.badges-grid { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 1.75rem; }
+.badge-chip {
+  background: var(--white); border-radius: 99px;
+  padding: 8px 14px; display: flex; align-items: center; gap: 8px;
+  box-shadow: var(--shadow-sm); font-size: 13px; font-weight: 500;
+  color: var(--ink2); transition: all 0.15s;
+}
+.badge-chip:hover { transform: translateY(-1px); box-shadow: var(--shadow); }
+.badge-chip .badge-emoji { font-size: 18px; }
+.badge-chip.locked { opacity: 0.4; filter: grayscale(1); }
+
+/* Aulas grid */
+.aulas-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; margin-bottom: 2rem; }
+.aula-card {
+  background: var(--white); border-radius: var(--r-lg);
+  box-shadow: var(--shadow-sm); cursor: pointer;
+  transition: all 0.2s; overflow: hidden; position: relative;
+}
+.aula-card:hover:not(.locked) { transform: translateY(-2px); box-shadow: var(--shadow); }
+.aula-card.locked { cursor: not-allowed; }
+.aula-card.locked .aula-card-body { opacity: 0.5; }
+.aula-card-header { padding: 1.25rem 1.25rem 0; display: flex; align-items: flex-start; justify-content: space-between; }
+.aula-card-num {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px; font-weight: 800; color: #fff;
+  background: linear-gradient(135deg, var(--coral), #c04a18);
+  flex-shrink: 0;
+}
+.aula-card.done .aula-card-num { background: linear-gradient(135deg, var(--green), #1e5437); }
+.aula-card.locked .aula-card-num { background: linear-gradient(135deg, #B0A89E, #8a7e74); }
+.aula-card-status { font-size: 18px; }
+.aula-card-body { padding: 0.75rem 1.25rem 1.25rem; }
+.aula-card-nivel { font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 4px; }
+.A1 { color: var(--green); }
+.A2 { color: var(--blue); }
+.B1 { color: var(--gold); }
+.B2 { color: var(--coral); }
+.aula-card-title { font-size: 15px; font-weight: 700; color: var(--ink); margin-bottom: 4px; line-height: 1.3; }
+.aula-card-tema { font-size: 12px; color: var(--ink3); line-height: 1.4; margin-bottom: 1rem; }
+.aula-card-footer { border-top: 1px solid rgba(26,22,18,0.05); padding: 10px 1.25rem; display: flex; align-items: center; justify-content: space-between; }
+.prog-bar-sm { flex: 1; background: rgba(26,22,18,0.07); border-radius: 99px; height: 5px; margin-right: 8px; }
+.prog-bar-sm-fill { background: var(--coral); height: 5px; border-radius: 99px; transition: width 0.5s; }
+.aula-card.done .prog-bar-sm-fill { background: var(--green); }
+.prog-bar-sm-label { font-size: 12px; color: var(--ink3); font-weight: 600; white-space: nowrap; }
+.lock-overlay {
+  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(253,250,247,0.7); border-radius: var(--r-lg);
+  font-size: 28px;
 }
 
-/* Flashcard with image */
-.flash-img {
-  width: 100%; max-height: 120px; object-fit: cover;
-  border-radius: var(--r); margin-bottom: 10px;
+/* ---- AULA VIEW ---- */
+.aula-view { display: none; }
+.aula-view-header { margin-bottom: 1.5rem; }
+.back-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 13px; color: var(--ink3); cursor: pointer;
+  font-weight: 600; margin-bottom: 1rem; transition: color 0.15s;
+  background: none; border: none; font-family: 'Outfit', sans-serif; padding: 0;
 }
-
-/* Frase with image */
-.frase-img {
-  width: 56px; height: 42px; object-fit: cover;
-  border-radius: var(--r); flex-shrink: 0;
-  border: 1px solid var(--border2);
+.back-btn:hover { color: var(--coral); }
+.aula-view-title-row { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.aula-view-title { font-size: 24px; font-weight: 800; color: var(--ink); letter-spacing: -0.4px; }
+.nivel-pill {
+  padding: 3px 10px; border-radius: 99px;
+  font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
 }
+.pill-A1 { background: var(--green-light); color: var(--green); }
+.pill-A2 { background: var(--blue-light); color: var(--blue); }
+.pill-B1 { background: var(--gold-light); color: var(--gold); }
+.pill-B2 { background: var(--coral-light); color: var(--coral); }
+.aula-view-tema { font-size: 14px; color: var(--ink3); margin-top: 4px; }
 
-/* Tab bar */
-.tab-bar { display: flex; gap: 4px; margin-bottom: 1.5rem; background: var(--surface2); padding: 4px; border-radius: var(--r-lg); width: fit-content; }
+/* Tabs */
+.tab-bar {
+  display: flex; gap: 4px; background: rgba(26,22,18,0.06);
+  padding: 4px; border-radius: var(--r); width: fit-content;
+  margin-bottom: 1.5rem;
+}
 .tab-btn {
-  padding: 7px 18px; border-radius: var(--r); border: none; background: transparent;
-  cursor: pointer; font-size: 13px; font-family: 'DM Sans', sans-serif;
-  color: var(--ink3); font-weight: 500; transition: all 0.15s;
+  padding: 8px 18px; border-radius: 9px; border: none;
+  background: transparent; cursor: pointer; font-size: 13px;
+  font-family: 'Outfit', sans-serif; color: var(--ink3);
+  font-weight: 600; transition: all 0.15s;
 }
-.tab-btn.active { background: var(--surface); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+.tab-btn.active { background: var(--white); color: var(--ink); box-shadow: var(--shadow-sm); }
 .tab-btn:hover:not(.active) { color: var(--ink2); }
-.tab-content { display: none; }
-.tab-content.active { display: block; }
+.tab-pane { display: none; }
+.tab-pane.active { display: block; }
 
-/* Page header */
-.page-hd { margin-bottom: 1.5rem; display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
-.page-title { font-family: 'Syne', sans-serif; font-size: 24px; font-weight: 800; color: var(--ink); }
-.nivel-badge { padding: 3px 10px; border-radius: 99px; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; }
-.A1 { background: #EEF6F1; color: #2A6B4A; }
-.A2 { background: #EAF0FA; color: #1B4E8A; }
-.B1 { background: #FDF5E0; color: #C9920A; }
-.B2 { background: #FDF0EB; color: #D4500A; }
-
-/* Cards */
-.card { background: var(--surface); border: 1px solid var(--border2); border-radius: var(--r-lg); padding: 1.25rem; margin-bottom: 12px; }
-
-/* Flash */
-.flash-wrap { perspective: 800px; cursor: pointer; }
-.flash-inner { transition: transform 0.4s cubic-bezier(.4,0,.2,1); transform-style: preserve-3d; position: relative; min-height: 150px; }
-.flash-wrap.flipped .flash-inner { transform: rotateY(180deg); }
-.flash-front, .flash-back {
-  position: absolute; width: 100%; backface-visibility: hidden; -webkit-backface-visibility: hidden;
-  display: flex; align-items: center; justify-content: center; flex-direction: column;
-  min-height: 150px; border-radius: var(--r-lg); padding: 1.5rem;
+/* Flashcard */
+.fc-wrap { perspective: 900px; cursor: pointer; margin-bottom: 1rem; }
+.fc-inner {
+  transition: transform 0.45s cubic-bezier(.4,0,.2,1);
+  transform-style: preserve-3d; position: relative; min-height: 180px;
 }
-.flash-front { background: var(--surface); border: 1px solid var(--border2); }
-.flash-back { background: #EEF6F1; border: 1px solid rgba(42,107,74,0.2); transform: rotateY(180deg); }
-.flash-word { font-family: 'Syne', sans-serif; font-size: 38px; font-weight: 800; color: var(--ink); }
-.flash-word.pt { color: var(--accent2); }
-.flash-lbl { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink3); margin-bottom: 6px; }
-.flash-ex { font-size: 13px; color: var(--ink3); font-style: italic; margin-top: 8px; }
-.flash-hint { font-size: 12px; color: var(--ink3); margin-top: 6px; }
-
-/* Progress */
-.prog { background: var(--surface2); border-radius: 99px; height: 4px; margin-bottom: 8px; }
-.prog-fill { background: var(--accent2); height: 4px; border-radius: 99px; transition: width 0.35s; }
+.fc-wrap.flipped .fc-inner { transform: rotateY(180deg); }
+.fc-front, .fc-back {
+  position: absolute; width: 100%; backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  min-height: 180px; border-radius: var(--r-lg);
+  display: flex; align-items: center; justify-content: center; flex-direction: column;
+  padding: 2rem;
+}
+.fc-front { background: var(--white); box-shadow: var(--shadow); }
+.fc-back { background: linear-gradient(135deg, var(--green-light), #d4eedd); box-shadow: var(--shadow); transform: rotateY(180deg); }
+.fc-lbl { font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--ink3); font-weight: 600; margin-bottom: 8px; }
+.fc-word { font-size: 40px; font-weight: 800; color: var(--ink); letter-spacing: -1px; }
+.fc-word.pt { color: var(--green); }
+.fc-ex { font-size: 13px; color: var(--ink3); font-style: italic; margin-top: 10px; }
+.fc-hint { font-size: 12px; color: var(--ink3); margin-top: 8px; }
+.fc-img { width: 100%; max-height: 110px; object-fit: cover; border-radius: var(--r); margin-bottom: 12px; }
+.fc-controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.fc-cats { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
 
 /* Quiz */
-.quiz-word { font-family: 'Syne', sans-serif; font-size: 30px; font-weight: 800; color: var(--ink); margin-bottom: 1rem; }
-.opts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.opt {
-  padding: 12px 14px; border-radius: var(--r); border: 1px solid var(--border);
-  background: var(--surface); cursor: pointer; font-size: 14px; text-align: left;
-  color: var(--ink); font-family: 'DM Sans', sans-serif; transition: all 0.15s;
+.quiz-q-word { font-size: 32px; font-weight: 800; color: var(--ink); margin-bottom: 1.25rem; letter-spacing: -0.5px; }
+.quiz-opts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.quiz-opt {
+  padding: 14px 16px; border-radius: var(--r); border: 2px solid rgba(26,22,18,0.08);
+  background: var(--white); cursor: pointer; font-size: 15px;
+  text-align: left; color: var(--ink); font-family: 'Outfit', sans-serif;
+  font-weight: 500; transition: all 0.15s; box-shadow: var(--shadow-sm);
 }
-.opt:hover:not(:disabled) { border-color: var(--ink); background: var(--surface2); }
-.opt.correct { background: #EEF6F1; border-color: var(--accent2); color: var(--accent2); font-weight: 500; }
-.opt.wrong { background: #FDF0EB; border-color: var(--accent); color: var(--accent); }
-.fb { font-size: 13px; padding: 9px 12px; border-radius: var(--r); margin-top: 10px; font-weight: 500; }
-.fb.ok { background: #EEF6F1; color: var(--accent2); }
-.fb.fail { background: #FDF0EB; color: var(--accent); }
+.quiz-opt:hover:not(:disabled) { border-color: var(--coral); background: var(--coral-light); }
+.quiz-opt.correct { background: var(--green-light); border-color: var(--green); color: var(--green); }
+.quiz-opt.wrong { background: var(--coral-light); border-color: var(--coral); color: var(--coral); }
+.quiz-fb { padding: 10px 14px; border-radius: var(--r); margin-top: 12px; font-weight: 600; font-size: 14px; }
+.quiz-fb.ok { background: var(--green-light); color: var(--green); }
+.quiz-fb.fail { background: var(--coral-light); color: var(--coral); }
 
 /* Frases */
 .frase-card {
-  background: var(--surface); border: 1px solid var(--border2);
-  border-radius: var(--r-lg); padding: 1rem 1.25rem;
-  margin-bottom: 8px; cursor: pointer; transition: all 0.15s;
+  background: var(--white); border-radius: var(--r-lg);
+  padding: 1rem 1.25rem; margin-bottom: 10px; cursor: pointer;
+  box-shadow: var(--shadow-sm); transition: all 0.15s;
+  display: flex; align-items: center; gap: 12px;
 }
-.frase-card:hover { border-color: var(--border); }
-.frase-es { font-size: 15px; font-weight: 500; color: var(--ink); }
-.frase-pt { font-size: 13px; color: var(--accent2); margin-top: 4px; display: none; }
-.frase-card.revealed { background: #EEF6F1; border-color: rgba(42,107,74,0.2); }
+.frase-card:hover { box-shadow: var(--shadow); }
+.frase-card.revealed { background: var(--green-light); }
+.frase-es { font-size: 15px; font-weight: 600; color: var(--ink); }
+.frase-pt { font-size: 13px; color: var(--green); margin-top: 4px; display: none; font-weight: 500; }
 .frase-card.revealed .frase-pt { display: block; }
-.frase-meta { font-size: 11px; color: var(--ink3); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 5px; }
+.frase-cat { font-size: 11px; color: var(--ink3); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; font-weight: 600; }
+.frase-img { width: 52px; height: 40px; object-fit: cover; border-radius: 8px; flex-shrink: 0; }
+
+/* Verbos */
+.verb-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; }
+.verb-card {
+  background: var(--white); border-radius: var(--r);
+  padding: 12px 14px; box-shadow: var(--shadow-sm);
+}
+.verb-name { font-size: 19px; font-weight: 800; color: var(--ink); }
+.verb-meaning { font-size: 12px; color: var(--ink3); margin-top: 2px; font-weight: 500; }
+
+/* Conclude button */
+.conclude-wrap {
+  background: var(--white); border-radius: var(--r-lg);
+  padding: 1.5rem; box-shadow: var(--shadow); margin-top: 1.5rem;
+  display: none; border: 2px dashed rgba(42,107,74,0.3);
+}
+.conclude-wrap.show { display: block; }
+.conclude-title { font-size: 16px; font-weight: 700; color: var(--ink); margin-bottom: 4px; }
+.conclude-sub { font-size: 13px; color: var(--ink3); margin-bottom: 1rem; }
+.btn-conclude {
+  padding: 12px 28px; border-radius: var(--r);
+  background: linear-gradient(135deg, var(--green), #1e5437);
+  color: #fff; font-size: 15px; font-weight: 700;
+  font-family: 'Outfit', sans-serif; border: none; cursor: pointer;
+  box-shadow: 0 4px 16px rgba(42,107,74,0.3);
+  transition: all 0.2s;
+}
+.btn-conclude:hover { transform: translateY(-1px); box-shadow: 0 6px 24px rgba(42,107,74,0.4); }
+
+/* Progress bar generic */
+.prog { background: rgba(26,22,18,0.08); border-radius: 99px; height: 5px; margin-bottom: 6px; }
+.prog-fill { background: var(--coral); height: 5px; border-radius: 99px; transition: width 0.4s; }
+.prog-label { font-size: 12px; color: var(--ink3); font-weight: 500; margin-bottom: 10px; }
 
 /* Buttons */
-.btn { padding: 8px 18px; border-radius: var(--r); border: 1px solid var(--border); background: var(--surface); cursor: pointer; font-size: 13px; font-family: 'DM Sans', sans-serif; color: var(--ink2); transition: all 0.15s; font-weight: 500; }
-.btn:hover { background: var(--surface2); color: var(--ink); }
-.btn-accent { background: var(--accent); color: #fff; border-color: var(--accent); }
-.btn-accent:hover { background: #b84008; }
-.btn-green { background: var(--accent2); color: #fff; border-color: var(--accent2); }
+.btn {
+  padding: 9px 20px; border-radius: var(--r); border: 1.5px solid rgba(26,22,18,0.1);
+  background: var(--white); cursor: pointer; font-size: 13px;
+  font-family: 'Outfit', sans-serif; color: var(--ink2);
+  font-weight: 600; transition: all 0.15s; box-shadow: var(--shadow-sm);
+}
+.btn:hover { background: var(--bg); color: var(--ink); }
+.btn-coral { background: var(--coral); color: #fff; border-color: var(--coral); box-shadow: 0 4px 12px rgba(232,98,42,0.3); }
+.btn-coral:hover { background: #c04a18; }
+.speak-btn {
+  width: 36px; height: 36px; border-radius: 50%;
+  border: 1.5px solid rgba(26,22,18,0.1); background: var(--white);
+  cursor: pointer; display: inline-flex; align-items: center;
+  justify-content: center; font-size: 16px; transition: all 0.15s;
+  box-shadow: var(--shadow-sm);
+}
+.speak-btn:hover { background: var(--bg); }
 .btn-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; align-items: center; }
-.speak-btn { width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--border); background: var(--surface); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; font-size: 15px; transition: all 0.15s; }
-.speak-btn:hover { background: var(--surface2); }
 
-/* Stats */
-.stats-row { display: flex; gap: 12px; margin-bottom: 1.5rem; }
-.stat { background: var(--surface); border: 1px solid var(--border2); border-radius: var(--r-lg); padding: 1rem; flex: 1; text-align: center; }
-.stat-n { font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 800; color: var(--ink); }
-.stat-l { font-size: 11px; color: var(--ink3); text-transform: uppercase; letter-spacing: 0.04em; margin-top: 2px; }
+/* Stats in quiz */
+.quiz-stats-row { display: flex; gap: 12px; margin-bottom: 1.25rem; }
+.quiz-stat { background: var(--white); border-radius: var(--r); padding: 12px 16px; flex: 1; text-align: center; box-shadow: var(--shadow-sm); }
+.quiz-stat-n { font-size: 24px; font-weight: 800; color: var(--ink); }
+.quiz-stat-l { font-size: 11px; color: var(--ink3); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; margin-top: 2px; }
 
-/* Result */
-.result-big { font-family: 'Syne', sans-serif; font-size: 60px; font-weight: 800; color: var(--ink); text-align: center; }
-.result-msg { font-size: 16px; color: var(--ink2); text-align: center; margin-top: 6px; }
+/* Badge unlock modal */
+.badge-modal-overlay {
+  position: fixed; inset: 0; background: rgba(26,22,18,0.5);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 9999; opacity: 0; pointer-events: none; transition: opacity 0.3s;
+}
+.badge-modal-overlay.show { opacity: 1; pointer-events: all; }
+.badge-modal {
+  background: var(--white); border-radius: var(--r-xl);
+  padding: 2.5rem 2rem; text-align: center; max-width: 360px; width: 90%;
+  box-shadow: var(--shadow-lg);
+  transform: scale(0.85); transition: transform 0.3s cubic-bezier(.4,0,.2,1);
+}
+.badge-modal-overlay.show .badge-modal { transform: scale(1); }
+.badge-modal-emoji { font-size: 72px; margin-bottom: 1rem; display: block; animation: bounce 0.6s ease 0.3s both; }
+@keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }
+.badge-modal-title { font-size: 22px; font-weight: 800; color: var(--ink); margin-bottom: 6px; }
+.badge-modal-sub { font-size: 14px; color: var(--ink3); margin-bottom: 1.5rem; line-height: 1.6; }
+.badge-modal-close {
+  padding: 11px 28px; border-radius: var(--r); background: var(--coral);
+  color: #fff; font-size: 15px; font-weight: 700;
+  font-family: 'Outfit', sans-serif; border: none; cursor: pointer;
+  box-shadow: 0 4px 16px rgba(232,98,42,0.3);
+}
 
-/* Loading / empty */
-.loading { display: flex; align-items: center; gap: 8px; color: var(--ink3); font-size: 13px; padding: 1rem 0; }
-.spinner { width: 16px; height: 16px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; }
+/* Result screen */
+.result-big { font-size: 64px; font-weight: 800; color: var(--ink); text-align: center; letter-spacing: -2px; }
+.result-msg { font-size: 18px; color: var(--ink2); text-align: center; margin-top: 6px; font-weight: 500; }
+
+/* Empty / loading */
+.loading { display: flex; align-items: center; gap: 10px; color: var(--ink3); font-size: 14px; padding: 2rem 0; }
+.spinner { width: 20px; height: 20px; border: 2px solid rgba(26,22,18,0.1); border-top-color: var(--coral); border-radius: 50%; animation: spin 0.7s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .empty { color: var(--ink3); font-size: 14px; padding: 2rem 0; text-align: center; }
 
-/* No config */
-.no-config {
-  background: #FDF0EB; border: 1px solid rgba(212,80,10,0.2);
-  border-radius: var(--r-lg); padding: 1.5rem;
-  font-size: 14px; color: var(--accent); line-height: 1.7;
+/* Chip */
+.chip {
+  display: inline-flex; align-items: center; padding: 5px 12px;
+  border-radius: 99px; border: 1.5px solid rgba(26,22,18,0.08);
+  font-size: 12px; cursor: pointer; color: var(--ink2);
+  background: var(--white); transition: all 0.15s; margin: 3px;
+  font-weight: 500; box-shadow: var(--shadow-sm);
 }
+.chip.sel { background: var(--ink); color: #fff; border-color: var(--ink); }
 
-/* Welcome */
-.welcome { padding: 3rem 0; text-align: center; }
-.welcome-title { font-family: 'Syne', sans-serif; font-size: 32px; font-weight: 800; color: var(--ink); margin-bottom: 8px; }
-.welcome-sub { font-size: 15px; color: var(--ink3); }
-
-/* Badge */
-.badge { display: inline-block; padding: 2px 8px; border-radius: 99px; font-size: 11px; font-weight: 500; margin-right: 4px; }
-.badge-cat { background: var(--surface2); color: var(--ink3); }
-
-/* Verbos */
-.v-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; }
-.v-card {
-  background: var(--surface2); border: 1px solid var(--border2);
-  border-radius: var(--r); padding: 10px 14px;
+/* Toast */
+.toast {
+  position: fixed; bottom: 1.5rem; right: 1.5rem;
+  background: var(--white); border-radius: var(--r-lg);
+  padding: 14px 20px; font-size: 14px; color: var(--ink);
+  box-shadow: var(--shadow-lg); z-index: 9998;
+  transform: translateY(80px); opacity: 0; font-weight: 500;
+  transition: all 0.25s cubic-bezier(.4,0,.2,1); max-width: 320px;
 }
-.v-verb { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 700; color: var(--ink); }
-.v-meaning { font-size: 12px; color: var(--ink3); margin-top: 2px; }
+.toast.show { transform: translateY(0); opacity: 1; }
+.toast.ok { border-left: 4px solid var(--green); }
+.toast.err { border-left: 4px solid var(--coral); }
 
-@media (max-width: 680px) {
-  .aside { width: 200px; min-width: 200px; }
-  .main { margin-left: 200px; padding: 1.25rem; }
-  .opts { grid-template-columns: 1fr; }
-  .stats-row { flex-wrap: wrap; }
-}
-@media (max-width: 500px) {
-  .aside { position: static; width: 100%; }
+@media (max-width: 720px) {
+  :root { --sidebar-w: 0px; }
+  .sidebar { display: none; }
   .main { margin-left: 0; }
-  .shell { flex-direction: column; }
+  .main-inner { padding: 1.25rem; }
+  .stats-row { grid-template-columns: 1fr 1fr; }
+  .quiz-opts { grid-template-columns: 1fr; }
+  .aulas-grid { grid-template-columns: 1fr; }
 }
 </style>
 </head>
 <body>
-<div class="shell">
-  <!-- SIDEBAR -->
-  <aside class="aside">
-    <div class="logo">
-      <div class="logo-name">Español Vivo</div>
-      <div class="logo-sub">Aulas interativas</div>
-    </div>
-    <div class="aside-section">Selecione a aula</div>
-    <div id="aulas-nav"><div style="padding:1rem 1.5rem; font-size:13px; color:rgba(255,255,255,0.3);">Carregando...</div></div>
-  </aside>
 
-  <main class="main">
-    <!-- Welcome -->
-    <div id="welcome-screen">
-      <div class="welcome">
-        <div class="welcome-title">¡Bienvenido!</div>
-        <div class="welcome-sub">Selecione uma aula no menu ao lado para começar.</div>
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-top">
+    <div class="logo-row">
+      <div class="logo-icon">🌍</div>
+      <div class="logo-text">Español Vivo</div>
+    </div>
+    <div class="student-card">
+      <div class="avatar" id="sb-avatar">?</div>
+      <div style="flex:1; min-width:0;">
+        <div class="student-name" id="sb-name">—</div>
+        <div class="student-level" id="sb-level">Carregando...</div>
+        <div class="progress-mini">
+          <div class="progress-mini-bar"><div class="progress-mini-fill" id="sb-prog" style="width:0%"></div></div>
+          <div class="progress-mini-label" id="sb-prog-label">0% concluído</div>
+        </div>
       </div>
     </div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section-label">Minhas aulas</div>
+    <div id="aulas-nav"></div>
+  </nav>
+  <div class="sidebar-bottom">
+    <button class="logout-btn" onclick="logout()">← Sair</button>
+  </div>
+</aside>
 
-    <!-- No config -->
-    <div id="no-config-screen" style="display:none;">
-      <div class="no-config">
-        <strong>⚠️ Configuração necessária</strong><br>
-        Insira as credenciais do Supabase no arquivo <strong>config.js</strong> ou no painel de <strong>admin.html</strong>.<br>
-        Consulte o arquivo <strong>LEIA-ME.txt</strong> para instruções.
+<!-- MAIN -->
+<main class="main">
+  <div class="main-inner">
+
+    <!-- DASHBOARD -->
+    <div id="view-dashboard">
+      <div class="dash-header">
+        <div>
+          <div class="dash-greeting" id="dash-greeting">¡Hola!</div>
+          <div class="dash-date" id="dash-date"></div>
+        </div>
       </div>
+
+      <!-- Progress hero card -->
+      <div class="progress-card">
+        <div class="progress-card-label">Seu progresso geral</div>
+        <div class="progress-card-title" id="dash-next-title">Carregando...</div>
+        <div class="progress-card-sub" id="dash-next-sub"></div>
+        <div class="prog-bar-white"><div class="prog-bar-white-fill" id="dash-prog-bar" style="width:0%"></div></div>
+        <div class="prog-pct" id="dash-prog-pct">0% concluído</div>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats-row">
+        <div class="stat-card">
+          <div class="stat-icon">📚</div>
+          <div class="stat-n" id="stat-concluidas">0</div>
+          <div class="stat-l">Aulas concluídas</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">🏅</div>
+          <div class="stat-n" id="stat-badges">0</div>
+          <div class="stat-l">Badges conquistados</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">⭐</div>
+          <div class="stat-n" id="stat-media">—</div>
+          <div class="stat-l">Média no quiz</div>
+        </div>
+      </div>
+
+      <!-- Badges -->
+      <div class="section-hd">
+        <div class="section-title">Meus badges</div>
+        <div class="section-link" onclick="showAllBadges()">Ver todos</div>
+      </div>
+      <div class="badges-grid" id="badges-grid"></div>
+
+      <!-- Aulas grid -->
+      <div class="section-hd">
+        <div class="section-title">Todas as aulas</div>
+      </div>
+      <div class="aulas-grid" id="aulas-grid"></div>
     </div>
 
-    <!-- Aula content -->
-    <div id="aula-content" style="display:none;">
-      <div class="page-hd">
-        <div class="page-title" id="ct-titulo">—</div>
-        <span class="nivel-badge A1" id="ct-nivel">A1</span>
+    <!-- AULA VIEW -->
+    <div id="view-aula" class="aula-view">
+      <div class="aula-view-header">
+        <button class="back-btn" onclick="showDashboard()">← Voltar</button>
+        <div class="aula-view-title-row">
+          <div class="aula-view-title" id="av-title">—</div>
+          <span class="nivel-pill pill-A1" id="av-nivel">A1</span>
+        </div>
+        <div class="aula-view-tema" id="av-tema"></div>
       </div>
-      <div id="ct-tema" style="font-size:14px; color:var(--ink3); margin-bottom:1.5rem; margin-top:-1rem;"></div>
 
-      <!-- Cover image (shown when aula has imagem_url) -->
-      <img id="ct-cover" class="aula-cover" src="" alt="" style="display:none;" onerror="this.style.display='none'">
+      <!-- Quiz progress bar -->
+      <div class="prog"><div class="prog-fill" id="av-quiz-prog" style="width:0%"></div></div>
+      <div class="prog-label" id="av-quiz-prog-label"></div>
 
-      <!-- Tabs -->
       <div class="tab-bar">
         <button class="tab-btn active" onclick="switchTab('flashcards',this)">🃏 Flashcards</button>
         <button class="tab-btn" onclick="switchTab('quiz',this)">❓ Quiz</button>
         <button class="tab-btn" onclick="switchTab('frases',this)">💬 Frases</button>
         <button class="tab-btn" onclick="switchTab('verbos',this)">📖 Verbos</button>
-        <button class="tab-btn" id="tab-btn-video" onclick="switchTab('video',this)" style="display:none;">🎬 Vídeo</button>
       </div>
 
       <!-- FLASHCARDS -->
-      <div class="tab-content active" id="tab-flashcards">
-        <div class="flash-wrap" id="fc" onclick="flipFC()">
-          <div class="flash-inner">
-            <div class="flash-front">
-              <div class="flash-lbl">em espanhol</div>
-              <div class="flash-word" id="fc-es">—</div>
-              <div class="flash-hint">clique para revelar</div>
+      <div class="tab-pane active" id="tab-flashcards">
+        <div class="fc-wrap" id="fc" onclick="flipFC()">
+          <div class="fc-inner">
+            <div class="fc-front">
+              <div class="fc-lbl">em espanhol</div>
+              <div class="fc-word" id="fc-es">—</div>
+              <div class="fc-hint">toque para revelar</div>
             </div>
-            <div class="flash-back">
-              <div class="flash-lbl" style="color:var(--accent2)">em português</div>
-              <div class="flash-word pt" id="fc-pt">—</div>
-              <div class="flash-ex" id="fc-ex"></div>
-              <div class="flash-hint" style="color:var(--accent2)">clique para virar</div>
+            <div class="fc-back">
+              <div class="fc-lbl" style="color:var(--green)">em português</div>
+              <div class="fc-word pt" id="fc-pt">—</div>
+              <div class="fc-ex" id="fc-ex"></div>
             </div>
           </div>
         </div>
-        <div class="btn-row" style="margin-top:14px;">
+        <div class="fc-controls">
           <button class="btn" onclick="prevFC()">← Anterior</button>
-          <button class="btn btn-accent" onclick="nextFC()">Próxima →</button>
+          <button class="btn btn-coral" onclick="nextFC()">Próxima →</button>
           <button class="speak-btn" onclick="speak(document.getElementById('fc-es').textContent,'es')">🔊</button>
-          <span style="font-size:13px; color:var(--ink3); margin-left:auto;" id="fc-counter">0 / 0</span>
+          <span style="font-size:13px; color:var(--ink3); margin-left:auto; font-weight:600;" id="fc-counter">0/0</span>
         </div>
-        <!-- Category filter -->
-        <div id="fc-cats" style="margin-top:14px; display:flex; flex-wrap:wrap; gap:4px;"></div>
+        <div class="fc-cats" id="fc-cats"></div>
       </div>
 
       <!-- QUIZ -->
-      <div class="tab-content" id="tab-quiz">
-        <div class="stats-row">
-          <div class="stat"><div class="stat-n" id="qs-acertos">0</div><div class="stat-l">acertos</div></div>
-          <div class="stat"><div class="stat-n" id="qs-total">0</div><div class="stat-l">respondidas</div></div>
-          <div class="stat"><div class="stat-n" id="qs-pct">—</div><div class="stat-l">aproveitamento</div></div>
+      <div class="tab-pane" id="tab-quiz">
+        <div class="quiz-stats-row">
+          <div class="quiz-stat"><div class="quiz-stat-n" id="qs-acc">0</div><div class="quiz-stat-l">Acertos</div></div>
+          <div class="quiz-stat"><div class="quiz-stat-n" id="qs-tot">0</div><div class="quiz-stat-l">Respondidas</div></div>
+          <div class="quiz-stat"><div class="quiz-stat-n" id="qs-pct">—</div><div class="quiz-stat-l">Aproveitamento</div></div>
         </div>
-        <div class="prog"><div class="prog-fill" id="q-prog" style="width:0%"></div></div>
-        <div style="font-size:12px; color:var(--ink3); margin-bottom:12px;" id="q-label">—</div>
-        <div class="card" id="quiz-area"></div>
+        <div id="quiz-area"></div>
         <div class="btn-row">
-          <button class="btn btn-accent" id="q-next-btn" onclick="nextQ()" style="display:none;">Próxima →</button>
-          <button class="btn" onclick="initQuiz()">Reiniciar</button>
+          <button class="btn btn-coral" id="quiz-next-btn" onclick="nextQ()" style="display:none">Próxima →</button>
+          <button class="btn" onclick="initQuiz()">Reiniciar quiz</button>
+        </div>
+        <!-- Conclude section -->
+        <div class="conclude-wrap" id="conclude-wrap">
+          <div class="conclude-title">🎉 Parabéns! Você passou nesta aula!</div>
+          <div class="conclude-sub" id="conclude-sub">Clique abaixo para concluir e desbloquear a próxima aula.</div>
+          <button class="btn-conclude" onclick="concluirAula()">✓ Concluir aula e avançar</button>
         </div>
       </div>
 
       <!-- FRASES -->
-      <div class="tab-content" id="tab-frases">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:8px;">
-          <span style="font-size:13px; color:var(--ink3);">Clique em cada frase para ver a tradução</span>
+      <div class="tab-pane" id="tab-frases">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
+          <span style="font-size:13px; color:var(--ink3); font-weight:500;">Toque em cada frase para ver a tradução</span>
           <div style="display:flex; gap:6px;">
-            <button class="btn" onclick="revealAllFrases()">Revelar todas</button>
+            <button class="btn" onclick="revealAllFrases()">Revelar</button>
             <button class="btn" onclick="hideAllFrases()">Esconder</button>
-            <button class="speak-btn" onclick="speakFrases()" title="Ouvir todas">🔊</button>
+            <button class="speak-btn" onclick="speakFrases()">🔊</button>
           </div>
         </div>
         <div id="frases-list"></div>
       </div>
 
       <!-- VERBOS -->
-      <div class="tab-content" id="tab-verbos">
+      <div class="tab-pane" id="tab-verbos">
         <div id="verbos-content"></div>
       </div>
-
-      <!-- VÍDEO -->
-      <div class="tab-content" id="tab-video">
-        <div id="video-content"></div>
-      </div>
     </div>
-  </main>
+
+  </div>
+</main>
+
+<!-- Badge unlock modal -->
+<div class="badge-modal-overlay" id="badge-modal">
+  <div class="badge-modal">
+    <span class="badge-modal-emoji" id="bm-emoji">🏅</span>
+    <div class="badge-modal-title" id="bm-title">Badge desbloqueado!</div>
+    <div class="badge-modal-sub" id="bm-sub">Você conquistou um novo badge.</div>
+    <button class="badge-modal-close" onclick="closeBadgeModal()">Continuar →</button>
+  </div>
 </div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
 
 <script>
 // ============================================================
-// CONFIG — lê as mesmas credenciais salvas pelo admin.html
+// BADGE DEFINITIONS
+// ============================================================
+const BADGE_DEFS = {
+  iniciante:   { emoji:'🚀', nome:'Iniciante',     desc:'Concluiu a primeira aula!' },
+  aula_1:      { emoji:'1️⃣',  nome:'Aula 1',        desc:'Concluiu a Aula 1' },
+  aula_2:      { emoji:'2️⃣',  nome:'Aula 2',        desc:'Concluiu a Aula 2' },
+  aula_3:      { emoji:'3️⃣',  nome:'Aula 3',        desc:'Concluiu a Aula 3' },
+  aula_4:      { emoji:'4️⃣',  nome:'Aula 4',        desc:'Concluiu a Aula 4' },
+  aula_5:      { emoji:'5️⃣',  nome:'Aula 5',        desc:'Concluiu a Aula 5' },
+  aula_6:      { emoji:'6️⃣',  nome:'Aula 6',        desc:'Concluiu a Aula 6' },
+  aula_7:      { emoji:'7️⃣',  nome:'Aula 7',        desc:'Concluiu a Aula 7' },
+  aula_8:      { emoji:'8️⃣',  nome:'Aula 8',        desc:'Concluiu a Aula 8' },
+  aula_9:      { emoji:'9️⃣',  nome:'Aula 9',        desc:'Concluiu a Aula 9' },
+  aula_10:     { emoji:'🔟', nome:'Aula 10',       desc:'Concluiu a Aula 10' },
+  perfeito:    { emoji:'⭐', nome:'Nota perfeita', desc:'100% no quiz!' },
+  dedicado:    { emoji:'🏆', nome:'Dedicado',      desc:'Concluiu 5 aulas!' },
+  mestre:      { emoji:'👑', nome:'Mestre',        desc:'Concluiu todas as aulas!' },
+  sequencia:   { emoji:'🔥', nome:'Em chamas',     desc:'3 aulas seguidas!' },
+  veloz:       { emoji:'⚡', nome:'Veloz',         desc:'Duas aulas no mesmo dia!' },
+};
+
+const VERB_MEANINGS = {
+  ser:'ser', estar:'estar', tener:'ter', ir:'ir', hablar:'falar',
+  comer:'comer', vivir:'morar/viver', querer:'querer', poder:'poder',
+  hacer:'fazer', decir:'dizer', saber:'saber', llamarse:'chamar-se',
+  gustar:'gostar', trabajar:'trabalhar', estudiar:'estudar',
+  escribir:'escrever', leer:'ler', escuchar:'escutar',
+};
+
+// ============================================================
+// STATE
 // ============================================================
 const SB_URL = localStorage.getItem('sb_url') || '';
 const SB_KEY = localStorage.getItem('sb_key') || '';
-
-let sb = null;
-let currentAula = null;
-let vocabAll = [];
-let vocabFiltered = [];
-let fcIdx = 0;
-let fcFlipped = false;
-let fcCatFilter = '';
-let quizPool = [];
-let quizIdx = 0;
-let quizScore = 0;
-let quizAnswered = false;
-let frasesData = [];
+let sb, aluno, aulasList = [], progressoMap = {}, badgesSet = new Set();
+let currentAula = null, vocabAll = [], vocabFiltered = [], frasesData = [];
+let fcIdx = 0, fcFlipped = false, fcCatFilter = '';
+let quizPool = [], quizIdx = 0, quizScore = 0, quizAnswered = false;
+let quizBestScore = 0;
+const MIN_SCORE = 70;
 
 // ============================================================
 // INIT
 // ============================================================
-if (SB_URL && SB_KEY) {
+async function init() {
+  if (!SB_URL || !SB_KEY) { window.location.href = 'login.html'; return; }
+  const savedAluno = localStorage.getItem('ev_aluno');
+  if (!savedAluno) { window.location.href = 'login.html'; return; }
+  aluno = JSON.parse(savedAluno);
   sb = supabase.createClient(SB_URL, SB_KEY);
-  loadAulasNav();
-} else {
-  document.getElementById('welcome-screen').style.display = 'none';
-  document.getElementById('no-config-screen').style.display = '';
+
+  // Refresh aluno data
+  const { data: fresh } = await sb.from('alunos').select('*').eq('id', aluno.id).single();
+  if (fresh) { aluno = fresh; localStorage.setItem('ev_aluno', JSON.stringify(fresh)); }
+
+  setupSidebar();
+  await loadAll();
+  showDashboard();
 }
 
-async function loadAulasNav() {
-  const { data } = await sb.from('aulas').select('id,numero,titulo,nivel').order('numero');
-  const nav = document.getElementById('aulas-nav');
-  if (!data || !data.length) { nav.innerHTML = '<div style="padding:1rem 1.5rem; font-size:13px; color:rgba(255,255,255,0.3);">Nenhuma aula cadastrada.</div>'; return; }
-  nav.innerHTML = data.map(a => `
-    <button class="aula-btn" id="nav-${a.id}" onclick="loadAula(${a.id})">
-      <div class="aula-n">${a.numero}</div>
-      <div class="aula-info">
-        <div class="aula-titulo-sm">${a.titulo}</div>
-        <div class="aula-nivel-sm">${a.nivel}</div>
+function setupSidebar() {
+  const initials = aluno.nome.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+  document.getElementById('sb-avatar').textContent = initials;
+  document.getElementById('sb-name').textContent = aluno.nome;
+}
+
+async function loadAll() {
+  const [{ data: aulas }, { data: prog }, { data: bdgs }] = await Promise.all([
+    sb.from('aulas').select('*').order('numero'),
+    sb.from('progresso').select('*').eq('aluno_id', aluno.id),
+    sb.from('badges').select('*').eq('aluno_id', aluno.id),
+  ]);
+  aulasList = aulas || [];
+  progressoMap = {};
+  (prog || []).forEach(p => { progressoMap[p.aula_id] = p; });
+  badgesSet = new Set((bdgs || []).map(b => b.tipo));
+  updateSidebarProgress();
+  renderAulasNav();
+}
+
+function updateSidebarProgress() {
+  const total = aulasList.length;
+  const done = aulasList.filter(a => progressoMap[a.id]?.concluida).length;
+  const pct = total ? Math.round(done/total*100) : 0;
+  document.getElementById('sb-prog').style.width = pct + '%';
+  document.getElementById('sb-prog-label').textContent = pct + '% concluído';
+  document.getElementById('sb-level').textContent = done + ' de ' + total + ' aulas';
+}
+
+function isUnlocked(aula) {
+  if (aula.numero === 1) return true;
+  const prev = aulasList.find(a => a.numero === aula.numero - 1);
+  return prev && progressoMap[prev.id]?.concluida;
+}
+
+function renderAulasNav() {
+  document.getElementById('aulas-nav').innerHTML = aulasList.map(a => {
+    const unlocked = isUnlocked(a);
+    const done = progressoMap[a.id]?.concluida;
+    const cls = done ? 'done' : '';
+    const locked = !unlocked ? 'locked' : '';
+    const icon = done ? '✓' : (!unlocked ? '🔒' : '→');
+    return `<div class="aula-nav-item ${cls} ${locked}" onclick="${unlocked ? `loadAula(${a.id})` : 'void(0)'}">
+      <div class="aula-nav-num">${a.numero}</div>
+      <div class="aula-nav-info">
+        <div class="aula-nav-title">${a.titulo}</div>
+        <div class="aula-nav-meta">${a.nivel} · ${done ? 'Concluída' : (!unlocked ? 'Bloqueada' : 'Disponível')}</div>
       </div>
-    </button>`).join('');
+      <div class="aula-nav-badge">${icon}</div>
+    </div>`;
+  }).join('');
 }
 
 // ============================================================
-// LOAD AULA
+// DASHBOARD
+// ============================================================
+function showDashboard() {
+  document.getElementById('view-dashboard').style.display = '';
+  document.getElementById('view-aula').style.display = 'none';
+  renderDashboard();
+}
+
+function renderDashboard() {
+  const now = new Date();
+  const days = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+  const months = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+  document.getElementById('dash-date').textContent =
+    `${days[now.getDay()]}, ${now.getDate()} de ${months[now.getMonth()]}`;
+
+  const firstName = aluno.nome.split(' ')[0];
+  document.getElementById('dash-greeting').textContent = `¡Hola, ${firstName}!`;
+
+  const total = aulasList.length;
+  const done = aulasList.filter(a => progressoMap[a.id]?.concluida).length;
+  const pct = total ? Math.round(done/total*100) : 0;
+
+  // Hero card
+  const nextAula = aulasList.find(a => !progressoMap[a.id]?.concluida && isUnlocked(a));
+  if (nextAula) {
+    document.getElementById('dash-next-title').textContent = `Próxima: Aula ${nextAula.numero} — ${nextAula.titulo}`;
+    document.getElementById('dash-next-sub').textContent = nextAula.tema || '';
+  } else if (done === total && total > 0) {
+    document.getElementById('dash-next-title').textContent = '¡Felicitaciones! Curso concluído! 🎉';
+    document.getElementById('dash-next-sub').textContent = 'Você completou todas as aulas!';
+  } else {
+    document.getElementById('dash-next-title').textContent = 'Nenhuma aula disponível ainda.';
+    document.getElementById('dash-next-sub').textContent = '';
+  }
+  document.getElementById('dash-prog-bar').style.width = pct + '%';
+  document.getElementById('dash-prog-pct').textContent = `${done} de ${total} aulas · ${pct}%`;
+
+  // Stats
+  document.getElementById('stat-concluidas').textContent = done;
+  document.getElementById('stat-badges').textContent = badgesSet.size;
+  const scores = Object.values(progressoMap).map(p => p.melhor_pontuacao).filter(s => s > 0);
+  document.getElementById('stat-media').textContent = scores.length ? Math.round(scores.reduce((a,b)=>a+b,0)/scores.length) + '%' : '—';
+
+  // Badges
+  renderBadges();
+
+  // Aulas grid
+  renderAulasGrid();
+}
+
+function renderBadges() {
+  const el = document.getElementById('badges-grid');
+  const allBadges = Object.entries(BADGE_DEFS).slice(0, 8);
+  el.innerHTML = allBadges.map(([tipo, def]) => {
+    const earned = badgesSet.has(tipo);
+    return `<div class="badge-chip ${earned ? '' : 'locked'}" title="${def.desc}">
+      <span class="badge-emoji">${def.emoji}</span>
+      <span>${def.nome}</span>
+    </div>`;
+  }).join('');
+}
+
+function showAllBadges() {
+  // Switch to showing all badges
+  const el = document.getElementById('badges-grid');
+  el.innerHTML = Object.entries(BADGE_DEFS).map(([tipo, def]) => {
+    const earned = badgesSet.has(tipo);
+    return `<div class="badge-chip ${earned ? '' : 'locked'}" title="${def.desc}">
+      <span class="badge-emoji">${def.emoji}</span>
+      <span>${def.nome}</span>
+    </div>`;
+  }).join('');
+}
+
+function renderAulasGrid() {
+  const el = document.getElementById('aulas-grid');
+  el.innerHTML = aulasList.map(a => {
+    const unlocked = isUnlocked(a);
+    const done = progressoMap[a.id]?.concluida;
+    const score = progressoMap[a.id]?.melhor_pontuacao || 0;
+    const pct = done ? 100 : score;
+    return `<div class="aula-card ${done?'done':''} ${!unlocked?'locked':''}"
+      onclick="${unlocked ? `loadAula(${a.id})` : 'void(0)'}">
+      <div class="aula-card-header">
+        <div class="aula-card-num">${a.numero}</div>
+        <div class="aula-card-status">${done ? '✅' : (!unlocked ? '🔒' : '📖')}</div>
+      </div>
+      <div class="aula-card-body">
+        <div class="aula-card-nivel ${a.nivel}">${a.nivel}</div>
+        <div class="aula-card-title">${a.titulo}</div>
+        <div class="aula-card-tema">${a.tema || ''}</div>
+      </div>
+      <div class="aula-card-footer">
+        <div class="prog-bar-sm"><div class="prog-bar-sm-fill" style="width:${pct}%"></div></div>
+        <div class="prog-bar-sm-label">${done ? '100%' : (score ? score+'%' : (unlocked ? 'Iniciar' : 'Bloqueada'))}</div>
+      </div>
+      ${!unlocked ? '<div class="lock-overlay">🔒</div>' : ''}
+    </div>`;
+  }).join('');
+}
+
+// ============================================================
+// AULA VIEW
 // ============================================================
 async function loadAula(id) {
-  if (!sb) return;
-  document.querySelectorAll('.aula-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('nav-' + id)?.classList.add('active');
-  document.getElementById('welcome-screen').style.display = 'none';
-  document.getElementById('aula-content').style.display = '';
+  const aula = aulasList.find(a => a.id === id);
+  if (!aula || !isUnlocked(aula)) return;
+  currentAula = aula;
+
+  document.getElementById('view-dashboard').style.display = 'none';
+  document.getElementById('view-aula').style.display = '';
 
   // Header
-  const { data: aula } = await sb.from('aulas').select('*').eq('id', id).single();
-  currentAula = aula;
-  document.getElementById('ct-titulo').textContent = `Aula ${aula.numero} — ${aula.titulo}`;
-  const nv = document.getElementById('ct-nivel');
+  document.getElementById('av-title').textContent = `Aula ${aula.numero} — ${aula.titulo}`;
+  const nv = document.getElementById('av-nivel');
   nv.textContent = aula.nivel;
-  nv.className = 'nivel-badge ' + aula.nivel;
-  document.getElementById('ct-tema').textContent = aula.tema || '';
+  nv.className = 'nivel-pill pill-' + aula.nivel;
+  document.getElementById('av-tema').textContent = aula.tema || '';
 
-  // Cover image
-  const cover = document.getElementById('ct-cover');
-  if (aula.imagem_url) {
-    cover.src = aula.imagem_url;
-    cover.style.display = '';
-  } else {
-    cover.style.display = 'none';
-    cover.src = '';
-  }
+  // Update sidebar active
+  document.querySelectorAll('.aula-nav-item').forEach(el => el.classList.remove('active'));
 
-  // Video tab — show/hide based on whether video_url is set
-  const videoBtn = document.getElementById('tab-btn-video');
-  if (aula.video_url) {
-    videoBtn.style.display = '';
-    renderVideo(aula.video_url);
-  } else {
-    videoBtn.style.display = 'none';
-    document.getElementById('video-content').innerHTML = '';
-  }
-
-  // Vocab
-  const { data: vocab } = await sb.from('vocabulario').select('*').eq('aula_id', id).order('criado_em');
+  // Load content
+  const [{ data: vocab }, { data: frases }] = await Promise.all([
+    sb.from('vocabulario').select('*').eq('aula_id', id).order('criado_em'),
+    sb.from('frases').select('*').eq('aula_id', id).order('criado_em'),
+  ]);
   vocabAll = vocab || [];
+  frasesData = frases || [];
   fcCatFilter = '';
   buildFCCats();
   applyFCFilter();
-
-  // Frases
-  const { data: frases } = await sb.from('frases').select('*').eq('aula_id', id).order('criado_em');
-  frasesData = frases || [];
   renderFrases();
-
-  // Verbos
   renderVerbos();
-
-  // Quiz
   initQuiz();
-
-  // Reset tabs to flashcards
   switchTab('flashcards', document.querySelector('.tab-btn'));
+  updateQuizProgressBar();
+}
+
+function updateQuizProgressBar() {
+  if (!currentAula) return;
+  const prog = progressoMap[currentAula.id];
+  const best = prog?.melhor_pontuacao || 0;
+  const done = prog?.concluida || false;
+  document.getElementById('av-quiz-prog').style.width = (done ? 100 : best) + '%';
+  document.getElementById('av-quiz-prog').style.background = done ? 'var(--green)' : 'var(--coral)';
+  document.getElementById('av-quiz-prog-label').textContent =
+    done ? `✓ Aula concluída · Melhor nota: ${best}%` :
+    best > 0 ? `Melhor nota: ${best}% · Meta: ${MIN_SCORE}%` :
+    `Complete o quiz com ${MIN_SCORE}% ou mais para concluir esta aula`;
 }
 
 // ============================================================
 // SPEECH
 // ============================================================
-function speak(text, lang = 'es', rate = 1) {
+function speak(text, lang='es', rate=1) {
   if (!window.speechSynthesis) return;
   window.speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(text);
@@ -470,7 +897,7 @@ function speak(text, lang = 'es', rate = 1) {
 // TABS
 // ============================================================
 function switchTab(id, btn) {
-  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-pane').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('tab-' + id).classList.add('active');
   btn.classList.add('active');
@@ -483,87 +910,58 @@ function buildFCCats() {
   const cats = [...new Set(vocabAll.map(v => v.categoria))].filter(Boolean);
   const el = document.getElementById('fc-cats');
   if (cats.length <= 1) { el.innerHTML = ''; return; }
-  el.innerHTML = '<span style="font-size:12px; color:var(--ink3); margin-right:4px;">Filtrar:</span>' +
-    '<span class="badge badge-cat" style="cursor:pointer; background:var(--ink); color:#fff;" onclick="setFCCat(this,\'\')">Todas</span>' +
-    cats.map(c => `<span class="badge badge-cat" style="cursor:pointer;" onclick="setFCCat(this,'${c}')">${c}</span>`).join('');
+  el.innerHTML = '<span class="chip sel" onclick="setFCCat(this,\'\')">Todas</span>' +
+    cats.map(c => `<span class="chip" onclick="setFCCat(this,'${c}')">${c}</span>`).join('');
 }
-
 function setFCCat(el, cat) {
-  document.querySelectorAll('#fc-cats .badge').forEach(b => { b.style.background=''; b.style.color=''; });
-  el.style.background = 'var(--ink)'; el.style.color = '#fff';
-  fcCatFilter = cat; fcIdx = 0; applyFCFilter();
+  document.querySelectorAll('#fc-cats .chip').forEach(c => { c.classList.remove('sel'); });
+  el.classList.add('sel');
+  fcCatFilter = cat; applyFCFilter();
 }
-
 function applyFCFilter() {
   vocabFiltered = fcCatFilter ? vocabAll.filter(v => v.categoria === fcCatFilter) : vocabAll;
   fcIdx = 0; fcFlipped = false;
   document.getElementById('fc').classList.remove('flipped');
   renderFC();
 }
-
 function renderFC() {
   if (!vocabFiltered.length) {
     document.getElementById('fc-es').textContent = '—';
-    document.getElementById('fc-pt').textContent = 'Sem vocabulário nesta aula.';
+    document.getElementById('fc-pt').textContent = 'Sem vocabulário.';
     document.getElementById('fc-ex').textContent = '';
-    document.getElementById('fc-counter').textContent = '0 / 0';
-    // clear image
-    const fi = document.getElementById('fc-img');
-    if (fi) fi.style.display = 'none';
+    document.getElementById('fc-counter').textContent = '0/0';
     return;
   }
   const w = vocabFiltered[fcIdx];
   document.getElementById('fc-es').textContent = w.espanhol;
   document.getElementById('fc-pt').textContent = w.portugues;
   document.getElementById('fc-ex').textContent = w.exemplo || '';
-  document.getElementById('fc-counter').textContent = (fcIdx + 1) + ' / ' + vocabFiltered.length;
-  // image on front face
+  document.getElementById('fc-counter').textContent = (fcIdx+1)+'/'+vocabFiltered.length;
+  // image
   let fi = document.getElementById('fc-img');
   if (!fi) {
-    fi = document.createElement('img');
-    fi.id = 'fc-img';
-    fi.className = 'flash-img';
-    fi.alt = '';
-    fi.onerror = () => fi.style.display = 'none';
-    // insert before the label inside flash-front
-    const front = document.querySelector('.flash-front');
-    front.insertBefore(fi, front.firstChild);
+    fi = document.createElement('img'); fi.id='fc-img'; fi.className='fc-img'; fi.alt='';
+    fi.onerror = () => fi.style.display='none';
+    document.querySelector('.fc-front').insertBefore(fi, document.querySelector('.fc-front').firstChild);
   }
-  if (w.imagem_url) {
-    fi.src = w.imagem_url;
-    fi.style.display = '';
-  } else {
-    fi.style.display = 'none';
-  }
+  if (w.imagem_url) { fi.src=w.imagem_url; fi.style.display=''; } else { fi.style.display='none'; }
   fcFlipped = false;
   document.getElementById('fc').classList.remove('flipped');
 }
-
-function flipFC() {
-  fcFlipped = !fcFlipped;
-  document.getElementById('fc').classList.toggle('flipped', fcFlipped);
-}
-
-function nextFC() {
-  if (!vocabFiltered.length) return;
-  fcIdx = (fcIdx + 1) % vocabFiltered.length;
-  renderFC();
-}
-
-function prevFC() {
-  if (!vocabFiltered.length) return;
-  fcIdx = (fcIdx - 1 + vocabFiltered.length) % vocabFiltered.length;
-  renderFC();
-}
+function flipFC() { fcFlipped=!fcFlipped; document.getElementById('fc').classList.toggle('flipped',fcFlipped); }
+function nextFC() { if(!vocabFiltered.length)return; fcIdx=(fcIdx+1)%vocabFiltered.length; renderFC(); }
+function prevFC() { if(!vocabFiltered.length)return; fcIdx=(fcIdx-1+vocabFiltered.length)%vocabFiltered.length; renderFC(); }
 
 // ============================================================
 // QUIZ
 // ============================================================
-function shuffle(a) { return [...a].sort(() => Math.random() - 0.5); }
+function shuffle(a) { return [...a].sort(()=>Math.random()-0.5); }
 
 function initQuiz() {
   quizPool = shuffle(vocabAll).slice(0, Math.min(10, vocabAll.length));
-  quizIdx = 0; quizScore = 0; quizAnswered = false;
+  quizIdx=0; quizScore=0; quizAnswered=false; quizBestScore=0;
+  document.getElementById('quiz-next-btn').style.display='none';
+  document.getElementById('conclude-wrap').classList.remove('show');
   updateQuizStats();
   renderQuizQ();
 }
@@ -571,23 +969,27 @@ function initQuiz() {
 function renderQuizQ() {
   const area = document.getElementById('quiz-area');
   if (quizIdx >= quizPool.length || !quizPool.length) {
-    const pct = quizPool.length ? Math.round(quizScore / quizPool.length * 100) : 0;
+    const pct = quizPool.length ? Math.round(quizScore/quizPool.length*100) : 0;
+    quizBestScore = pct;
     area.innerHTML = `<div style="padding:2rem 0; text-align:center;">
-      <div class="result-big">${quizScore}/${quizPool.length || 0}</div>
-      <div class="result-msg">${pct >= 80 ? '🌟 Excelente!' : pct >= 60 ? '👍 Bom trabalho!' : '💪 Continue praticando!'}</div>
+      <div class="result-big">${quizScore}/${quizPool.length||0}</div>
+      <div class="result-msg">${pct>=80?'🌟 Excelente!':pct>=60?'👍 Bom trabalho!':'💪 Continue praticando!'}</div>
+      <div style="font-size:15px; color:var(--ink3); margin-top:8px; font-weight:500;">${pct}% de aproveitamento</div>
     </div>`;
-    document.getElementById('q-next-btn').style.display = 'none';
+    document.getElementById('quiz-next-btn').style.display='none';
+    saveProgress(pct);
     return;
   }
   const w = quizPool[quizIdx];
-  const distractors = shuffle(vocabAll.filter(x => x.id !== w.id)).slice(0, 3);
-  const opts = shuffle([w, ...distractors]);
-  document.getElementById('q-label').textContent = `pergunta ${quizIdx + 1} de ${quizPool.length}`;
-  area.innerHTML = `
-    <div style="font-size:12px; color:var(--ink3); margin-bottom:4px;">como se diz em espanhol?</div>
-    <div class="quiz-word">${w.portugues}</div>
-    <div class="opts">${opts.map(o =>
-      `<button class="opt" onclick="checkQ(this,'${o.espanhol}','${w.espanhol}')">${o.espanhol}</button>`
+  const distractors = shuffle(vocabAll.filter(x=>x.id!==w.id)).slice(0,3);
+  const opts = shuffle([w,...distractors]);
+  document.getElementById('quiz-area').innerHTML = `
+    <div style="font-size:13px; color:var(--ink3); margin-bottom:6px; font-weight:500;">Como se diz em espanhol?</div>
+    <div class="quiz-q-word">${w.portugues}</div>
+    <div class="quiz-opts">${opts.map(o =>
+      `<button class="quiz-opt" onclick="checkQ(this,'${o.espanhol.replace(/'/g,"\\'")}','${w.espanhol.replace(/'/g,"\\'")}')">
+        ${o.espanhol}
+      </button>`
     ).join('')}</div>
     <div id="quiz-fb"></div>`;
 }
@@ -595,35 +997,132 @@ function renderQuizQ() {
 function checkQ(btn, chosen, correct) {
   if (quizAnswered) return;
   quizAnswered = true;
-  document.querySelectorAll('.opt').forEach(b => {
+  document.querySelectorAll('.quiz-opt').forEach(b => {
     b.disabled = true;
-    if (b.textContent === correct) b.classList.add('correct');
+    if (b.textContent.trim() === correct) b.classList.add('correct');
   });
-  const fb = document.getElementById('quiz-fb');
   if (chosen === correct) {
     quizScore++;
-    fb.innerHTML = `<div class="fb ok">Correto! ✓</div>`;
+    document.getElementById('quiz-fb').innerHTML = `<div class="quiz-fb ok">Correto! ✓</div>`;
   } else {
     btn.classList.add('wrong');
-    fb.innerHTML = `<div class="fb fail">Errado — resposta: <strong>${correct}</strong></div>`;
+    document.getElementById('quiz-fb').innerHTML = `<div class="quiz-fb fail">Errado — resposta: <strong>${correct}</strong></div>`;
   }
   quizIdx++;
   updateQuizStats();
-  document.getElementById('q-next-btn').style.display = '';
-  document.getElementById('q-next-btn').textContent = quizIdx >= quizPool.length ? 'Ver resultado →' : 'Próxima →';
+  document.getElementById('quiz-next-btn').style.display = '';
+  document.getElementById('quiz-next-btn').textContent = quizIdx >= quizPool.length ? 'Ver resultado →' : 'Próxima →';
 }
 
 function nextQ() {
   quizAnswered = false;
-  document.getElementById('q-next-btn').style.display = 'none';
+  document.getElementById('quiz-next-btn').style.display = 'none';
   renderQuizQ();
 }
 
 function updateQuizStats() {
-  document.getElementById('qs-acertos').textContent = quizScore;
-  document.getElementById('qs-total').textContent = quizIdx;
-  document.getElementById('qs-pct').textContent = quizIdx > 0 ? Math.round(quizScore / quizIdx * 100) + '%' : '—';
-  document.getElementById('q-prog').style.width = quizPool.length ? (quizIdx / quizPool.length * 100) + '%' : '0%';
+  document.getElementById('qs-acc').textContent = quizScore;
+  document.getElementById('qs-tot').textContent = quizIdx;
+  document.getElementById('qs-pct').textContent = quizIdx>0 ? Math.round(quizScore/quizIdx*100)+'%' : '—';
+}
+
+async function saveProgress(pct) {
+  if (!currentAula) return;
+  const existing = progressoMap[currentAula.id];
+  const best = Math.max(pct, existing?.melhor_pontuacao || 0);
+  const tentativas = (existing?.tentativas || 0) + 1;
+  const payload = {
+    aluno_id: aluno.id, aula_id: currentAula.id,
+    melhor_pontuacao: best, tentativas,
+    concluida: existing?.concluida || false,
+  };
+  const { data } = existing
+    ? await sb.from('progresso').update(payload).eq('id', existing.id).select().single()
+    : await sb.from('progresso').insert(payload).select().single();
+  if (data) progressoMap[currentAula.id] = data;
+  updateSidebarProgress();
+  renderAulasNav();
+  updateQuizProgressBar();
+
+  // Show conclude button if score >= MIN_SCORE and not already concluded
+  if (pct >= MIN_SCORE && !existing?.concluida) {
+    document.getElementById('conclude-sub').textContent =
+      `Você tirou ${pct}% — atingiu os ${MIN_SCORE}% necessários! Clique para avançar.`;
+    document.getElementById('conclude-wrap').classList.add('show');
+  }
+}
+
+async function concluirAula() {
+  if (!currentAula) return;
+  const existing = progressoMap[currentAula.id];
+  if (!existing) return;
+  const { data } = await sb.from('progresso')
+    .update({ concluida: true, concluida_em: new Date().toISOString() })
+    .eq('id', existing.id).select().single();
+  if (data) progressoMap[currentAula.id] = data;
+  document.getElementById('conclude-wrap').classList.remove('show');
+  updateSidebarProgress();
+  renderAulasNav();
+  updateQuizProgressBar();
+
+  // Check and award badges
+  const newBadges = await checkBadges();
+  if (newBadges.length > 0) {
+    showBadgeModal(newBadges[0]);
+  } else {
+    toast('✓ Aula concluída! Próxima aula desbloqueada.', 'ok');
+  }
+  renderDashboard();
+}
+
+async function checkBadges() {
+  const earned = [];
+  const aNum = currentAula.numero;
+  const concluidas = aulasList.filter(a => progressoMap[a.id]?.concluida);
+  const total = concluidas.length;
+
+  const candidates = [];
+  // Per-aula badge
+  candidates.push('aula_' + aNum);
+  // Iniciante
+  if (aNum === 1) candidates.push('iniciante');
+  // Perfeito
+  if (quizBestScore === 100) candidates.push('perfeito');
+  // Dedicado
+  if (total >= 5) candidates.push('dedicado');
+  // Mestre
+  if (total === aulasList.length) candidates.push('mestre');
+  // Sequência de 3
+  if (aNum >= 3) {
+    const prev2 = aulasList.filter(a => a.numero >= aNum-2 && a.numero < aNum);
+    if (prev2.every(a => progressoMap[a.id]?.concluida)) candidates.push('sequencia');
+  }
+  // Veloz — concluiu 2 aulas hoje
+  const today = new Date().toISOString().slice(0,10);
+  const todayDone = concluidas.filter(a => progressoMap[a.id]?.concluida_em?.slice(0,10) === today);
+  if (todayDone.length >= 2) candidates.push('veloz');
+
+  for (const tipo of candidates) {
+    if (!badgesSet.has(tipo) && BADGE_DEFS[tipo]) {
+      const { error } = await sb.from('badges').insert({ aluno_id: aluno.id, tipo });
+      if (!error) { badgesSet.add(tipo); earned.push(tipo); }
+    }
+  }
+  return earned;
+}
+
+let badgeQueue = [];
+function showBadgeModal(tipo) {
+  const def = BADGE_DEFS[tipo];
+  if (!def) return;
+  document.getElementById('bm-emoji').textContent = def.emoji;
+  document.getElementById('bm-title').textContent = '¡Badge desbloqueado!';
+  document.getElementById('bm-sub').textContent = `Você conquistou o badge "${def.nome}" — ${def.desc}`;
+  document.getElementById('badge-modal').classList.add('show');
+}
+function closeBadgeModal() {
+  document.getElementById('badge-modal').classList.remove('show');
+  toast('✓ Aula concluída! Próxima aula desbloqueada.', 'ok');
 }
 
 // ============================================================
@@ -631,78 +1130,59 @@ function updateQuizStats() {
 // ============================================================
 function renderFrases() {
   const el = document.getElementById('frases-list');
-  if (!frasesData.length) { el.innerHTML = '<div class="empty">Nenhuma frase cadastrada nesta aula.</div>'; return; }
+  if (!frasesData.length) { el.innerHTML = '<div class="empty">Nenhuma frase nesta aula.</div>'; return; }
   el.innerHTML = frasesData.map(f => `
-    <div class="frase-card" style="display:flex; align-items:center; gap:12px;" onclick="this.classList.toggle('revealed')">
+    <div class="frase-card" onclick="this.classList.toggle('revealed')">
       ${f.imagem_url ? `<img class="frase-img" src="${f.imagem_url}" alt="" onerror="this.style.display='none'">` : ''}
       <div style="flex:1;">
-        <div class="frase-meta">${f.categoria}</div>
+        <div class="frase-cat">${f.categoria}</div>
         <div class="frase-es">${f.espanhol}</div>
         <div class="frase-pt">${f.portugues}</div>
       </div>
     </div>`).join('');
 }
-
-function revealAllFrases() { document.querySelectorAll('.frase-card').forEach(c => c.classList.add('revealed')); }
-function hideAllFrases() { document.querySelectorAll('.frase-card').forEach(c => c.classList.remove('revealed')); }
+function revealAllFrases() { document.querySelectorAll('.frase-card').forEach(c=>c.classList.add('revealed')); }
+function hideAllFrases() { document.querySelectorAll('.frase-card').forEach(c=>c.classList.remove('revealed')); }
 function speakFrases() {
-  let i = 0;
-  function next() { if (i >= frasesData.length) return; speak(frasesData[i].espanhol, 'es'); i++; setTimeout(next, 2800); }
-  next();
+  let i=0; function next() { if(i>=frasesData.length)return; speak(frasesData[i].espanhol,'es'); i++; setTimeout(next,2800); } next();
 }
 
 // ============================================================
-// VIDEO
+// VERBOS
 // ============================================================
-function toEmbedUrl(url) {
-  if (!url) return null;
-  const yt = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\s]+)/);
-  if (yt) return `https://www.youtube.com/embed/${yt[1]}?rel=0`;
-  const vm = url.match(/vimeo\.com\/(\d+)/);
-  if (vm) return `https://player.vimeo.com/video/${vm[1]}`;
-  return null;
-}
-
-function renderVideo(url) {
-  const embed = toEmbedUrl(url);
-  const el = document.getElementById('video-content');
-  if (!embed) {
-    el.innerHTML = '<div class="empty">URL de vídeo inválida.</div>';
-    return;
-  }
-  el.innerHTML = `
-    <div style="font-size:13px; color:var(--ink3); margin-bottom:10px;">Vídeo desta aula:</div>
-    <div class="video-wrap">
-      <iframe src="${embed}" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>
-    </div>`;
-}
-
-const VERB_MEANINGS = {
-  ser:'ser',estar:'estar (temporário)',tener:'ter',ir:'ir',hablar:'falar',
-  comer:'comer',vivir:'morar/viver',querer:'querer',poder:'poder',
-  hacer:'fazer',decir:'dizer',saber:'saber',llamarse:'chamar-se',
-  gustar:'gostar',trabajar:'trabalhar',estudiar:'estudar',escribir:'escrever',
-  leer:'ler',escuchar:'escutar',mirar:'olhar',comprar:'comprar',vender:'vender',
-};
-
 function renderVerbos() {
   const el = document.getElementById('verbos-content');
-  if (!currentAula?.verbos?.length) { el.innerHTML = '<div class="empty">Nenhum verbo definido para esta aula.</div>'; return; }
+  if (!currentAula?.verbos?.length) { el.innerHTML='<div class="empty">Nenhum verbo definido.</div>'; return; }
   el.innerHTML = `
-    <div style="font-size:13px; color:var(--ink3); margin-bottom:12px;">Verbos desta aula:</div>
-    <div class="v-grid">${currentAula.verbos.map(v => `
-      <div class="v-card">
-        <div style="display:flex; align-items:center; gap:8px;">
-          <div class="v-verb">${v}</div>
+    <div style="font-size:13px; color:var(--ink3); margin-bottom:12px; font-weight:500;">Verbos desta aula:</div>
+    <div class="verb-grid">${currentAula.verbos.map(v=>`
+      <div class="verb-card">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div class="verb-name">${v}</div>
           <button class="speak-btn" style="width:28px;height:28px;font-size:13px;" onclick="speak('${v}','es')">🔊</button>
         </div>
-        <div class="v-meaning">${VERB_MEANINGS[v.toLowerCase()] || '—'}</div>
+        <div class="verb-meaning">${VERB_MEANINGS[v.toLowerCase()]||'—'}</div>
       </div>`).join('')}
-    </div>
-    <div style="margin-top:1rem; padding:12px 16px; background:var(--surface); border:1px solid var(--border2); border-radius:var(--r-lg); font-size:13px; color:var(--ink2); line-height:1.7;">
-      💡 Para a conjugação completa dos verbos, consulte a aba <strong>Verbos</strong> no app principal.
     </div>`;
 }
+
+// ============================================================
+// TOAST / LOGOUT
+// ============================================================
+let toastTimer;
+function toast(msg, type='ok') {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.className='toast show '+type;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>el.classList.remove('show'), 3500);
+}
+function logout() {
+  localStorage.removeItem('ev_codigo');
+  localStorage.removeItem('ev_aluno');
+  window.location.href = 'login.html';
+}
+
+init();
 </script>
 </body>
 </html>
