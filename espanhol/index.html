@@ -204,7 +204,7 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--in
 }
 
 /* ---- AULA VIEW ---- */
-.aula-view { display: none; }
+.aula-view { }
 .aula-view-header { margin-bottom: 1.5rem; }
 .back-btn {
   display: inline-flex; align-items: center; gap: 6px;
@@ -512,7 +512,7 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--in
     </div>
 
     <!-- AULA VIEW -->
-    <div id="view-aula" class="aula-view">
+    <div id="view-aula" class="aula-view" style="display:none;">
       <div class="aula-view-header">
         <button class="back-btn" onclick="showDashboard()">← Voltar</button>
         <div class="aula-view-title-row">
@@ -732,7 +732,7 @@ function renderAulasNav() {
 // DASHBOARD
 // ============================================================
 function showDashboard() {
-  document.getElementById('view-dashboard').style.display = '';
+  document.getElementById('view-dashboard').style.display = 'block';
   document.getElementById('view-aula').style.display = 'none';
   renderDashboard();
 }
@@ -834,13 +834,15 @@ function renderAulasGrid() {
 // AULA VIEW
 // ============================================================
 async function loadAula(id) {
-  id = Number(id); // coerce — onclick passes strings, list has numbers
+  id = Number(id);
   const aula = aulasList.find(a => a.id === id);
   if (!aula || !isUnlocked(aula)) return;
   currentAula = aula;
 
+  // Show aula view, hide dashboard — use 'block' not '' to override CSS class
   document.getElementById('view-dashboard').style.display = 'none';
-  document.getElementById('view-aula').style.display = '';
+  const viewAula = document.getElementById('view-aula');
+  viewAula.style.display = 'block';
 
   // Header
   document.getElementById('av-title').textContent = `Aula ${aula.numero} — ${aula.titulo}`;
@@ -855,8 +857,9 @@ async function loadAula(id) {
     if (el.onclick?.toString().includes(`loadAula(${id})`)) el.classList.add('active');
   });
 
-  // Show loading in content area
-  document.getElementById('quiz-area').innerHTML = '<div class="loading"><div class="spinner"></div>Carregando conteúdo...</div>';
+  // Show loading spinner in quiz area while fetching
+  document.getElementById('quiz-area').innerHTML =
+    '<div class="loading"><div class="spinner"></div>Carregando conteúdo...</div>';
 
   try {
     const [vocabRes, frasesRes] = await Promise.all([
@@ -877,7 +880,11 @@ async function loadAula(id) {
   renderFrases();
   renderVerbos();
   initQuiz();
-  switchTab('flashcards', document.querySelector('.tab-btn'));
+
+  // switchTab: use querySelector scoped to the aula view to avoid grabbing wrong button
+  const firstTabBtn = viewAula.querySelector('.tab-btn');
+  if (firstTabBtn) switchTab('flashcards', firstTabBtn);
+
   updateQuizProgressBar();
 }
 
