@@ -717,7 +717,7 @@ function renderAulasNav() {
     const cls = done ? 'done' : '';
     const locked = !unlocked ? 'locked' : '';
     const icon = done ? '✓' : (!unlocked ? '🔒' : '→');
-    return `<div class="aula-nav-item ${cls} ${locked}" onclick="${unlocked ? `loadAula(${a.id})` : 'void(0)'}">
+    return `<div class="aula-nav-item ${cls} ${locked}" onclick="${unlocked ? `loadAula(${Number(a.id)})` : 'void(0)'}">
       <div class="aula-nav-num">${a.numero}</div>
       <div class="aula-nav-info">
         <div class="aula-nav-title">${a.titulo}</div>
@@ -811,7 +811,7 @@ function renderAulasGrid() {
     const score = progressoMap[a.id]?.melhor_pontuacao || 0;
     const pct = done ? 100 : score;
     return `<div class="aula-card ${done?'done':''} ${!unlocked?'locked':''}"
-      onclick="${unlocked ? `loadAula(${a.id})` : 'void(0)'}">
+      onclick="${unlocked ? `loadAula(${Number(a.id)})` : 'void(0)'}">
       <div class="aula-card-header">
         <div class="aula-card-num">${a.numero}</div>
         <div class="aula-card-status">${done ? '✅' : (!unlocked ? '🔒' : '📖')}</div>
@@ -834,6 +834,7 @@ function renderAulasGrid() {
 // AULA VIEW
 // ============================================================
 async function loadAula(id) {
+  id = Number(id); // coerce — onclick passes strings, list has numbers
   const aula = aulasList.find(a => a.id === id);
   if (!aula || !isUnlocked(aula)) return;
   currentAula = aula;
@@ -848,16 +849,28 @@ async function loadAula(id) {
   nv.className = 'nivel-pill pill-' + aula.nivel;
   document.getElementById('av-tema').textContent = aula.tema || '';
 
-  // Update sidebar active
+  // Sidebar active state
   document.querySelectorAll('.aula-nav-item').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.aula-nav-item').forEach(el => {
+    if (el.onclick?.toString().includes(`loadAula(${id})`)) el.classList.add('active');
+  });
 
-  // Load content
-  const [{ data: vocab }, { data: frases }] = await Promise.all([
-    sb.from('vocabulario').select('*').eq('aula_id', id).order('criado_em'),
-    sb.from('frases').select('*').eq('aula_id', id).order('criado_em'),
-  ]);
-  vocabAll = vocab || [];
-  frasesData = frases || [];
+  // Show loading in content area
+  document.getElementById('quiz-area').innerHTML = '<div class="loading"><div class="spinner"></div>Carregando conteúdo...</div>';
+
+  try {
+    const [vocabRes, frasesRes] = await Promise.all([
+      sb.from('vocabulario').select('*').eq('aula_id', id).order('criado_em'),
+      sb.from('frases').select('*').eq('aula_id', id).order('criado_em'),
+    ]);
+    vocabAll = vocabRes.data || [];
+    frasesData = frasesRes.data || [];
+  } catch(e) {
+    document.getElementById('quiz-area').innerHTML =
+      `<div style="color:var(--coral); padding:1rem;">Erro ao carregar conteúdo: ${e.message}</div>`;
+    return;
+  }
+
   fcCatFilter = '';
   buildFCCats();
   applyFCFilter();
@@ -968,26 +981,42 @@ function initQuiz() {
 
 function renderQuizQ() {
   const area = document.getElementById('quiz-area');
-  if (quizIdx >= quizPool.length || !quizPool.length) {
-    const pct = quizPool.length ? Math.round(quizScore/quizPool.length*100) : 0;
+
+  // No vocab at all
+  if (!quizPool.length) {
+    area.innerHTML = '<div class="empty">Esta aula ainda não tem vocabulário cadastrado.<br>Volte em breve!</div>';
+    document.getElementById('quiz-next-btn').style.display = 'none';
+    return;
+  }
+
+  if (quizIdx >= quizPool.length) {
+    const pct = Math.round(quizScore / quizPool.length * 100);
     quizBestScore = pct;
     area.innerHTML = `<div style="padding:2rem 0; text-align:center;">
-      <div class="result-big">${quizScore}/${quizPool.length||0}</div>
+      <div class="result-big">${quizScore}/${quizPool.length}</div>
       <div class="result-msg">${pct>=80?'🌟 Excelente!':pct>=60?'👍 Bom trabalho!':'💪 Continue praticando!'}</div>
       <div style="font-size:15px; color:var(--ink3); margin-top:8px; font-weight:500;">${pct}% de aproveitamento</div>
     </div>`;
-    document.getElementById('quiz-next-btn').style.display='none';
+    document.getElementById('quiz-next-btn').style.display = 'none';
     saveProgress(pct);
     return;
   }
+
   const w = quizPool[quizIdx];
-  const distractors = shuffle(vocabAll.filter(x=>x.id!==w.id)).slice(0,3);
-  const opts = shuffle([w,...distractors]);
-  document.getElementById('quiz-area').innerHTML = `
+  // Build distractor pool from all vocab except current word
+  const pool = shuffle(vocabAll.filter(x => x.id !== w.id));
+  // Pad with dummy options if not enough words
+  const distractors = pool.slice(0, 3);
+  while (distractors.length < 3) {
+    distractors.push({ espanhol: '—', portugues: '—', id: -distractors.length });
+  }
+  const opts = shuffle([w, ...distractors]);
+
+  area.innerHTML = `
     <div style="font-size:13px; color:var(--ink3); margin-bottom:6px; font-weight:500;">Como se diz em espanhol?</div>
     <div class="quiz-q-word">${w.portugues}</div>
     <div class="quiz-opts">${opts.map(o =>
-      `<button class="quiz-opt" onclick="checkQ(this,'${o.espanhol.replace(/'/g,"\\'")}','${w.espanhol.replace(/'/g,"\\'")}')">
+      `<button class="quiz-opt" onclick="checkQ(this,${JSON.stringify(o.espanhol)},${JSON.stringify(w.espanhol)})">
         ${o.espanhol}
       </button>`
     ).join('')}</div>
