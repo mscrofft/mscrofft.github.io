@@ -1072,21 +1072,35 @@ async function saveProgress(pct) {
   const existing = progressoMap[currentAula.id];
   const best = Math.max(pct, existing?.melhor_pontuacao || 0);
   const tentativas = (existing?.tentativas || 0) + 1;
-  const payload = {
-    aluno_id: aluno.id, aula_id: currentAula.id,
-    melhor_pontuacao: best, tentativas,
-    concluida: existing?.concluida || false,
-  };
-  const { data } = existing
-    ? await sb.from('progresso').update(payload).eq('id', existing.id).select().single()
-    : await sb.from('progresso').insert(payload).select().single();
-  if (data) progressoMap[currentAula.id] = data;
+  const jaConcluidaAntes = existing?.concluida || false;
+
+  // Use upsert so it works whether record exists or not
+  const { data, error } = await sb.from('progresso').upsert({
+    aluno_id: aluno.id,
+    aula_id: currentAula.id,
+    melhor_pontuacao: best,
+    tentativas,
+    concluida: jaConcluidaAntes,
+  }, { onConflict: 'aluno_id,aula_id' }).select().single();
+
+  if (error) {
+    console.error('saveProgress error:', error);
+    // Fallback: try insert then update
+    const ins = await sb.from('progresso').insert({
+      aluno_id: aluno.id, aula_id: currentAula.id,
+      melhor_pontuacao: best, tentativas, concluida: false,
+    }).select().single();
+    if (ins.data) progressoMap[currentAula.id] = ins.data;
+  } else if (data) {
+    progressoMap[currentAula.id] = data;
+  }
+
   updateSidebarProgress();
   renderAulasNav();
   updateQuizProgressBar();
 
   // Show conclude button if score >= MIN_SCORE and not already concluded
-  if (pct >= MIN_SCORE && !existing?.concluida) {
+  if (pct >= MIN_SCORE && !jaConcluidaAntes) {
     document.getElementById('conclude-sub').textContent =
       `Você tirou ${pct}% — atingiu os ${MIN_SCORE}% necessários! Clique para avançar.`;
     document.getElementById('conclude-wrap').classList.add('show');
@@ -1095,31 +1109,45 @@ async function saveProgress(pct) {
 
 async function concluirAula() {
   if (!currentAula) return;
-  const existing = progressoMap[currentAula.id];
-  if (!existing) return;
 
-  const { data } = await sb.from('progresso')
-    .update({ concluida: true, concluida_em: new Date().toISOString() })
-    .eq('id', existing.id).select().single();
-  if (data) progressoMap[currentAula.id] = data;
+  // Re-read from progressoMap (may have been updated by saveProgress)
+  const existing = progressoMap[currentAula.id];
+
+  let updated;
+  if (existing?.id) {
+    // Update existing record
+    const { data } = await sb.from('progresso')
+      .update({ concluida: true, concluida_em: new Date().toISOString() })
+      .eq('id', existing.id).select().single();
+    updated = data;
+  } else {
+    // No record yet — create it directly as concluded
+    const { data } = await sb.from('progresso').insert({
+      aluno_id: aluno.id, aula_id: currentAula.id,
+      concluida: true, concluida_em: new Date().toISOString(),
+      melhor_pontuacao: quizBestScore || MIN_SCORE, tentativas: 1,
+    }).select().single();
+    updated = data;
+  }
+
+  if (updated) progressoMap[currentAula.id] = updated;
 
   document.getElementById('conclude-wrap').classList.remove('show');
   updateSidebarProgress();
   renderAulasNav();
   updateQuizProgressBar();
 
-  // Find next unlocked aula
+  // Find next aula
   const nextAula = aulasList.find(a => a.numero === currentAula.numero + 1);
 
-  // Check and award badges
+  // Check badges
   const newBadges = await checkBadges();
   if (newBadges.length > 0) {
-    // After modal closes, go to next aula or dashboard
     window._afterBadge = nextAula ? () => loadAula(nextAula.id) : () => showDashboard();
     showBadgeModal(newBadges[0]);
   } else {
     if (nextAula) {
-      toast('✓ Aula concluída! A próxima aula foi desbloqueada.', 'ok');
+      toast('✓ Aula concluída! Próxima aula desbloqueada.', 'ok');
       await loadAula(nextAula.id);
     } else {
       toast('🏆 Parabéns! Você concluiu todas as aulas!', 'ok');

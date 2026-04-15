@@ -183,6 +183,42 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.6; }
 .status-dot.on { background: var(--green); }
 .status-dot.off { background: var(--red); }
 
+/* Drag and drop */
+.aula-item { cursor: grab; }
+.aula-item.dragging { opacity: 0.4; cursor: grabbing; }
+.aula-item.drag-over { border-color: var(--accent); background: var(--accent-dim); }
+.drag-handle { color: var(--ink3); cursor: grab; padding: 0 6px; font-size: 14px; flex-shrink: 0; }
+.reorder-hint { font-size: 12px; color: var(--ink3); margin-bottom: 8px; }
+
+/* Professor login */
+.login-overlay {
+  position: fixed; inset: 0; background: var(--bg);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 9999; flex-direction: column; gap: 1rem;
+}
+.login-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r-lg); padding: 2rem; width: 100%; max-width: 380px;
+}
+.login-logo { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 800; color: var(--ink); margin-bottom: 4px; }
+.login-sub { font-size: 12px; color: var(--accent); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 1.5rem; }
+
+/* Progresso — desbloqueio manual */
+.aula-prog-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.unlock-btn {
+  padding: 3px 10px; font-size: 11px; border-radius: 99px;
+  border: 1px solid rgba(61,190,122,0.3); background: var(--green-dim);
+  color: var(--green); cursor: pointer; font-family: 'DM Sans', sans-serif;
+  font-weight: 500; transition: all 0.15s;
+}
+.unlock-btn:hover { background: rgba(61,190,122,0.2); }
+.lock-btn {
+  padding: 3px 10px; font-size: 11px; border-radius: 99px;
+  border: 1px solid rgba(232,84,84,0.3); background: var(--red-dim);
+  color: var(--red); cursor: pointer; font-family: 'DM Sans', sans-serif;
+  font-weight: 500; transition: all 0.15s;
+}
+
 /* Frases list */
 .frase-row {
   display: flex; align-items: flex-start; gap: 10px;
@@ -202,7 +238,25 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.6; }
 </style>
 </head>
 <body>
-<div class="shell">
+<!-- PROFESSOR LOGIN OVERLAY -->
+<div class="login-overlay" id="login-overlay">
+  <div class="login-card">
+    <div class="login-logo">Español Vivo</div>
+    <div class="login-sub">Acesso da professora</div>
+    <div class="field">
+      <label class="field-label">Senha</label>
+      <input class="inp" type="password" id="prof-senha" placeholder="••••••••"
+        onkeydown="if(event.key==='Enter')loginProf()">
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-accent" onclick="loginProf()" style="width:100%;">Entrar</button>
+    </div>
+    <div id="login-err" style="font-size:13px;color:var(--red);margin-top:10px;display:none;">Senha incorreta.</div>
+  </div>
+  <div style="font-size:12px;color:var(--ink3);">Español Vivo · Painel Administrativo</div>
+</div>
+
+<div class="shell" id="app-shell" style="display:none;">
 
   <!-- SIDEBAR -->
   <aside class="aside">
@@ -219,6 +273,9 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.6; }
     <div class="aside-link" onclick="goTo('progresso',this)"><span class="aside-icon">📊</span> Progresso</div>
     <div class="aside-section">Sistema</div>
     <div class="aside-link" onclick="goTo('config',this)"><span class="aside-icon">⚙️</span> Configuração</div>
+    <div style="padding:1rem 1.5rem;margin-top:auto;border-top:1px solid var(--border);">
+      <button onclick="logoutProf()" style="background:none;border:none;color:var(--ink3);font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;">← Sair</button>
+    </div>
   </aside>
 
   <main class="main">
@@ -550,6 +607,24 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.6; }
       </div>
 
       <div class="card" style="margin-top:12px;">
+        <div class="card-header"><span class="card-title">Senha de acesso ao painel</span></div>
+        <div style="font-size:13px; color:var(--ink2); margin-bottom:10px; line-height:1.6;">
+          Senha padrão: <code>espanol2024</code> — altere após o primeiro acesso.
+        </div>
+        <div class="field">
+          <label class="field-label">Nova senha</label>
+          <input class="inp" type="password" id="cfg-nova-senha" placeholder="mínimo 6 caracteres">
+        </div>
+        <div class="field">
+          <label class="field-label">Confirmar nova senha</label>
+          <input class="inp" type="password" id="cfg-conf-senha" placeholder="repita a senha">
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-accent" onclick="salvarSenha()">Alterar senha</button>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:12px;">
         <div class="card-header"><span class="card-title">Email — Resend API</span></div>
         <div style="font-size:13px; color:var(--ink2); margin-bottom:10px; line-height:1.6;">
           Usado para enviar o código de acesso aos alunos. Obtenha sua chave em <strong>resend.com</strong>.
@@ -803,8 +878,17 @@ async function loadAulas() {
 function renderAulasList() {
   const el = document.getElementById('aulas-list');
   if (!aulasList.length) { el.innerHTML = '<div class="empty">Nenhuma aula criada ainda.<br>Clique em "+ Nova aula".</div>'; return; }
-  el.innerHTML = aulasList.map(a => `
-    <div class="aula-item" onclick="editarAula(${a.id})" id="aula-item-${a.id}">
+  el.innerHTML = '<div class="reorder-hint">☰ Arraste para reordenar as aulas</div>' +
+    aulasList.map(a => `
+    <div class="aula-item" id="aula-item-${a.id}"
+      draggable="true"
+      ondragstart="dragStart(event,${a.id})"
+      ondragover="dragOver(event)"
+      ondragleave="dragLeave(event)"
+      ondrop="dragDrop(event,${a.id})"
+      ondragend="dragEnd(event)"
+      onclick="editarAula(${a.id})">
+      <div class="drag-handle">☰</div>
       <div class="aula-num">${a.numero}</div>
       <div class="aula-info">
         <div class="aula-titulo">${a.titulo}</div>
@@ -1263,29 +1347,179 @@ async function loadProgresso() {
           const p = alunoProgresso.find(x => x.aula_id === aula.id);
           const done = p?.concluida;
           const score = p?.melhor_pontuacao || 0;
-          return `<div style="padding:5px 10px; border-radius:8px; font-size:12px; font-weight:600;
+          const progId = p?.id;
+          return `<div class="aula-prog-row" style="padding:5px 10px; border-radius:8px;
             background:${done?'var(--green-dim)':score>0?'var(--gold-dim)':'var(--surface2)'};
-            color:${done?'var(--green)':score>0?'var(--gold)':'var(--ink3)'};"
-            title="${aula.titulo}">
-            Aula ${aula.numero} ${done ? '✓' : score > 0 ? score+'%' : '—'}
+            border:1px solid ${done?'rgba(61,190,122,0.2)':'transparent'};">
+            <span style="font-size:12px; font-weight:600;
+              color:${done?'var(--green)':score>0?'var(--gold)':'var(--ink3)'};"
+              title="${aula.titulo}">
+              Aula ${aula.numero} ${done ? '✓' : score > 0 ? score+'%' : '—'}
+            </span>
+            ${done
+              ? `<button class="lock-btn" onclick="toggleConcluida(${aluno.id},${aula.id},${progId||'null'},false,'${aluno.nome}','${aula.numero}')" title="Revogar conclusão">🔒</button>`
+              : `<button class="unlock-btn" onclick="toggleConcluida(${aluno.id},${aula.id},${progId||'null'},true,'${aluno.nome}','${aula.numero}')" title="Desbloquear manualmente">🔓</button>`
+            }
           </div>`;
         }).join('')}
       </div>
-      ${alunoBadges.length ? `<div style="margin-top:10px; font-size:13px; color:var(--ink3);">Badges: ${alunoBadges.map(b=>b.tipo).join(', ')}</div>` : ''}
+      ${alunoBadges.length ? `<div style="margin-top:10px; font-size:12px; color:var(--ink3);">Badges: ${alunoBadges.map(b=>b.tipo).join(', ')}</div>` : ''}
     </div>`;
   }).join('');
 }
 
 // ============================================================
+// DRAG AND DROP — reorder aulas
+// ============================================================
+let dragSrcId = null;
+
+function dragStart(e, id) {
+  dragSrcId = id;
+  e.dataTransfer.effectAllowed = 'move';
+  setTimeout(() => document.getElementById('aula-item-' + id)?.classList.add('dragging'), 0);
+}
+function dragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  e.currentTarget.classList.add('drag-over');
+}
+function dragLeave(e) { e.currentTarget.classList.remove('drag-over'); }
+function dragEnd(e) {
+  e.currentTarget.classList.remove('dragging');
+  document.querySelectorAll('.aula-item').forEach(el => el.classList.remove('drag-over'));
+}
+
+async function dragDrop(e, targetId) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over');
+  if (dragSrcId === targetId) return;
+
+  const srcIdx = aulasList.findIndex(a => a.id === dragSrcId);
+  const tgtIdx = aulasList.findIndex(a => a.id === targetId);
+  if (srcIdx === -1 || tgtIdx === -1) return;
+
+  // Reorder in memory
+  const reordered = [...aulasList];
+  const [moved] = reordered.splice(srcIdx, 1);
+  reordered.splice(tgtIdx, 0, moved);
+
+  // Reassign numero sequentially
+  const updates = reordered.map((a, i) => ({ id: a.id, numero: i + 1 }));
+
+  // Optimistic UI update
+  aulasList = reordered.map((a, i) => ({ ...a, numero: i + 1 }));
+  renderAulasList();
+
+  // Persist to Supabase — batch updates
+  toast('Reordenando...', 'ok');
+  let errors = 0;
+  for (const u of updates) {
+    const { error } = await sb.from('aulas').update({ numero: u.numero }).eq('id', u.id);
+    if (error) errors++;
+  }
+  if (errors) {
+    toast('Erro ao salvar ordem. Recarregando...', 'err');
+    loadAulas();
+  } else {
+    toast('Ordem salva! ✓', 'ok');
+    populateAulaSelects();
+  }
+}
+
+// ============================================================
+// MANUAL UNLOCK — toggle aula concluida for a student
+// ============================================================
+async function toggleConcluida(alunoId, aulaId, progId, concluida, nomeAluno, aulaNumero) {
+  if (!sb) return;
+  const acao = concluida ? 'desbloquear' : 'bloquear';
+  if (!confirm(`${acao === 'desbloquear' ? 'Desbloquear' : 'Revogar'} Aula ${aulaNumero} para ${nomeAluno}?`)) return;
+
+  if (progId && progId !== 'null') {
+    // Update existing
+    const { error } = await sb.from('progresso').update({
+      concluida,
+      concluida_em: concluida ? new Date().toISOString() : null,
+    }).eq('id', progId);
+    if (error) { toast('Erro: ' + error.message, 'err'); return; }
+  } else {
+    // Insert new record
+    const { error } = await sb.from('progresso').insert({
+      aluno_id: alunoId, aula_id: aulaId,
+      concluida, melhor_pontuacao: concluida ? 100 : 0,
+      tentativas: 0,
+      concluida_em: concluida ? new Date().toISOString() : null,
+    });
+    if (error) { toast('Erro: ' + error.message, 'err'); return; }
+  }
+  toast(`Aula ${aulaNumero} ${concluida ? 'desbloqueada' : 'bloqueada'} para ${nomeAluno}. ✓`, 'ok');
+  loadProgresso();
+}
+
+// ============================================================
+// PROFESSOR LOGIN
+// ============================================================
+const PROF_KEY = 'prof_session';
+
+function checkProfLogin() {
+  const session = sessionStorage.getItem(PROF_KEY);
+  if (session === 'ok') {
+    document.getElementById('login-overlay').style.display = 'none';
+    document.getElementById('app-shell').style.display = '';
+    return true;
+  }
+  document.getElementById('login-overlay').style.display = '';
+  document.getElementById('app-shell').style.display = 'none';
+  return false;
+}
+
+function loginProf() {
+  const senha = document.getElementById('prof-senha').value;
+  const saved = localStorage.getItem('prof_senha') || 'espanol2024';
+  if (senha === saved) {
+    sessionStorage.setItem(PROF_KEY, 'ok');
+    document.getElementById('login-overlay').style.display = 'none';
+    document.getElementById('app-shell').style.display = '';
+    document.getElementById('login-err').style.display = 'none';
+    const connected = loadConfig();
+    if (connected) loadAulas();
+  } else {
+    document.getElementById('login-err').style.display = '';
+    document.getElementById('prof-senha').value = '';
+    document.getElementById('prof-senha').focus();
+  }
+}
+
+function salvarSenha() {
+  const nova = document.getElementById('cfg-nova-senha').value;
+  const conf = document.getElementById('cfg-conf-senha').value;
+  if (!nova || nova.length < 6) { toast('A senha deve ter pelo menos 6 caracteres.', 'err'); return; }
+  if (nova !== conf) { toast('As senhas não coincidem.', 'err'); return; }
+  localStorage.setItem('prof_senha', nova);
+  document.getElementById('cfg-nova-senha').value = '';
+  document.getElementById('cfg-conf-senha').value = '';
+  toast('Senha alterada com sucesso! ✓', 'ok');
+}
+
+function logoutProf() {
+  sessionStorage.removeItem(PROF_KEY);
+  checkProfLogin();
+}
+
+// ============================================================
 // INIT
 // ============================================================
-const connected = loadConfig();
-if (connected) loadAulas();
-// Pre-seed Resend key if not set
-if (!localStorage.getItem('resend_key')) {
-  localStorage.setItem('resend_key', 're_CDoToUah_EmWMmuAUCuvcexLu8p9mr4KG');
-  const el = document.getElementById('cfg-resend');
-  if (el) el.value = 're_CDoToUah_EmWMmuAUCuvcexLu8p9mr4KG';
+// Check login first — if not logged in, show overlay and stop
+if (!checkProfLogin()) {
+  // Wait for login — loadConfig and loadAulas called inside loginProf()
+} else {
+  const connected = loadConfig();
+  if (connected) loadAulas();
+  // Pre-seed Resend key if not set
+  if (!localStorage.getItem('resend_key')) {
+    localStorage.setItem('resend_key', 're_CDoToUah_EmWMmuAUCuvcexLu8p9mr4KG');
+    const el = document.getElementById('cfg-resend');
+    if (el) el.value = 're_CDoToUah_EmWMmuAUCuvcexLu8p9mr4KG';
+  }
 }
 </script>
 </body>
