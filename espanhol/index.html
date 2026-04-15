@@ -1010,33 +1010,38 @@ function renderQuizQ() {
   }
 
   const w = quizPool[quizIdx];
-  // Build distractor pool from all vocab except current word
   const pool = shuffle(vocabAll.filter(x => x.id !== w.id));
-  // Pad with dummy options if not enough words
   const distractors = pool.slice(0, 3);
   while (distractors.length < 3) {
     distractors.push({ espanhol: '—', portugues: '—', id: -distractors.length });
   }
   const opts = shuffle([w, ...distractors]);
 
+  // Store opts on window so checkQ can access them without inline string passing
+  window._quizOpts = opts;
+  window._quizCorrect = w.espanhol;
+
   area.innerHTML = `
     <div style="font-size:13px; color:var(--ink3); margin-bottom:6px; font-weight:500;">Como se diz em espanhol?</div>
     <div class="quiz-q-word">${w.portugues}</div>
-    <div class="quiz-opts">${opts.map(o =>
-      `<button class="quiz-opt" onclick="checkQ(this,${JSON.stringify(o.espanhol)},${JSON.stringify(w.espanhol)})">
-        ${o.espanhol}
-      </button>`
+    <div class="quiz-opts">${opts.map((o, i) =>
+      `<button class="quiz-opt" onclick="checkQ(this,${i})">${o.espanhol}</button>`
     ).join('')}</div>
     <div id="quiz-fb"></div>`;
 }
 
-function checkQ(btn, chosen, correct) {
+function checkQ(btn, optIndex) {
   if (quizAnswered) return;
   quizAnswered = true;
-  document.querySelectorAll('.quiz-opt').forEach(b => {
+
+  const chosen = window._quizOpts[optIndex].espanhol;
+  const correct = window._quizCorrect;
+
+  document.querySelectorAll('.quiz-opt').forEach((b, i) => {
     b.disabled = true;
-    if (b.textContent.trim() === correct) b.classList.add('correct');
+    if (window._quizOpts[i]?.espanhol === correct) b.classList.add('correct');
   });
+
   if (chosen === correct) {
     quizScore++;
     document.getElementById('quiz-fb').innerHTML = `<div class="quiz-fb ok">Correto! ✓</div>`;
