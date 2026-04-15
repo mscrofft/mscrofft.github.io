@@ -1097,23 +1097,35 @@ async function concluirAula() {
   if (!currentAula) return;
   const existing = progressoMap[currentAula.id];
   if (!existing) return;
+
   const { data } = await sb.from('progresso')
     .update({ concluida: true, concluida_em: new Date().toISOString() })
     .eq('id', existing.id).select().single();
   if (data) progressoMap[currentAula.id] = data;
+
   document.getElementById('conclude-wrap').classList.remove('show');
   updateSidebarProgress();
   renderAulasNav();
   updateQuizProgressBar();
 
+  // Find next unlocked aula
+  const nextAula = aulasList.find(a => a.numero === currentAula.numero + 1);
+
   // Check and award badges
   const newBadges = await checkBadges();
   if (newBadges.length > 0) {
+    // After modal closes, go to next aula or dashboard
+    window._afterBadge = nextAula ? () => loadAula(nextAula.id) : () => showDashboard();
     showBadgeModal(newBadges[0]);
   } else {
-    toast('✓ Aula concluída! Próxima aula desbloqueada.', 'ok');
+    if (nextAula) {
+      toast('✓ Aula concluída! A próxima aula foi desbloqueada.', 'ok');
+      await loadAula(nextAula.id);
+    } else {
+      toast('🏆 Parabéns! Você concluiu todas as aulas!', 'ok');
+      showDashboard();
+    }
   }
-  renderDashboard();
 }
 
 async function checkBadges() {
@@ -1163,7 +1175,13 @@ function showBadgeModal(tipo) {
 }
 function closeBadgeModal() {
   document.getElementById('badge-modal').classList.remove('show');
-  toast('✓ Aula concluída! Próxima aula desbloqueada.', 'ok');
+  if (typeof window._afterBadge === 'function') {
+    const fn = window._afterBadge;
+    window._afterBadge = null;
+    fn();
+  } else {
+    toast('✓ Aula concluída! Próxima aula desbloqueada.', 'ok');
+  }
 }
 
 // ============================================================
