@@ -689,7 +689,8 @@ async function loadAll() {
   ]);
   aulasList = aulas || [];
   progressoMap = {};
-  (prog || []).forEach(p => { progressoMap[p.aula_id] = p; });
+  // Normalize keys to String to avoid number/string mismatch
+  (prog || []).forEach(p => { progressoMap[String(p.aula_id)] = p; });
   badgesSet = new Set((bdgs || []).map(b => b.tipo));
   updateSidebarProgress();
   renderAulasNav();
@@ -697,7 +698,7 @@ async function loadAll() {
 
 function updateSidebarProgress() {
   const total = aulasList.length;
-  const done = aulasList.filter(a => progressoMap[a.id]?.concluida).length;
+  const done = aulasList.filter(a => progressoMap[String(a.id)]?.concluida).length;
   const pct = total ? Math.round(done/total*100) : 0;
   document.getElementById('sb-prog').style.width = pct + '%';
   document.getElementById('sb-prog-label').textContent = pct + '% concluído';
@@ -707,13 +708,13 @@ function updateSidebarProgress() {
 function isUnlocked(aula) {
   if (aula.numero === 1) return true;
   const prev = aulasList.find(a => a.numero === aula.numero - 1);
-  return prev && progressoMap[prev.id]?.concluida;
+  return prev && progressoMap[String(prev.id)]?.concluida;
 }
 
 function renderAulasNav() {
   document.getElementById('aulas-nav').innerHTML = aulasList.map(a => {
     const unlocked = isUnlocked(a);
-    const done = progressoMap[a.id]?.concluida;
+    const done = progressoMap[String(a.id)]?.concluida;
     const cls = done ? 'done' : '';
     const locked = !unlocked ? 'locked' : '';
     const icon = done ? '✓' : (!unlocked ? '🔒' : '→');
@@ -748,11 +749,11 @@ function renderDashboard() {
   document.getElementById('dash-greeting').textContent = `¡Hola, ${firstName}!`;
 
   const total = aulasList.length;
-  const done = aulasList.filter(a => progressoMap[a.id]?.concluida).length;
+  const done = aulasList.filter(a => progressoMap[String(a.id)]?.concluida).length;
   const pct = total ? Math.round(done/total*100) : 0;
 
   // Hero card
-  const nextAula = aulasList.find(a => !progressoMap[a.id]?.concluida && isUnlocked(a));
+  const nextAula = aulasList.find(a => !progressoMap[String(a.id)]?.concluida && isUnlocked(a));
   if (nextAula) {
     document.getElementById('dash-next-title').textContent = `Próxima: Aula ${nextAula.numero} — ${nextAula.titulo}`;
     document.getElementById('dash-next-sub').textContent = nextAula.tema || '';
@@ -807,8 +808,8 @@ function renderAulasGrid() {
   const el = document.getElementById('aulas-grid');
   el.innerHTML = aulasList.map(a => {
     const unlocked = isUnlocked(a);
-    const done = progressoMap[a.id]?.concluida;
-    const score = progressoMap[a.id]?.melhor_pontuacao || 0;
+    const done = progressoMap[String(a.id)]?.concluida;
+    const score = progressoMap[String(a.id)]?.melhor_pontuacao || 0;
     const pct = done ? 100 : score;
     return `<div class="aula-card ${done?'done':''} ${!unlocked?'locked':''}"
       onclick="${unlocked ? `loadAula(${Number(a.id)})` : 'void(0)'}">
@@ -890,7 +891,7 @@ async function loadAula(id) {
 
 function updateQuizProgressBar() {
   if (!currentAula) return;
-  const prog = progressoMap[currentAula.id];
+  const prog = progressoMap[String(currentAula.id)];
   const best = prog?.melhor_pontuacao || 0;
   const done = prog?.concluida || false;
   document.getElementById('av-quiz-prog').style.width = (done ? 100 : best) + '%';
@@ -1069,37 +1070,38 @@ function updateQuizStats() {
 
 async function saveProgress(pct) {
   if (!currentAula) return;
-  const existing = progressoMap[currentAula.id];
+  const existing = progressoMap[String(currentAula.id)];
   const best = Math.max(pct, existing?.melhor_pontuacao || 0);
   const tentativas = (existing?.tentativas || 0) + 1;
   const jaConcluidaAntes = existing?.concluida || false;
 
-  // Use upsert so it works whether record exists or not
-  const { data, error } = await sb.from('progresso').upsert({
-    aluno_id: aluno.id,
-    aula_id: currentAula.id,
-    melhor_pontuacao: best,
-    tentativas,
-    concluida: jaConcluidaAntes,
-  }, { onConflict: 'aluno_id,aula_id' }).select().single();
-
-  if (error) {
-    console.error('saveProgress error:', error);
-    // Fallback: try insert then update
-    const ins = await sb.from('progresso').insert({
+  let saved = null;
+  if (existing?.id) {
+    // Record exists — update it
+    const { data, error } = await sb.from('progresso')
+      .update({ melhor_pontuacao: best, tentativas, concluida: jaConcluidaAntes })
+      .eq('id', existing.id).select().single();
+    if (error) console.error('saveProgress update error:', error);
+    else saved = data;
+  } else {
+    // No record yet — insert
+    const { data, error } = await sb.from('progresso').insert({
       aluno_id: aluno.id, aula_id: currentAula.id,
       melhor_pontuacao: best, tentativas, concluida: false,
     }).select().single();
-    if (ins.data) progressoMap[currentAula.id] = ins.data;
-  } else if (data) {
-    progressoMap[currentAula.id] = data;
+    if (error) console.error('saveProgress insert error:', error);
+    else saved = data;
+  }
+
+  if (saved) {
+    progressoMap[String(currentAula.id)] = saved;
+    console.log('saveProgress OK:', String(currentAula.id), saved);
   }
 
   updateSidebarProgress();
   renderAulasNav();
   updateQuizProgressBar();
 
-  // Show conclude button if score >= MIN_SCORE and not already concluded
   if (pct >= MIN_SCORE && !jaConcluidaAntes) {
     document.getElementById('conclude-sub').textContent =
       `Você tirou ${pct}% — atingiu os ${MIN_SCORE}% necessários! Clique para avançar.`;
@@ -1110,27 +1112,28 @@ async function saveProgress(pct) {
 async function concluirAula() {
   if (!currentAula) return;
 
-  // Re-read from progressoMap (may have been updated by saveProgress)
-  const existing = progressoMap[currentAula.id];
+  const existing = progressoMap[String(currentAula.id)];
+  console.log('concluirAula — existing:', existing, 'currentAula.id:', currentAula.id);
 
   let updated;
   if (existing?.id) {
-    // Update existing record
-    const { data } = await sb.from('progresso')
+    const { data, error } = await sb.from('progresso')
       .update({ concluida: true, concluida_em: new Date().toISOString() })
       .eq('id', existing.id).select().single();
+    if (error) console.error('concluirAula update error:', error);
     updated = data;
   } else {
-    // No record yet — create it directly as concluded
-    const { data } = await sb.from('progresso').insert({
+    const { data, error } = await sb.from('progresso').insert({
       aluno_id: aluno.id, aula_id: currentAula.id,
       concluida: true, concluida_em: new Date().toISOString(),
       melhor_pontuacao: quizBestScore || MIN_SCORE, tentativas: 1,
     }).select().single();
+    if (error) console.error('concluirAula insert error:', error);
     updated = data;
   }
 
-  if (updated) progressoMap[currentAula.id] = updated;
+  console.log('concluirAula — updated:', updated);
+  if (updated) progressoMap[String(currentAula.id)] = updated;
 
   document.getElementById('conclude-wrap').classList.remove('show');
   updateSidebarProgress();
@@ -1159,7 +1162,7 @@ async function concluirAula() {
 async function checkBadges() {
   const earned = [];
   const aNum = currentAula.numero;
-  const concluidas = aulasList.filter(a => progressoMap[a.id]?.concluida);
+  const concluidas = aulasList.filter(a => progressoMap[String(a.id)]?.concluida);
   const total = concluidas.length;
 
   const candidates = [];
@@ -1176,11 +1179,11 @@ async function checkBadges() {
   // Sequência de 3
   if (aNum >= 3) {
     const prev2 = aulasList.filter(a => a.numero >= aNum-2 && a.numero < aNum);
-    if (prev2.every(a => progressoMap[a.id]?.concluida)) candidates.push('sequencia');
+    if (prev2.every(a => progressoMap[String(a.id)]?.concluida)) candidates.push('sequencia');
   }
   // Veloz — concluiu 2 aulas hoje
   const today = new Date().toISOString().slice(0,10);
-  const todayDone = concluidas.filter(a => progressoMap[a.id]?.concluida_em?.slice(0,10) === today);
+  const todayDone = concluidas.filter(a => progressoMap[String(a.id)]?.concluida_em?.slice(0,10) === today);
   if (todayDone.length >= 2) candidates.push('veloz');
 
   for (const tipo of candidates) {
