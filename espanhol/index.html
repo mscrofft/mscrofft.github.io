@@ -793,9 +793,16 @@ async function init() {
   // Update local storage with fresh data (correct ID)
   aluno = fresh;
   localStorage.setItem('ev_aluno', JSON.stringify(fresh));
+  console.log('init: aluno loaded', aluno.id, aluno.nome);
 
   setupSidebar();
+
+  // Show loading state in dashboard while fetching
+  document.getElementById('dash-next-title').textContent = 'Carregando suas aulas...';
+  document.getElementById('dash-next-sub').textContent = '';
+
   await loadAll();
+  console.log('init: loadAll done, aulasList.length =', aulasList.length);
   showDashboard();
 }
 
@@ -806,18 +813,40 @@ function setupSidebar() {
 }
 
 async function loadAll() {
-  const [{ data: aulas }, { data: prog }, { data: bdgs }] = await Promise.all([
-    sb.from('aulas').select('*').order('numero'),
-    sb.from('progresso').select('*').eq('aluno_id', aluno.id),
-    sb.from('badges').select('*').eq('aluno_id', aluno.id),
-  ]);
-  aulasList = aulas || [];
-  progressoMap = {};
-  // Normalize keys to String to avoid number/string mismatch
-  (prog || []).forEach(p => { progressoMap[String(p.aula_id)] = p; });
-  badgesSet = new Set((bdgs || []).map(b => b.tipo));
-  updateSidebarProgress();
-  renderAulasNav();
+  try {
+    const [aulasRes, progRes, bdgsRes] = await Promise.all([
+      sb.from('aulas').select('*').order('numero'),
+      sb.from('progresso').select('*').eq('aluno_id', aluno.id),
+      sb.from('badges').select('*').eq('aluno_id', aluno.id),
+    ]);
+
+    if (aulasRes.error) throw new Error('Aulas: ' + aulasRes.error.message);
+
+    aulasList = aulasRes.data || [];
+    progressoMap = {};
+    (progRes.data || []).forEach(p => { progressoMap[String(p.aula_id)] = p; });
+    badgesSet = new Set((bdgsRes.data || []).map(b => b.tipo));
+
+    updateSidebarProgress();
+    renderAulasNav();
+  } catch(e) {
+    console.error('loadAll error:', e);
+    // Show visible error on dashboard
+    document.getElementById('dash-next-title').textContent = 'Erro ao carregar aulas';
+    document.getElementById('dash-next-sub').textContent = e.message + ' — tente recarregar a página.';
+    document.getElementById('dash-prog-pct').textContent = '';
+    document.getElementById('aulas-nav').innerHTML =
+      `<div style="padding:1rem 1.5rem; font-size:12px; color:rgba(255,255,255,0.4); line-height:1.6;">
+        Erro de conexão.<br>Recarregue a página.
+      </div>`;
+    document.getElementById('aulas-grid').innerHTML =
+      `<div style="grid-column:1/-1; padding:2rem; text-align:center; background:var(--white); border-radius:var(--r-lg);">
+        <div style="font-size:32px; margin-bottom:8px;">⚠️</div>
+        <div style="font-weight:700; color:var(--ink); margin-bottom:4px;">Erro ao carregar o conteúdo</div>
+        <div style="font-size:13px; color:var(--ink3); margin-bottom:1rem;">${e.message}</div>
+        <button class="btn btn-coral" onclick="location.reload()">Recarregar página</button>
+      </div>`;
+  }
 }
 
 function updateSidebarProgress() {
