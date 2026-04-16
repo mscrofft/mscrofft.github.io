@@ -402,6 +402,100 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--in
 }
 .chip.sel { background: var(--ink); color: #fff; border-color: var(--ink); }
 
+/* ---- EXERCÍCIOS ---- */
+.ex-container {
+  background: var(--white); border-radius: var(--r-xl);
+  padding: 2rem; box-shadow: var(--shadow); margin-bottom: 1rem;
+  min-height: 260px; display: flex; flex-direction: column;
+}
+.ex-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; }
+.ex-tipo {
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.1em; color: var(--ink3);
+}
+.ex-counter { font-size: 13px; color: var(--ink3); font-weight: 600; }
+.ex-prog { background: rgba(26,22,18,0.08); border-radius: 99px; height: 6px; margin-bottom: 1.5rem; }
+.ex-prog-fill { background: var(--coral); height: 6px; border-radius: 99px; transition: width 0.4s; }
+.ex-enunciado {
+  font-size: 19px; font-weight: 700; color: var(--ink);
+  margin-bottom: 1.5rem; line-height: 1.5;
+}
+.ex-frase {
+  font-size: 20px; color: var(--ink); line-height: 1.8;
+  margin-bottom: 1.5rem; display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
+}
+.ex-lacuna {
+  display: inline-block; min-width: 120px; height: 38px;
+  border-bottom: 3px solid var(--coral); padding: 0 8px;
+  background: rgba(232,98,42,0.05); border-radius: 4px 4px 0 0;
+  font-size: 18px; font-weight: 700; color: var(--coral);
+  text-align: center; line-height: 38px; cursor: pointer;
+  transition: all 0.15s; vertical-align: middle;
+}
+.ex-lacuna.filled { border-bottom-color: var(--green); color: var(--green); background: rgba(42,107,74,0.05); }
+.ex-lacuna.correct { border-bottom-color: var(--green); color: var(--green); background: var(--green-light); }
+.ex-lacuna.wrong { border-bottom-color: var(--coral); color: var(--coral); background: var(--coral-light); }
+.ex-banco {
+  display: flex; flex-wrap: wrap; gap: 8px;
+  margin-top: 1rem; padding-top: 1rem;
+  border-top: 1px solid rgba(26,22,18,0.06);
+}
+.ex-word-chip {
+  padding: 8px 18px; border-radius: 10px;
+  border: 2px solid rgba(26,22,18,0.12); background: var(--white);
+  font-size: 16px; font-weight: 500; color: var(--ink);
+  cursor: pointer; transition: all 0.15s; user-select: none;
+  box-shadow: 0 2px 6px rgba(26,22,18,0.06);
+}
+.ex-word-chip:hover { border-color: var(--coral); color: var(--coral); }
+.ex-word-chip.used { opacity: 0.3; pointer-events: none; }
+.ex-word-chip.correct { border-color: var(--green); background: var(--green-light); color: var(--green); }
+.ex-word-chip.wrong { border-color: var(--coral); background: var(--coral-light); color: var(--coral); }
+/* Escrita */
+.ex-audio-btns { display: flex; gap: 10px; margin-bottom: 1.5rem; }
+.ex-audio-btn {
+  width: 60px; height: 60px; border-radius: var(--r-lg);
+  border: 2px solid rgba(26,22,18,0.1); background: var(--white);
+  cursor: pointer; font-size: 22px; display: flex; align-items: center;
+  justify-content: center; transition: all 0.15s; box-shadow: var(--shadow-sm);
+}
+.ex-audio-btn:hover { border-color: var(--coral); background: var(--coral-light); }
+.ex-input {
+  width: 100%; padding: 14px 18px; font-size: 18px;
+  border: 2px solid rgba(26,22,18,0.12); border-radius: var(--r-lg);
+  background: var(--bg); color: var(--ink);
+  font-family: 'Outfit', sans-serif; font-weight: 500;
+  transition: all 0.2s; outline: none;
+}
+.ex-input:focus { border-color: var(--coral); background: var(--white); }
+.ex-input.correct { border-color: var(--green); background: var(--green-light); color: var(--green); }
+.ex-input.wrong { border-color: var(--coral); background: var(--coral-light); color: var(--coral); }
+/* Feedback */
+.ex-feedback {
+  padding: 12px 16px; border-radius: var(--r); font-size: 15px;
+  font-weight: 600; margin-top: 12px; display: none;
+}
+.ex-feedback.ok { background: var(--green-light); color: var(--green); display: block; }
+.ex-feedback.fail { background: var(--coral-light); color: var(--coral); display: block; }
+/* Opções múltipla escolha */
+.ex-opcoes { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 1rem; }
+.ex-opcao {
+  padding: 10px 22px; border-radius: 10px;
+  border: 2px solid rgba(26,22,18,0.1); background: var(--white);
+  font-size: 16px; font-weight: 500; color: var(--ink);
+  cursor: pointer; transition: all 0.15s; box-shadow: var(--shadow-sm);
+}
+.ex-opcao:hover { border-color: var(--coral); color: var(--coral); }
+.ex-opcao.selected { border-color: var(--coral); background: var(--coral-light); color: var(--coral); }
+.ex-opcao.correct { border-color: var(--green); background: var(--green-light); color: var(--green); }
+.ex-opcao.wrong { border-color: var(--coral); background: var(--coral-light); color: var(--coral); }
+/* Conclude needs exercises */
+.conclude-locked {
+  background: var(--white); border-radius: var(--r-lg);
+  padding: 1.25rem; box-shadow: var(--shadow-sm); margin-top: 1rem;
+  border: 2px dashed rgba(26,22,18,0.1); font-size: 14px; color: var(--ink3);
+  text-align: center;
+}
 /* Toast */
 .toast {
   position: fixed; bottom: 1.5rem; right: 1.5rem;
@@ -529,6 +623,7 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--in
       <div class="tab-bar">
         <button class="tab-btn active" onclick="switchTab('flashcards',this)">🃏 Flashcards</button>
         <button class="tab-btn" onclick="switchTab('quiz',this)">❓ Quiz</button>
+        <button class="tab-btn" onclick="switchTab('exercicios',this)">✏️ Exercícios</button>
         <button class="tab-btn" onclick="switchTab('frases',this)">💬 Frases</button>
         <button class="tab-btn" onclick="switchTab('verbos',this)">📖 Verbos</button>
       </div>
@@ -572,10 +667,18 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--in
         </div>
         <!-- Conclude section -->
         <div class="conclude-wrap" id="conclude-wrap">
-          <div class="conclude-title">🎉 Parabéns! Você passou nesta aula!</div>
-          <div class="conclude-sub" id="conclude-sub">Clique abaixo para concluir e desbloquear a próxima aula.</div>
-          <button class="btn-conclude" onclick="concluirAula()">✓ Concluir aula e avançar</button>
+          <div class="conclude-title">🎉 Quiz concluído com sucesso!</div>
+          <div class="conclude-sub" id="conclude-sub"></div>
+          <div id="conclude-ex-warning" style="display:none; margin-bottom:12px; font-size:13px; color:var(--coral); font-weight:500;">
+            ⚠️ Complete também os <strong>Exercícios</strong> para poder avançar.
+          </div>
+          <button class="btn-conclude" id="btn-concluir" onclick="concluirAula()">✓ Concluir aula e avançar</button>
         </div>
+      </div>
+
+      <!-- EXERCÍCIOS -->
+      <div class="tab-pane" id="tab-exercicios">
+        <div id="ex-area"></div>
       </div>
 
       <!-- FRASES -->
@@ -655,6 +758,10 @@ let fcIdx = 0, fcFlipped = false, fcCatFilter = '';
 let quizPool = [], quizIdx = 0, quizScore = 0, quizAnswered = false;
 let quizBestScore = 0;
 const MIN_SCORE = 70;
+// Exercises state
+let exerciciosData = [], exIdx = 0, exScore = 0, exTotal = 0;
+let exAnswered = false, exDone = false;
+let quizPassed = false;
 
 // ============================================================
 // INIT
@@ -880,17 +987,23 @@ async function loadAula(id) {
     '<div class="loading"><div class="spinner"></div>Carregando conteúdo...</div>';
 
   try {
-    const [vocabRes, frasesRes] = await Promise.all([
+    const [vocabRes, frasesRes, exRes] = await Promise.all([
       sb.from('vocabulario').select('*').eq('aula_id', id).order('criado_em'),
       sb.from('frases').select('*').eq('aula_id', id).order('criado_em'),
+      sb.from('exercicios').select('*').eq('aula_id', id).order('criado_em'),
     ]);
     vocabAll = vocabRes.data || [];
     frasesData = frasesRes.data || [];
+    exerciciosData = exRes.data || [];
   } catch(e) {
     document.getElementById('quiz-area').innerHTML =
       `<div style="color:var(--coral); padding:1rem;">Erro ao carregar conteúdo: ${e.message}</div>`;
     return;
   }
+
+  // Reset exercise state
+  exIdx = 0; exScore = 0; exTotal = exerciciosData.length;
+  exAnswered = false; exDone = false; quizPassed = false;
 
   fcCatFilter = '';
   buildFCCats();
@@ -898,6 +1011,7 @@ async function loadAula(id) {
   renderFrases();
   renderVerbos();
   initQuiz();
+  initExercicios();
 
   // switchTab: use querySelector scoped to the aula view to avoid grabbing wrong button
   const firstTabBtn = viewAula.querySelector('.tab-btn');
@@ -911,12 +1025,25 @@ function updateQuizProgressBar() {
   const prog = progressoMap[String(currentAula.id)];
   const best = prog?.melhor_pontuacao || 0;
   const done = prog?.concluida || false;
+  const hasEx = exerciciosData.length > 0;
+
   document.getElementById('av-quiz-prog').style.width = (done ? 100 : best) + '%';
   document.getElementById('av-quiz-prog').style.background = done ? 'var(--green)' : 'var(--coral)';
-  document.getElementById('av-quiz-prog-label').textContent =
-    done ? `✓ Aula concluída · Melhor nota: ${best}%` :
-    best > 0 ? `Melhor nota: ${best}% · Meta: ${MIN_SCORE}%` :
-    `Complete o quiz com ${MIN_SCORE}% ou mais para concluir esta aula`;
+
+  if (done) {
+    document.getElementById('av-quiz-prog-label').textContent = `✓ Aula concluída · Melhor nota: ${best}%`;
+  } else if (best >= MIN_SCORE && hasEx && !exDone) {
+    document.getElementById('av-quiz-prog-label').textContent = `Quiz: ${best}% ✓ · Exercícios: pendentes ⚠️`;
+  } else if (best >= MIN_SCORE && (!hasEx || exDone)) {
+    document.getElementById('av-quiz-prog-label').textContent = `Quiz: ${best}% ✓ · Pronto para concluir!`;
+  } else if (best > 0) {
+    document.getElementById('av-quiz-prog-label').textContent = `Melhor nota: ${best}% · Meta: ${MIN_SCORE}%`;
+  } else {
+    document.getElementById('av-quiz-prog-label').textContent =
+      hasEx
+        ? `Complete o quiz (${MIN_SCORE}%+) e os exercícios para concluir esta aula`
+        : `Complete o quiz com ${MIN_SCORE}% ou mais para concluir esta aula`;
+  }
 }
 
 // ============================================================
@@ -1115,15 +1242,11 @@ async function saveProgress(pct) {
     console.log('saveProgress OK:', String(currentAula.id), saved);
   }
 
+  quizPassed = pct >= MIN_SCORE;
   updateSidebarProgress();
   renderAulasNav();
   updateQuizProgressBar();
-
-  if (pct >= MIN_SCORE && !jaConcluidaAntes) {
-    document.getElementById('conclude-sub').textContent =
-      `Você tirou ${pct}% — atingiu os ${MIN_SCORE}% necessários! Clique para avançar.`;
-    document.getElementById('conclude-wrap').classList.add('show');
-  }
+  checkConcludeEligibility();
 }
 
 async function concluirAula() {
@@ -1174,6 +1297,222 @@ async function concluirAula() {
       showDashboard();
     }
   }
+}
+
+    }
+  }
+}
+
+// ============================================================
+// CONCLUDE ELIGIBILITY — requires quiz + exercises
+// ============================================================
+function checkConcludeEligibility() {
+  const prog = progressoMap[String(currentAula?.id)];
+  if (prog?.concluida) return;
+  const hasEx = exerciciosData.length > 0;
+  const quizOk = quizPassed;
+  const exOk = !hasEx || exDone;
+  const wrap = document.getElementById('conclude-wrap');
+  const warning = document.getElementById('conclude-ex-warning');
+  const btn = document.getElementById('btn-concluir');
+  const pct = prog?.melhor_pontuacao || 0;
+
+  if (quizOk && exOk) {
+    document.getElementById('conclude-sub').textContent =
+      `Quiz: ${pct}%${hasEx ? ' · Exercícios completos ✓' : ''} · Clique para avançar!`;
+    if (warning) warning.style.display = 'none';
+    if (btn) btn.disabled = false;
+    wrap.classList.add('show');
+  } else if (quizOk && !exOk) {
+    document.getElementById('conclude-sub').textContent = `Quiz: ${pct}% ✓ — agora complete os exercícios!`;
+    if (warning) warning.style.display = '';
+    if (btn) btn.disabled = true;
+    wrap.classList.add('show');
+  }
+  updateQuizProgressBar();
+}
+
+// ============================================================
+// EXERCISES ENGINE
+// ============================================================
+function initExercicios() {
+  exIdx = 0; exScore = 0; exAnswered = false; exDone = false;
+  _exSelected = null; _exBancoSelections = []; _bancoChipMap = {};
+  renderExercicio();
+}
+
+function renderExercicio() {
+  const area = document.getElementById('ex-area');
+  if (!exerciciosData.length) {
+    area.innerHTML = `<div style="padding:3rem 0; text-align:center;">
+      <div style="font-size:40px; margin-bottom:12px;">✏️</div>
+      <div style="font-size:16px; font-weight:600; color:var(--ink2);">Nenhum exercício nesta aula ainda.</div>
+      <div style="font-size:13px; color:var(--ink3); margin-top:6px;">A professora pode adicionar pelo painel admin.</div>
+    </div>`;
+    return;
+  }
+  if (exIdx >= exerciciosData.length) {
+    exDone = true;
+    const pct = Math.round(exScore / exerciciosData.length * 100);
+    area.innerHTML = `<div style="text-align:center; padding:2rem 0;">
+      <div style="font-size:56px; font-weight:800; color:var(--ink); letter-spacing:-2px;">${exScore}/${exerciciosData.length}</div>
+      <div style="font-size:18px; color:var(--ink2); margin-top:6px; font-weight:500;">${pct>=80?'🌟 Excelente!':pct>=60?'👍 Bom trabalho!':'💪 Continue praticando!'}</div>
+      <div style="font-size:14px; color:var(--ink3); margin-top:4px;">${pct}% nos exercícios</div>
+      <button class="btn btn-coral" style="margin-top:1.5rem;" onclick="initExercicios()">Refazer exercícios</button>
+    </div>`;
+    checkConcludeEligibility();
+    return;
+  }
+  const ex = exerciciosData[exIdx];
+  const pct = Math.round(exIdx / exerciciosData.length * 100);
+  let body = '';
+  if (ex.tipo === 'lacuna_escolha') body = renderLacunaEscolha(ex);
+  else if (ex.tipo === 'lacuna_banco') body = renderLacunaBanco(ex);
+  else if (ex.tipo === 'escrita_audio') body = renderEscritaAudio(ex);
+
+  area.innerHTML = `
+    <div class="ex-prog"><div class="ex-prog-fill" style="width:${pct}%"></div></div>
+    <div class="ex-header">
+      <span class="ex-tipo">${tipoLabel(ex.tipo)}</span>
+      <span class="ex-counter">${exIdx+1} / ${exerciciosData.length}</span>
+    </div>
+    <div class="ex-container">${body}<div class="ex-feedback" id="ex-feedback"></div></div>
+    <div class="btn-row" style="margin-top:12px;">
+      <button class="btn btn-coral" id="ex-next-btn" onclick="nextExercicio()" style="display:none;">Próximo →</button>
+      <button class="btn" id="ex-check-btn" onclick="checkExercicio()">Verificar ✓</button>
+    </div>`;
+  exAnswered = false;
+  if (ex.tipo === 'escrita_audio') setTimeout(() => speakEx(ex.frase, 1), 400);
+}
+
+function tipoLabel(t) {
+  return t==='lacuna_escolha'?'Complete o espaço':t==='lacuna_banco'?'Complete com as palavras':t==='escrita_audio'?'Escreva o que ouviu':'Exercício';
+}
+
+function renderLacunaEscolha(ex) {
+  const p = ex.frase.split('___');
+  return `<div class="ex-frase"><span>${p[0]}</span><span class="ex-lacuna" id="ex-lacuna-0">___</span><span>${p[1]||''}</span></div>
+    <div class="ex-opcoes">${(ex.opcoes||[]).map((o,i)=>
+      `<button class="ex-opcao" id="ex-op-${i}" onclick="selecionarOpcao(${i},${JSON.stringify(o)})">${o}</button>`
+    ).join('')}</div>`;
+}
+
+let _exSelected = null;
+function selecionarOpcao(idx, val) {
+  if (exAnswered) return;
+  document.querySelectorAll('.ex-opcao').forEach(b=>b.classList.remove('selected'));
+  document.getElementById('ex-op-'+idx).classList.add('selected');
+  const l = document.getElementById('ex-lacuna-0');
+  if (l) { l.textContent = val; l.classList.add('filled'); }
+  _exSelected = val;
+}
+
+let _exBancoSelections = [], _bancoChipMap = {};
+function renderLacunaBanco(ex) {
+  const partes = ex.frase.split('___');
+  _exBancoSelections = Array(partes.length - 1).fill(null);
+  let fraseHtml = '';
+  partes.forEach((p,i) => {
+    fraseHtml += `<span>${p}</span>`;
+    if (i < partes.length-1) fraseHtml += `<span class="ex-lacuna" id="ex-lacuna-${i}" onclick="devolver(${i})">___</span>`;
+  });
+  const opts = shuffle([...(ex.opcoes||[])]);
+  return `<div class="ex-frase">${fraseHtml}</div>
+    <div class="ex-banco">${opts.map((o,i)=>
+      `<button class="ex-word-chip" id="ex-chip-${i}" onclick="selecionarBanco(${i},${JSON.stringify(o)})">${o}</button>`
+    ).join('')}</div>`;
+}
+
+function selecionarBanco(chipIdx, val) {
+  if (exAnswered) return;
+  for (let i=0; i<_exBancoSelections.length; i++) {
+    if (_exBancoSelections[i]===null) {
+      _exBancoSelections[i]=val;
+      const l=document.getElementById('ex-lacuna-'+i);
+      if(l){l.textContent=val;l.classList.add('filled');}
+      document.getElementById('ex-chip-'+chipIdx)?.classList.add('used');
+      _bancoChipMap[i]=chipIdx; break;
+    }
+  }
+}
+
+function devolver(li) {
+  if (exAnswered||_exBancoSelections[li]===null) return;
+  _exBancoSelections[li]=null;
+  const l=document.getElementById('ex-lacuna-'+li);
+  if(l){l.textContent='___';l.classList.remove('filled');}
+  const ci=_bancoChipMap[li];
+  if(ci!==undefined){document.getElementById('ex-chip-'+ci)?.classList.remove('used');delete _bancoChipMap[li];}
+}
+
+function renderEscritaAudio(ex) {
+  const partes = ex.frase.split(ex.resposta);
+  const fraseVis = partes.length>1
+    ? `${partes[0]}<span class="ex-lacuna" id="ex-lacuna-0">___</span>${partes.slice(1).join(ex.resposta)}`
+    : ex.frase;
+  return `<div class="ex-audio-btns">
+    <button class="ex-audio-btn" onclick="speakEx(${JSON.stringify(ex.frase)},1)">🔊</button>
+    <button class="ex-audio-btn" onclick="speakEx(${JSON.stringify(ex.frase)},0.6)">🐢</button>
+  </div>
+  <div class="ex-frase" style="font-size:16px;">${fraseVis}</div>
+  <input class="ex-input" id="ex-input" type="text" placeholder="Escreva a palavra em espanhol..."
+    autocomplete="off" autocorrect="off" spellcheck="false"
+    onkeydown="if(event.key==='Enter')checkExercicio()">`;
+}
+
+function speakEx(text, rate) { speak(text, 'es', rate); }
+
+function normalize(s) {
+  return (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
+}
+
+function checkExercicio() {
+  if (exAnswered) return;
+  const ex = exerciciosData[exIdx];
+  let correct = false;
+  const fb = document.getElementById('ex-feedback');
+
+  if (ex.tipo === 'lacuna_escolha') {
+    if (!_exSelected) { fb.textContent='Selecione uma opção.'; fb.className='ex-feedback fail'; return; }
+    correct = normalize(_exSelected) === normalize(ex.resposta);
+    document.querySelectorAll('.ex-opcao').forEach(b=>{
+      b.disabled=true;
+      if(normalize(b.textContent.trim())===normalize(ex.resposta)) b.classList.add('correct');
+    });
+    if(!correct) document.querySelector('.ex-opcao.selected')?.classList.add('wrong');
+    const l=document.getElementById('ex-lacuna-0');
+    if(l){l.classList.remove('filled');l.classList.add(correct?'correct':'wrong');}
+
+  } else if (ex.tipo === 'lacuna_banco') {
+    const resps = (ex.resposta||'').split(',').map(r=>normalize(r.trim()));
+    correct = _exBancoSelections.every((s,i)=>s!==null && normalize(s)===resps[i]);
+    document.querySelectorAll('.ex-lacuna').forEach((l,i)=>{
+      l.classList.remove('filled');
+      l.classList.add(normalize(_exBancoSelections[i]||'')===resps[i]?'correct':'wrong');
+    });
+
+  } else if (ex.tipo === 'escrita_audio') {
+    const val=(document.getElementById('ex-input')?.value||'').trim();
+    if(!val){fb.textContent='Escreva a resposta.';fb.className='ex-feedback fail';return;}
+    correct = normalize(val) === normalize(ex.resposta);
+    const inp=document.getElementById('ex-input');
+    if(inp){inp.disabled=true;inp.classList.add(correct?'correct':'wrong');}
+    const l=document.getElementById('ex-lacuna-0');
+    if(l){l.textContent=ex.resposta;l.classList.add(correct?'correct':'wrong');}
+  }
+
+  exAnswered = true;
+  if (correct) exScore++;
+  fb.textContent = correct ? '✓ Correto!' : `✗ Resposta: ${ex.resposta}`;
+  fb.className = 'ex-feedback '+(correct?'ok':'fail');
+  document.getElementById('ex-check-btn').style.display='none';
+  const nb=document.getElementById('ex-next-btn');
+  if(nb){nb.style.display='';nb.textContent=exIdx+1>=exerciciosData.length?'Ver resultado →':'Próximo →';}
+}
+
+function nextExercicio() {
+  exIdx++; exAnswered=false; _exSelected=null; _exBancoSelections=[]; _bancoChipMap={};
+  renderExercicio();
 }
 
 async function checkBadges() {

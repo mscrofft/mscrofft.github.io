@@ -268,6 +268,7 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.6; }
     <div class="aside-link active" onclick="goTo('aulas',this)"><span class="aside-icon">📚</span> Aulas</div>
     <div class="aside-link" onclick="goTo('vocabulario',this)"><span class="aside-icon">🗂️</span> Vocabulário</div>
     <div class="aside-link" onclick="goTo('frases',this)"><span class="aside-icon">💬</span> Frases</div>
+    <div class="aside-link" onclick="goTo('exercicios',this)"><span class="aside-icon">✏️</span> Exercícios</div>
     <div class="aside-section">Alunos</div>
     <div class="aside-link" onclick="goTo('alunos',this)"><span class="aside-icon">👥</span> Alunos</div>
     <div class="aside-link" onclick="goTo('progresso',this)"><span class="aside-icon">📊</span> Progresso</div>
@@ -489,6 +490,107 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.6; }
 
       <div class="card">
         <div id="frases-list-wrap"><div class="loading"><div class="spinner"></div>Carregando...</div></div>
+      </div>
+    </div>
+
+    <!-- ===== EXERCÍCIOS ===== -->
+    <div class="page" id="page-exercicios">
+      <div class="page-hd">
+        <div class="page-title">Exercícios</div>
+        <div class="page-sub">Crie exercícios interativos por aula</div>
+      </div>
+
+      <div class="card" style="margin-bottom:1rem;">
+        <div class="grid3">
+          <div class="field" style="margin:0;">
+            <label class="field-label">Filtrar por aula</label>
+            <select class="inp" id="ex-aula-filter" onchange="loadExercicios()">
+              <option value="">Todas as aulas</option>
+            </select>
+          </div>
+          <div class="field" style="margin:0;">
+            <label class="field-label">Tipo</label>
+            <select class="inp" id="ex-tipo-filter" onchange="loadExercicios()">
+              <option value="">Todos</option>
+              <option value="lacuna_escolha">Complete o espaço</option>
+              <option value="lacuna_banco">Complete com palavras</option>
+              <option value="escrita_audio">Escreva o que ouviu</option>
+            </select>
+          </div>
+          <div class="field" style="margin:0; display:flex; align-items:flex-end;">
+            <button class="btn btn-accent" style="width:100%;" onclick="toggleExForm()">+ Novo exercício</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Form novo exercício -->
+      <div class="card" id="ex-form" style="display:none; border-color:rgba(232,98,42,0.3);">
+        <div class="card-header"><span class="card-title" id="ex-form-title">Novo exercício</span></div>
+        <input type="hidden" id="ex-id">
+
+        <div class="grid2">
+          <div class="field" style="margin:0;">
+            <label class="field-label">Aula</label>
+            <select class="inp" id="ex-aula-id"></select>
+          </div>
+          <div class="field" style="margin:0;">
+            <label class="field-label">Tipo de exercício</label>
+            <select class="inp" id="ex-tipo" onchange="updateExFormTipo()">
+              <option value="lacuna_escolha">Complete o espaço (múltipla escolha)</option>
+              <option value="lacuna_banco">Complete com banco de palavras</option>
+              <option value="escrita_audio">Ouça e escreva</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field" style="margin-top:10px;">
+          <label class="field-label">Frase (use ___ para marcar a lacuna)</label>
+          <input class="inp" type="text" id="ex-frase"
+            placeholder="El perro ___ muy grande.">
+          <div style="font-size:11px; color:var(--ink3); margin-top:4px;" id="ex-frase-hint">
+            Use ___ onde deve aparecer a lacuna. Para múltiplas lacunas, use ___ em cada posição.
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="field-label">Resposta correta</label>
+          <input class="inp" type="text" id="ex-resposta"
+            placeholder="es">
+          <div style="font-size:11px; color:var(--ink3); margin-top:4px;" id="ex-resp-hint">
+            Para múltiplas lacunas, separe por vírgula: libros,estante
+          </div>
+        </div>
+
+        <div class="field" id="ex-opcoes-field">
+          <label class="field-label">Opções de resposta (separadas por vírgula)</label>
+          <input class="inp" type="text" id="ex-opcoes"
+            placeholder="es, soy, están, somos">
+          <div style="font-size:11px; color:var(--ink3); margin-top:4px;">
+            Inclua a resposta correta + 3 distratores. Para banco de palavras, inclua todas as palavras disponíveis.
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="field-label">URL da imagem (opcional)</label>
+          <input class="inp" type="text" id="ex-imagem"
+            placeholder="https://exemplo.com/imagem.jpg">
+        </div>
+
+        <div class="btn-row">
+          <button class="btn btn-green" onclick="salvarExercicio()">Salvar exercício</button>
+          <button class="btn" onclick="toggleExForm()">Cancelar</button>
+          <button class="btn btn-accent" onclick="testarExercicio()" style="margin-left:auto;">▶ Testar</button>
+        </div>
+
+        <!-- Preview -->
+        <div id="ex-preview" style="display:none; margin-top:1rem; padding:1rem; background:var(--surface2); border-radius:var(--r);">
+          <div style="font-size:12px; color:var(--ink3); margin-bottom:8px; text-transform:uppercase; letter-spacing:0.06em;">Preview</div>
+          <div id="ex-preview-content"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div id="ex-list-wrap"><div class="loading"><div class="spinner"></div>Carregando...</div></div>
       </div>
     </div>
 
@@ -846,6 +948,7 @@ function goTo(id, el) {
   el.classList.add('active');
   if (id === 'vocabulario') { populateAulaSelects(); loadVocab(); }
   if (id === 'frases') { populateAulaSelects(); loadFrases(); }
+  if (id === 'exercicios') { populateExAulaSelects(); loadExercicios(); }
   if (id === 'alunos') loadAlunos();
   if (id === 'progresso') { populateAlunoFilter(); loadProgresso(); }
 }
@@ -1138,6 +1241,184 @@ async function deletarFrase(id) {
   if (error) { toast('Erro: ' + error.message, 'err'); return; }
   toast('Frase removida.', 'ok');
   loadFrases();
+}
+
+// ============================================================
+// EXERCÍCIOS
+// ============================================================
+function populateExAulaSelects() {
+  ['ex-aula-id', 'ex-aula-filter'].forEach(sid => {
+    const el = document.getElementById(sid);
+    if (!el) return;
+    const isFilter = sid.includes('filter');
+    el.innerHTML = (isFilter ? '<option value="">Todas as aulas</option>' : '') +
+      aulasList.map(a => `<option value="${a.id}">Aula ${a.numero} — ${a.titulo}</option>`).join('');
+  });
+}
+
+async function loadExercicios() {
+  if (!sb) { document.getElementById('ex-list-wrap').innerHTML = '<div class="empty">Configure o Supabase primeiro.</div>'; return; }
+  document.getElementById('ex-list-wrap').innerHTML = '<div class="loading"><div class="spinner"></div>Carregando...</div>';
+  let q = sb.from('exercicios').select('*, aulas(numero, titulo)').order('criado_em', { ascending: false });
+  const aulaF = document.getElementById('ex-aula-filter')?.value;
+  const tipoF = document.getElementById('ex-tipo-filter')?.value;
+  if (aulaF) q = q.eq('aula_id', aulaF);
+  if (tipoF) q = q.eq('tipo', tipoF);
+  const { data, error } = await q;
+  if (error) { toast('Erro: ' + error.message, 'err'); return; }
+  const rows = data || [];
+  if (!rows.length) {
+    document.getElementById('ex-list-wrap').innerHTML = '<div class="empty">Nenhum exercício encontrado.</div>';
+    return;
+  }
+  const tipoLabel = t => t==='lacuna_escolha'?'Complete o espaço':t==='lacuna_banco'?'Banco de palavras':'Ouça e escreva';
+  document.getElementById('ex-list-wrap').innerHTML = `
+    <table class="vtable">
+      <thead><tr><th>Aula</th><th>Tipo</th><th>Frase</th><th>Resposta</th><th></th></tr></thead>
+      <tbody>${rows.map(r => `
+        <tr>
+          <td><span class="badge badge-blue">Aula ${r.aulas?.numero||'?'}</span></td>
+          <td><span class="badge badge-orange">${tipoLabel(r.tipo)}</span></td>
+          <td style="max-width:260px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${r.frase||'—'}</td>
+          <td style="color:var(--green); font-weight:500;">${r.resposta||'—'}</td>
+          <td>
+            <button class="btn btn-sm" onclick="editarExercicio(${r.id})">✏️</button>
+            <button class="btn btn-red btn-sm" onclick="deletarExercicio(${r.id})" style="margin-left:4px;">✕</button>
+          </td>
+        </tr>`).join('')}
+      </tbody>
+    </table>`;
+}
+
+function toggleExForm() {
+  const f = document.getElementById('ex-form');
+  const visible = f.style.display !== 'none';
+  f.style.display = visible ? 'none' : '';
+  if (!visible) { limparExForm(); updateExFormTipo(); }
+}
+
+function limparExForm() {
+  ['ex-id','ex-frase','ex-resposta','ex-opcoes','ex-imagem'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  document.getElementById('ex-tipo').value = 'lacuna_escolha';
+  document.getElementById('ex-form-title').textContent = 'Novo exercício';
+  document.getElementById('ex-preview').style.display = 'none';
+}
+
+function updateExFormTipo() {
+  const tipo = document.getElementById('ex-tipo').value;
+  const opField = document.getElementById('ex-opcoes-field');
+  const fraseHint = document.getElementById('ex-frase-hint');
+  const respHint = document.getElementById('ex-resp-hint');
+
+  if (tipo === 'lacuna_escolha') {
+    opField.style.display = '';
+    fraseHint.textContent = 'Use ___ onde deve aparecer a lacuna. Ex: El perro ___ muy grande.';
+    respHint.textContent = 'A palavra correta para preencher a lacuna. Ex: es';
+  } else if (tipo === 'lacuna_banco') {
+    opField.style.display = '';
+    fraseHint.textContent = 'Use ___ para cada lacuna. Ex: Hay muchos ___ en mi ___.';
+    respHint.textContent = 'Respostas separadas por vírgula, na ordem das lacunas. Ex: libros,estante';
+  } else if (tipo === 'escrita_audio') {
+    opField.style.display = 'none';
+    fraseHint.textContent = 'A frase completa que será lida em voz alta. Ex: Los niños juegan en el parque.';
+    respHint.textContent = 'A palavra que o aluno deve escrever. Ex: parque';
+  }
+}
+
+async function editarExercicio(id) {
+  if (!sb) return;
+  const { data } = await sb.from('exercicios').select('*').eq('id', id).single();
+  if (!data) return;
+  document.getElementById('ex-id').value = data.id;
+  document.getElementById('ex-aula-id').value = data.aula_id;
+  document.getElementById('ex-tipo').value = data.tipo;
+  document.getElementById('ex-frase').value = data.frase || '';
+  document.getElementById('ex-resposta').value = data.resposta || '';
+  document.getElementById('ex-opcoes').value = (data.opcoes || []).join(', ');
+  document.getElementById('ex-imagem').value = data.imagem_url || '';
+  document.getElementById('ex-form-title').textContent = 'Editando exercício';
+  document.getElementById('ex-form').style.display = '';
+  updateExFormTipo();
+  document.getElementById('ex-form').scrollIntoView({ behavior: 'smooth' });
+}
+
+async function salvarExercicio() {
+  if (!sb) { toast('Sem conexão.', 'err'); return; }
+  const id = document.getElementById('ex-id').value;
+  const tipo = document.getElementById('ex-tipo').value;
+  const frase = document.getElementById('ex-frase').value.trim();
+  const resposta = document.getElementById('ex-resposta').value.trim();
+  const opcoesRaw = document.getElementById('ex-opcoes').value.trim();
+  const imagem = document.getElementById('ex-imagem').value.trim();
+
+  if (!frase) { toast('Escreva a frase.', 'err'); return; }
+  if (!resposta) { toast('Escreva a resposta correta.', 'err'); return; }
+  if (tipo !== 'escrita_audio' && !opcoesRaw) { toast('Adicione as opções de resposta.', 'err'); return; }
+  if (!frase.includes('___')) { toast('A frase deve conter ___ para marcar a lacuna.', 'err'); return; }
+
+  const opcoes = opcoesRaw ? opcoesRaw.split(',').map(o => o.trim()).filter(Boolean) : [];
+  const payload = {
+    aula_id: document.getElementById('ex-aula-id').value || null,
+    tipo, frase, resposta, opcoes,
+    imagem_url: imagem || null,
+  };
+
+  const { error } = id
+    ? await sb.from('exercicios').update(payload).eq('id', id)
+    : await sb.from('exercicios').insert(payload);
+  if (error) { toast('Erro: ' + error.message, 'err'); return; }
+  toast(id ? 'Exercício atualizado! ✓' : 'Exercício criado! ✓', 'ok');
+  toggleExForm();
+  loadExercicios();
+}
+
+async function deletarExercicio(id) {
+  if (!confirm('Deletar este exercício?')) return;
+  const { error } = await sb.from('exercicios').delete().eq('id', id);
+  if (error) { toast('Erro: ' + error.message, 'err'); return; }
+  toast('Exercício removido.', 'ok');
+  loadExercicios();
+}
+
+function testarExercicio() {
+  const tipo = document.getElementById('ex-tipo').value;
+  const frase = document.getElementById('ex-frase').value.trim();
+  const resposta = document.getElementById('ex-resposta').value.trim();
+  const opcoes = document.getElementById('ex-opcoes').value.split(',').map(o=>o.trim()).filter(Boolean);
+  const preview = document.getElementById('ex-preview');
+  const content = document.getElementById('ex-preview-content');
+  if (!frase) { toast('Preencha a frase primeiro.', 'err'); return; }
+
+  let html = `<div style="font-size:13px; font-weight:600; color:var(--ink); margin-bottom:8px;">${
+    tipo==='lacuna_escolha'?'Complete o espaço':tipo==='lacuna_banco'?'Complete com as palavras':'Ouça e escreva'
+  }</div>`;
+
+  const partes = frase.split('___');
+  let fraseHtml = '';
+  partes.forEach((p, i) => {
+    fraseHtml += `<span>${p}</span>`;
+    if (i < partes.length - 1) fraseHtml += `<span style="display:inline-block;min-width:80px;height:28px;border-bottom:2px solid var(--accent);background:var(--accent-dim);border-radius:4px 4px 0 0;margin:0 4px;vertical-align:middle;"></span>`;
+  });
+  html += `<div style="font-size:16px; margin-bottom:10px; line-height:2;">${fraseHtml}</div>`;
+
+  if (tipo === 'lacuna_escolha' || tipo === 'lacuna_banco') {
+    html += `<div style="display:flex; flex-wrap:wrap; gap:6px;">` +
+      opcoes.map(o => `<span style="padding:6px 14px; border-radius:8px; border:1.5px solid var(--border); background:var(--surface); font-size:14px;">${o}</span>`).join('') +
+      `</div>`;
+  } else {
+    html += `<div style="display:flex; gap:8px; margin-bottom:8px;">
+      <span style="width:44px;height:44px;border-radius:8px;border:1.5px solid var(--border);display:inline-flex;align-items:center;justify-content:center;font-size:18px;">🔊</span>
+      <span style="width:44px;height:44px;border-radius:8px;border:1.5px solid var(--border);display:inline-flex;align-items:center;justify-content:center;font-size:18px;">🐢</span>
+    </div>
+    <div style="padding:10px 14px; border:1.5px solid var(--border); border-radius:var(--r); background:var(--surface2); font-size:14px; color:var(--ink3);">Escreva a palavra em espanhol...</div>`;
+  }
+  html += `<div style="margin-top:8px; font-size:12px; color:var(--green); font-weight:500;">✓ Resposta: ${resposta}</div>`;
+
+  content.innerHTML = html;
+  preview.style.display = '';
 }
 
 // ============================================================
