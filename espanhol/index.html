@@ -1416,15 +1416,19 @@ function tipoLabel(t) {
 
 function renderLacunaEscolha(ex) {
   const p = ex.frase.split('___');
+  // Store options on window to avoid inline string passing
+  window._exOpcoes = ex.opcoes || [];
   return `<div class="ex-frase"><span>${p[0]}</span><span class="ex-lacuna" id="ex-lacuna-0">___</span><span>${p[1]||''}</span></div>
     <div class="ex-opcoes">${(ex.opcoes||[]).map((o,i)=>
-      `<button class="ex-opcao" id="ex-op-${i}" onclick="selecionarOpcao(${i},${JSON.stringify(o)})">${o}</button>`
+      `<button class="ex-opcao" id="ex-op-${i}" onclick="selecionarOpcao(${i})">${o}</button>`
     ).join('')}</div>`;
 }
 
 let _exSelected = null;
-function selecionarOpcao(idx, val) {
+function selecionarOpcao(idx) {
   if (exAnswered) return;
+  const val = window._exOpcoes[idx];
+  if (!val) return;
   document.querySelectorAll('.ex-opcao').forEach(b=>b.classList.remove('selected'));
   document.getElementById('ex-op-'+idx).classList.add('selected');
   const l = document.getElementById('ex-lacuna-0');
@@ -1442,14 +1446,17 @@ function renderLacunaBanco(ex) {
     if (i < partes.length-1) fraseHtml += `<span class="ex-lacuna" id="ex-lacuna-${i}" onclick="devolver(${i})">___</span>`;
   });
   const opts = shuffle([...(ex.opcoes||[])]);
+  window._exBancoOpts = opts; // store for index-based access
   return `<div class="ex-frase">${fraseHtml}</div>
     <div class="ex-banco">${opts.map((o,i)=>
-      `<button class="ex-word-chip" id="ex-chip-${i}" onclick="selecionarBanco(${i},${JSON.stringify(o)})">${o}</button>`
+      `<button class="ex-word-chip" id="ex-chip-${i}" onclick="selecionarBanco(${i})">${o}</button>`
     ).join('')}</div>`;
 }
 
-function selecionarBanco(chipIdx, val) {
+function selecionarBanco(chipIdx) {
   if (exAnswered) return;
+  const val = window._exBancoOpts[chipIdx];
+  if (!val) return;
   for (let i=0; i<_exBancoSelections.length; i++) {
     if (_exBancoSelections[i]===null) {
       _exBancoSelections[i]=val;
@@ -1475,9 +1482,11 @@ function renderEscritaAudio(ex) {
   const fraseVis = partes.length>1
     ? `${partes[0]}<span class="ex-lacuna" id="ex-lacuna-0">___</span>${partes.slice(1).join(ex.resposta)}`
     : ex.frase;
+  // Store frase on window to avoid inline string issues
+  window._exAudioFrase = ex.frase;
   return `<div class="ex-audio-btns">
-    <button class="ex-audio-btn" onclick="speakEx(${JSON.stringify(ex.frase)},1)">🔊</button>
-    <button class="ex-audio-btn" onclick="speakEx(${JSON.stringify(ex.frase)},0.6)">🐢</button>
+    <button class="ex-audio-btn" onclick="speakExStored(1)">🔊</button>
+    <button class="ex-audio-btn" onclick="speakExStored(0.6)">🐢</button>
   </div>
   <div class="ex-frase" style="font-size:16px;">${fraseVis}</div>
   <input class="ex-input" id="ex-input" type="text" placeholder="Escreva a palavra em espanhol..."
@@ -1485,6 +1494,7 @@ function renderEscritaAudio(ex) {
     onkeydown="if(event.key==='Enter')checkExercicio()">`;
 }
 
+function speakExStored(rate) { speak(window._exAudioFrase || '', 'es', rate); }
 function speakEx(text, rate) { speak(text, 'es', rate); }
 
 function normalize(s) {
