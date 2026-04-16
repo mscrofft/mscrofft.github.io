@@ -662,13 +662,30 @@ const MIN_SCORE = 70;
 async function init() {
   if (!SB_URL || !SB_KEY) { window.location.href = 'login.html'; return; }
   const savedAluno = localStorage.getItem('ev_aluno');
-  if (!savedAluno) { window.location.href = 'login.html'; return; }
+  const savedCodigo = localStorage.getItem('ev_codigo');
+  if (!savedAluno || !savedCodigo) { window.location.href = 'login.html'; return; }
+
   aluno = JSON.parse(savedAluno);
   sb = supabase.createClient(SB_URL, SB_KEY);
 
-  // Refresh aluno data
-  const { data: fresh } = await sb.from('alunos').select('*').eq('id', aluno.id).single();
-  if (fresh) { aluno = fresh; localStorage.setItem('ev_aluno', JSON.stringify(fresh)); }
+  // Always re-fetch aluno by codigo (not by ID) to handle recreated records
+  const { data: fresh, error: fetchErr } = await sb
+    .from('alunos').select('*')
+    .eq('codigo', savedCodigo)
+    .eq('ativo', true)
+    .single();
+
+  if (fetchErr || !fresh) {
+    // Aluno not found or inactive — clear and redirect to login
+    localStorage.removeItem('ev_aluno');
+    localStorage.removeItem('ev_codigo');
+    window.location.href = 'login.html';
+    return;
+  }
+
+  // Update local storage with fresh data (correct ID)
+  aluno = fresh;
+  localStorage.setItem('ev_aluno', JSON.stringify(fresh));
 
   setupSidebar();
   await loadAll();
