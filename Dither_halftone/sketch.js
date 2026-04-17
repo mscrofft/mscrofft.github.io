@@ -6,18 +6,18 @@ let gSrc;             // p5.Graphics (fonte)
 let gProc;            // p5.Graphics (resultado)
 
 // UI state
-let threshold = 128;        // bitmap threshold / halftone gamma slider source
+let threshold = 128;
 let pixelSize = 8;
 let stretchX = 1.0;
-let method = 'bitmap';      // token
+let method = 'bitmap';
 let processEveryN = 1;
 
 // Halftone controls
-let htShape = 'dots';       // 'dots' | 'squares' | 'lines'
-let htAngle = 0;            // degrees
-let htSpacing = 1.0;        // 0.5..2.0
+let htShape = 'dots';
+let htAngle = 0;
+let htSpacing = 1.0;
 
-// colors
+// colors — sincronizados com UITheme
 let bgColor = '#000000';
 let fgColor = '#ffffff';
 
@@ -32,147 +32,139 @@ let isRecording = false;
 // Export resolution state
 let exportW = 1920, exportH = 1080;
 
-// --- dat.GUI UI ---
 const EXPORT_PRESETS = {
-  '1280x720': [1280, 720],
+  '1280x720':  [1280, 720],
   '1920x1080': [1920, 1080],
   '3840x2160': [3840, 2160],
 };
-function setExportPreset(key){
+function setExportPreset(key) {
   const wh = EXPORT_PRESETS[key] || EXPORT_PRESETS['1920x1080'];
   exportW = wh[0]; exportH = wh[1];
 }
 
-let gui = null;
-let guiCtrls = {};
-let guiState = {
-  // Source / actions
-  upload: () => { const inp = document.getElementById('file'); if (inp) inp.click(); },
-  fit: () => fitToCanvas(),
-  invertColors: () => { const tmp = bgColor; bgColor = fgColor; fgColor = tmp; processAll(); },
+// refs para controles (para ocultar/mostrar)
+let ctrl = {};
 
-  // Core params
-  method: method,
-  threshold: threshold,
-  pixelSize: pixelSize,
-  stretchX: stretchX,
-  processEveryN: processEveryN,
-
-  // Halftone
-  htShape: htShape,
-  htAngle: htAngle,
-  htSpacing: Math.round(htSpacing * 100), // store as 50..200
-
-  // Colors
-  bgColor: bgColor,
-  fgColor: fgColor,
-
-  // Video actions
-  play: () => { if (srcVideo) srcVideo.play(); },
-  pause: () => { if (srcVideo) srcVideo.pause(); },
-  mute: () => { if (srcVideo) srcVideo.volume(0); },
-  unmute: () => { if (srcVideo) srcVideo.volume(1); },
-
-  // Export
-  exportPreset: '1920x1080',
-  savePNG: () => savePNG(),
-  saveSVG: () => saveSVG(),
-
-  // Recording
-  record: () => { if (!isRecording) startRecording(); else stopRecording(); },
-};
-
-function initDatGUI(){
-  if (!window.dat || !dat.GUI) return;
-
-  gui = new dat.GUI();
-
-  const fSrc = gui.addFolder('Source');
-  fSrc.add(guiState, 'upload').name('Upload image/video…');
-  fSrc.add(guiState, 'fit').name('Fit to canvas');
-  fSrc.add(guiState, 'invertColors').name('Invert colors');
-  fSrc.open();
-
-  const fD = gui.addFolder('Dither');
-  guiCtrls.method = fD.add(guiState, 'method', [
-    'bitmap','stretch','fs','atkinson','jjn','stucki','bayer2','bayer4','bayer8','cluster4','halftone'
-  ]).name('Method').onChange((v)=>{
-    method = v;
-    updateGuiVisibility();
-    processAll();
+// ── inicializa painel ────────────────────────────────────────
+function initUI() {
+  UITheme.init({
+    initial: 'dark',
+    onToggle(themeName, tokens) {
+      // sincroniza bgColor/fgColor com o tema de UI
+      bgColor = tokens.bg;
+      fgColor = tokens.fg;
+      // atualiza color pickers
+      if (ctrl.bgColor) ctrl.bgColor.setValue(bgColor);
+      if (ctrl.fgColor) ctrl.fgColor.setValue(fgColor);
+      processAll();
+    },
   });
 
-  guiCtrls.threshold = fD.add(guiState, 'threshold', 0, 255, 1).name('Threshold / Gamma').onChange((v)=>{
-    threshold = +v;
-    processAll();
+  UIPanel.init('Bitmap / Dithering');
+
+  // ── Source ─────────────────────────────────────────────────
+  const fSrc = UIPanel.section('Source');
+  fSrc.button('Upload image / video…', () => {
+    document.getElementById('file').click();
+  });
+  fSrc.button('Fit to canvas', () => fitToCanvas());
+
+  // ── Dither ─────────────────────────────────────────────────
+  const fD = UIPanel.section('Dither');
+
+  ctrl.method = fD.select('Method', [
+    'bitmap','stretch','fs','atkinson','jjn','stucki',
+    'bayer2','bayer4','bayer8','cluster4','halftone',
+  ], {
+    value: method,
+    onChange(v) { method = v; updateVisibility(); processAll(); },
   });
 
-  guiCtrls.pixelSize = fD.add(guiState, 'pixelSize', 2, 64, 1).name('Pixel size').onChange((v)=>{
-    pixelSize = +v;
-    processAll();
+  ctrl.threshold = fD.slider('Threshold / Gamma', {
+    min: 0, max: 255, step: 1, value: threshold,
+    onChange(v) { threshold = v; processAll(); },
   });
 
-  guiCtrls.stretchX = fD.add(guiState, 'stretchX', 0.25, 4.0, 0.05).name('Stretch X').onChange((v)=>{
-    stretchX = +v;
-    processAll();
+  ctrl.pixelSize = fD.slider('Pixel size', {
+    min: 2, max: 64, step: 1, value: pixelSize,
+    onChange(v) { pixelSize = v; processAll(); },
   });
 
-  guiCtrls.processEveryN = fD.add(guiState, 'processEveryN', 1, 8, 1).name('Process every N').onChange((v)=>{
-    processEveryN = +v;
+  ctrl.stretchX = fD.slider('Stretch X', {
+    min: 25, max: 400, step: 5, value: Math.round(stretchX * 100),
+    onChange(v) { stretchX = v / 100; processAll(); },
   });
-  fD.open();
 
-  const fH = gui.addFolder('Halftone');
-  guiCtrls.htShape = fH.add(guiState, 'htShape', ['dots','squares','lines']).name('Shape').onChange((v)=>{
-    htShape = v; processAll();
+  ctrl.processEveryN = fD.slider('Process every N', {
+    min: 1, max: 8, step: 1, value: processEveryN,
+    onChange(v) { processEveryN = v; },
   });
-  guiCtrls.htAngle = fH.add(guiState, 'htAngle', -90, 90, 1).name('Angle').onChange((v)=>{
-    htAngle = +v; processAll();
+
+  // ── Halftone ────────────────────────────────────────────────
+  const fH = UIPanel.section('Halftone', { collapsed: true });
+
+  ctrl.htShape = fH.select('Shape', ['dots','squares','lines'], {
+    value: htShape,
+    onChange(v) { htShape = v; processAll(); },
   });
-  guiCtrls.htSpacing = fH.add(guiState, 'htSpacing', 50, 200, 1).name('Spacing %').onChange((v)=>{
-    htSpacing = (+v)/100; processAll();
+
+  ctrl.htAngle = fH.slider('Angle', {
+    min: -90, max: 90, step: 1, value: htAngle,
+    onChange(v) { htAngle = v; processAll(); },
   });
-  fH.open();
 
-  const fC = gui.addFolder('Colors');
-  guiCtrls.bg = fC.addColor(guiState, 'bgColor').name('BG').onChange((v)=>{ bgColor = v; processAll(); });
-  guiCtrls.fg = fC.addColor(guiState, 'fgColor').name('FG').onChange((v)=>{ fgColor = v; processAll(); });
-  fC.open();
-
-  const fV = gui.addFolder('Video');
-  fV.add(guiState, 'play').name('Play');
-  fV.add(guiState, 'pause').name('Pause');
-  fV.add(guiState, 'mute').name('Mute');
-  fV.add(guiState, 'unmute').name('Unmute');
-  fV.open();
-
-  const fE = gui.addFolder('Export');
-  guiCtrls.exportPreset = fE.add(guiState, 'exportPreset', Object.keys(EXPORT_PRESETS)).name('Resolution').onChange((v)=>{
-    setExportPreset(v);
+  ctrl.htSpacing = fH.slider('Spacing %', {
+    min: 50, max: 200, step: 1, value: Math.round(htSpacing * 100),
+    onChange(v) { htSpacing = v / 100; processAll(); },
   });
-  fE.add(guiState, 'savePNG').name('Save PNG');
-  fE.add(guiState, 'saveSVG').name('Save SVG');
-  fE.open();
 
-  const fR = gui.addFolder('Record');
-  fR.add(guiState, 'record').name('Start/Stop');
-  fR.open();
+  // ── Colors ──────────────────────────────────────────────────
+  const fC = UIPanel.section('Colors');
 
-  updateGuiVisibility();
+  ctrl.bgColor = fC.color('BG', {
+    value: bgColor,
+    onChange(v) { bgColor = v; processAll(); },
+  });
+
+  ctrl.fgColor = fC.color('FG', {
+    value: fgColor,
+    onChange(v) { fgColor = v; processAll(); },
+  });
+
+  // ── Video ───────────────────────────────────────────────────
+  const fV = UIPanel.section('Video', { collapsed: true });
+  fV.button('Play',   () => { if (srcVideo) srcVideo.play(); });
+  fV.button('Pause',  () => { if (srcVideo) srcVideo.pause(); });
+  fV.button('Mute',   () => { if (srcVideo) srcVideo.volume(0); });
+  fV.button('Unmute', () => { if (srcVideo) srcVideo.volume(1); });
+
+  // ── Export ──────────────────────────────────────────────────
+  const fE = UIPanel.section('Export');
+
+  fE.select('Resolution', Object.keys(EXPORT_PRESETS), {
+    value: '1920x1080',
+    onChange(v) { setExportPreset(v); },
+  });
+
+  fE.button('Save PNG', () => savePNG());
+  fE.button('Save SVG', () => saveSVG());
+
+  // ── Record ──────────────────────────────────────────────────
+  const fR = UIPanel.section('Record', { collapsed: true });
+  fR.button('Start / Stop', () => {
+    if (!isRecording) startRecording(); else stopRecording();
+  });
+
+  updateVisibility();
+  setExportPreset('1920x1080');
 }
 
-function _setCtrlVisible(ctrl, visible){
-  if(!ctrl || !ctrl.domElement) return;
-  const row = ctrl.domElement.parentElement;
-  if(row) row.style.display = visible ? '' : 'none';
-}
-function updateGuiVisibility(){
-  const isStretch = (method === 'stretch');
+function updateVisibility() {
+  const isStretch  = (method === 'stretch');
   const isHalftone = (method === 'halftone');
-  _setCtrlVisible(guiCtrls.stretchX, isStretch);
-  _setCtrlVisible(guiCtrls.htShape, isHalftone);
-  _setCtrlVisible(guiCtrls.htAngle, isHalftone);
-  _setCtrlVisible(guiCtrls.htSpacing, isHalftone);
+  if (isStretch)  ctrl.stretchX.show(); else ctrl.stretchX.hide();
+  if (isHalftone) { ctrl.htShape.show(); ctrl.htAngle.show(); ctrl.htSpacing.show(); }
+  else            { ctrl.htShape.hide(); ctrl.htAngle.hide(); ctrl.htSpacing.hide(); }
 }
 
 // último grid (para SVG)
@@ -200,9 +192,9 @@ const Bayer8 = (function(){
     for(let y=0;y<n;y++){
       for(let x=0;x<n;x++){
         const v = M[y][x];
-        out[y][x] = 4*v+0;
-        out[y][x+n] = 4*v+2;
-        out[y+n][x] = 4*v+3;
+        out[y][x]     = 4*v+0;
+        out[y][x+n]   = 4*v+2;
+        out[y+n][x]   = 4*v+3;
         out[y+n][x+n] = 4*v+1;
       }
     }
@@ -219,14 +211,14 @@ const Cluster4 = [
 ];
 
 const KERNELS = {
-  "fs": { spread:[ {dx:1,dy:0,w:7/16}, {dx:-1,dy:1,w:3/16}, {dx:0,dy:1,w:5/16}, {dx:1,dy:1,w:1/16} ] },
+  "fs":       { spread:[ {dx:1,dy:0,w:7/16}, {dx:-1,dy:1,w:3/16}, {dx:0,dy:1,w:5/16}, {dx:1,dy:1,w:1/16} ] },
   "atkinson": { spread:[ {dx:1,dy:0,w:1/8},{dx:2,dy:0,w:1/8},{dx:-1,dy:1,w:1/8},{dx:0,dy:1,w:1/8},{dx:1,dy:1,w:1/8},{dx:0,dy:2,w:1/8} ] },
-  "jjn": { spread:[
+  "jjn":      { spread:[
       {dx:1,dy:0,w:7/48},{dx:2,dy:0,w:5/48},
       {dx:-2,dy:1,w:3/48},{dx:-1,dy:1,w:5/48},{dx:0,dy:1,w:7/48},{dx:1,dy:1,w:5/48},{dx:2,dy:1,w:3/48},
       {dx:-2,dy:2,w:1/48},{dx:-1,dy:2,w:3/48},{dx:0,dy:2,w:5/48},{dx:1,dy:2,w:3/48},{dx:2,dy:2,w:1/48}
   ]},
-  "stucki": { spread:[
+  "stucki":   { spread:[
       {dx:1,dy:0,w:8/42},{dx:2,dy:0,w:4/42},
       {dx:-2,dy:1,w:2/42},{dx:-1,dy:1,w:4/42},{dx:0,dy:1,w:8/42},{dx:1,dy:1,w:4/42},{dx:2,dy:1,w:2/42},
       {dx:-2,dy:2,w:1/42},{dx:-1,dy:2,w:2/42},{dx:0,dy:2,w:4/42},{dx:1,dy:2,w:2/42},{dx:2,dy:2,w:1/42}
@@ -238,58 +230,51 @@ function setup(){
   canvas = createCanvas(windowWidth, windowHeight);
   canvas.position(0, 0);
 
-  gSrc = createGraphics(1280, 720);
+  gSrc  = createGraphics(1280, 720);
   gProc = createGraphics(1280, 720);
 
   noLoop();
 
-  // Hidden file input (triggered by dat.GUI)
   const fileInput = document.getElementById('file');
   if (fileInput) fileInput.addEventListener('change', onFile);
 
-  initDatGUI();
-
-  // default export preset
-  setExportPreset(guiState.exportPreset);
+  initUI();
 }
 
 function windowResized(){
   resizeCanvas(windowWidth, windowHeight);
-  // keep current fit
   fitToCanvas();
 }
 
-
-
 function onFile(e){
   const f = e.target.files[0];
-  if(!f) return;
+  if (!f) return;
   cleanupMedia();
 
   const url = URL.createObjectURL(f);
-  if(f.type.startsWith('image/')){
-    loadImage(url, img=>{
+  if (f.type.startsWith('image/')){
+    loadImage(url, img => {
       srcImg = img;
       fitToCanvas();
       processAll();
-    }, err=>console.warn('Falha ao carregar imagem', err));
-  }else if(f.type.startsWith('video/')){
-    srcVideo = createVideo([url], ()=>{
+    }, err => console.warn('Falha ao carregar imagem', err));
+  } else if (f.type.startsWith('video/')){
+    srcVideo = createVideo([url], () => {
       srcVideo.hide();
       srcVideo.elt.crossOrigin = 'anonymous';
       srcVideo.volume(0);
       srcVideo.loop();
       fitToCanvas();
-      loop(); // draw contínuo para vídeo
+      loop();
     });
-  }else{
+  } else {
     alert('Tipo não suportado. Use imagem ou vídeo (mp4/webm).');
   }
 }
 
 function cleanupMedia(){
-  if(srcVideo){
-    try{ srcVideo.stop(); srcVideo.remove(); }catch(e){}
+  if (srcVideo){
+    try { srcVideo.stop(); srcVideo.remove(); } catch(e) {}
   }
   srcVideo = null;
   srcImg = null;
@@ -298,13 +283,13 @@ function cleanupMedia(){
 // --- Core draw loop ---
 function draw(){
   background(0);
-  if(srcVideo){
+  if (srcVideo){
     frameCountForN = (frameCountForN + 1) % processEveryN;
     gSrc.push();
     gSrc.clear();
     gSrc.image(srcVideo, 0, 0, gSrc.width, gSrc.height);
     gSrc.pop();
-    if(frameCountForN===0){
+    if (frameCountForN === 0){
       processCurrent(gSrc);
     }
   }
@@ -312,7 +297,7 @@ function draw(){
 }
 
 function processAll(){
-  if(srcImg){
+  if (srcImg){
     gSrc.push();
     gSrc.clear();
     const fit = fitRect(srcImg.width, srcImg.height, gSrc.width, gSrc.height);
@@ -320,7 +305,7 @@ function processAll(){
     gSrc.pop();
     processCurrent(gSrc);
     redraw();
-  }else if(srcVideo){
+  } else if (srcVideo){
     // draw() cuida
   }
 }
@@ -331,33 +316,31 @@ function processCurrent(g){
   const step = Math.max(2, Math.floor(pixelSize * htSpacing));
   const cols = Math.floor(gw / step);
   const rows = Math.floor(gh / step);
-  const grid = new Array(rows).fill(0).map(()=>new Array(cols).fill(0));
+  const grid = new Array(rows).fill(0).map(() => new Array(cols).fill(0));
 
-  for(let j=0; j<rows; j++){
-    for(let i=0; i<cols; i++){
+  for (let j = 0; j < rows; j++){
+    for (let i = 0; i < cols; i++){
       const cx = Math.floor((i+0.5)*step);
       const cy = Math.floor((j+0.5)*step);
       const idx = 4*(cy*gw + cx);
       const r = g.pixels[idx]||0, gg = g.pixels[idx+1]||0, b = g.pixels[idx+2]||0;
-      const y = 0.2126*r + 0.7152*gg + 0.0722*b; // luminância
-      grid[j][i] = y; // 0..255
+      const y = 0.2126*r + 0.7152*gg + 0.0722*b;
+      grid[j][i] = y;
     }
   }
   lastHT = { shape: htShape, angle: htAngle, spacing: htSpacing };
-  if(method === 'halftone'){
-    // cache for SVG export (halftone uses grid at 'step')
+  if (method === 'halftone'){
     lastMethod = method;
     lastGrid = grid;
     drawHalftone(grid, gProc, step, htShape, htAngle);
     return;
   }
 
-  // dithers binários usam pixelSize normal (não spacing)
   const cols2 = Math.floor(gw / pixelSize);
   const rows2 = Math.floor(gh / pixelSize);
-  const grid2 = new Array(rows2).fill(0).map(()=>new Array(cols2).fill(0));
-  for(let j=0; j<rows2; j++){
-    for(let i=0; i<cols2; i++){
+  const grid2 = new Array(rows2).fill(0).map(() => new Array(cols2).fill(0));
+  for (let j = 0; j < rows2; j++){
+    for (let i = 0; i < cols2; i++){
       const cx = Math.floor((i+0.5)*pixelSize);
       const cy = Math.floor((j+0.5)*pixelSize);
       const idx = 4*(cy*gw + cx);
@@ -368,24 +351,21 @@ function processCurrent(g){
   }
 
   let bw = null;
-
-  // cache the post-sampling grid for SVG export and debugging
   lastMethod = method;
   lastGrid = grid2;
 
   switch(method){
-    case 'bitmap': bw = bitmap(grid2, threshold); break;
-    case 'stretch': bw = bitmap(grid2, threshold); break;
-    case 'fs': bw = errorDiffuse(grid2, threshold, KERNELS["fs"]); break;
+    case 'bitmap':   bw = bitmap(grid2, threshold); break;
+    case 'stretch':  bw = bitmap(grid2, threshold); break;
+    case 'fs':       bw = errorDiffuse(grid2, threshold, KERNELS["fs"]); break;
     case 'atkinson': bw = errorDiffuse(grid2, threshold, KERNELS["atkinson"]); break;
-    case 'jjn': bw = errorDiffuse(grid2, threshold, KERNELS["jjn"]); break;
-    case 'stucki': bw = errorDiffuse(grid2, threshold, KERNELS["stucki"]); break;
-    case 'bayer2': bw = orderedDither(grid2, Bayer2, threshold); break;
-    case 'bayer4': bw = orderedDither(grid2, Bayer4, threshold); break;
-    case 'bayer8': bw = orderedDither(grid2, Bayer8, threshold); break;
+    case 'jjn':      bw = errorDiffuse(grid2, threshold, KERNELS["jjn"]); break;
+    case 'stucki':   bw = errorDiffuse(grid2, threshold, KERNELS["stucki"]); break;
+    case 'bayer2':   bw = orderedDither(grid2, Bayer2, threshold); break;
+    case 'bayer4':   bw = orderedDither(grid2, Bayer4, threshold); break;
+    case 'bayer8':   bw = orderedDither(grid2, Bayer8, threshold); break;
     case 'cluster4': bw = orderedDither(grid2, Cluster4, threshold); break;
   }
-  // cache result for SVG export (ensures FS/Atkinson/JJN/Stucki/Bayer/Cluster match PNG)
   lastBW = bw;
   lastBWMeta = { method, pixelSize, stretchX: (method==='stretch' ? stretchX : 1.0), threshold };
 
@@ -394,12 +374,10 @@ function processCurrent(g){
 
 function bitmap(grid, thr){
   const h = grid.length, w = grid[0].length;
-  const out = Array.from({length:h}, ()=>Array(w).fill(0));
-  for(let y=0;y<h;y++){
-    for(let x=0;x<w;x++){
+  const out = Array.from({length:h}, () => Array(w).fill(0));
+  for (let y = 0; y < h; y++)
+    for (let x = 0; x < w; x++)
       out[y][x] = grid[y][x] < thr ? 0 : 255;
-    }
-  }
   return out;
 }
 
@@ -407,30 +385,29 @@ function orderedDither(grid, mat, thr){
   const h = grid.length, w = grid[0].length;
   const n = mat.length;
   const maxv = n*n - 1;
-  const out = Array.from({length:h}, ()=>Array(w).fill(0));
-  for(let y=0;y<h;y++){
-    for(let x=0;x<w;x++){
+  const out = Array.from({length:h}, () => Array(w).fill(0));
+  for (let y = 0; y < h; y++)
+    for (let x = 0; x < w; x++){
       const t = ((mat[y % n][x % n] + 0.5) * (255 / (maxv+1)));
       const v = grid[y][x] + (t - 128);
       out[y][x] = v < thr ? 0 : 255;
     }
-  }
   return out;
 }
 
 function errorDiffuse(grid, thr, kernel){
   const h = grid.length, w = grid[0].length;
-  const out = Array.from({length:h}, ()=>Array(w).fill(0));
-  const g = grid.map(row=>row.slice());
-  for(let y=0;y<h;y++){
-    for(let x=0;x<w;x++){
+  const out = Array.from({length:h}, () => Array(w).fill(0));
+  const g = grid.map(row => row.slice());
+  for (let y = 0; y < h; y++){
+    for (let x = 0; x < w; x++){
       const old = g[y][x];
       const newVal = old < thr ? 0 : 255;
       const err = old - newVal;
       out[y][x] = newVal;
-      for(const k of kernel.spread){
+      for (const k of kernel.spread){
         const nx = x + k.dx, ny = y + k.dy;
-        if(nx>=0 && nx<w && ny>=0 && ny<h){
+        if (nx>=0 && nx<w && ny>=0 && ny<h){
           g[ny][nx] = g[ny][nx] + err * k.w;
         }
       }
@@ -445,19 +422,13 @@ function drawGridToGraphics(bw, gfx, px, sx=1){
   const ph = px;
   gfx.push();
   gfx.clear();
-  // fundo
   gfx.noStroke();
   gfx.fill(bgColor);
-  gfx.rect(0,0,gfx.width,gfx.height);
-  // pixels (fg)
+  gfx.rect(0, 0, gfx.width, gfx.height);
   gfx.fill(fgColor);
-  for(let y=0;y<h;y++){
-    for(let x=0;x<w;x++){
-      if(bw[y][x]===0){
-        gfx.rect(x*pw, y*ph, pw, ph);
-      }
-    }
-  }
+  for (let y = 0; y < h; y++)
+    for (let x = 0; x < w; x++)
+      if (bw[y][x] === 0) gfx.rect(x*pw, y*ph, pw, ph);
   gfx.pop();
 }
 
@@ -470,33 +441,31 @@ function drawHalftone(grid, gfx, step, shape, angleDeg){
   gfx.push();
   gfx.clear();
   gfx.noStroke();
-  // fundo
   gfx.fill(bgColor);
-  gfx.rect(0,0,gfx.width,gfx.height);
-  // elementos
+  gfx.rect(0, 0, gfx.width, gfx.height);
   gfx.fill(fgColor);
 
-  for(let j=0;j<h;j++){
-    for(let i=0;i<w;i++){
-      const Y = grid[j][i] / 255;         // 0..1
-      const val = Math.pow(1 - Y, gamma); // intensidade (0..1)
+  for (let j = 0; j < h; j++){
+    for (let i = 0; i < w; i++){
+      const Y = grid[j][i] / 255;
+      const val = Math.pow(1 - Y, gamma);
       const cx = i*step + half;
       const cy = j*step + half;
 
       gfx.push();
       gfx.translate(cx, cy);
-      if(shape !== 'dots' && ang !== 0) gfx.rotate(ang);
+      if (shape !== 'dots' && ang !== 0) gfx.rotate(ang);
 
-      if(shape === 'dots'){
+      if (shape === 'dots'){
         const r = half * val;
-        if(r > 0.05) gfx.circle(0, 0, 2*r);
-      }else if(shape === 'squares'){
+        if (r > 0.05) gfx.circle(0, 0, 2*r);
+      } else if (shape === 'squares'){
         const s = step * val;
-        if(s > 0.05) gfx.rect(-s/2, -s/2, s, s);
-      }else if(shape === 'lines'){
-        const thickness = step * val;   // espessura da linha
-        const length = step * 1.1;      // um pouquinho maior pra evitar gaps
-        if(thickness > 0.05) gfx.rect(-length/2, -thickness/2, length, thickness);
+        if (s > 0.05) gfx.rect(-s/2, -s/2, s, s);
+      } else if (shape === 'lines'){
+        const thickness = step * val;
+        const length = step * 1.1;
+        if (thickness > 0.05) gfx.rect(-length/2, -thickness/2, length, thickness);
       }
       gfx.pop();
     }
@@ -516,15 +485,15 @@ function fitRect(sw, sh, dw, dh){
 
 function fitToCanvas(){
   let w = 1280, h = 720;
-  if(srcImg){ w = srcImg.width; h = srcImg.height; }
-  if(srcVideo){ w = srcVideo.width || 1280; h = srcVideo.height || 720; }
+  if (srcImg)   { w = srcImg.width; h = srcImg.height; }
+  if (srcVideo) { w = srcVideo.width || 1280; h = srcVideo.height || 720; }
   const fit = fitRect(w, h, windowWidth, windowHeight);
   gSrc.resizeCanvas(Math.max(320, fit.w), Math.max(320, fit.h));
   gProc.resizeCanvas(Math.max(320, fit.w), Math.max(320, fit.h));
-  if(srcImg) processAll();
+  if (srcImg) processAll();
 }
 
-// SVG export (respeita cores e halftone shapes/ângulo/espaçamento)
+// SVG export
 function _saveSVG_do(){
   const baseStep = Math.max(2, Math.floor(pixelSize * htSpacing));
   const half = baseStep * 0.5;
@@ -539,49 +508,42 @@ function _saveSVG_do(){
             `<rect width="100%" height="100%" fill="${bgColor}"/>\n` +
             `<g fill="${fgColor}">\n`;
 
-  if(lastMethod === 'halftone' && lastGrid){
-    for(let j=0;j<lastGrid.length;j++){
-      for(let i=0;i<lastGrid[0].length;i++){
+  if (lastMethod === 'halftone' && lastGrid){
+    for (let j = 0; j < lastGrid.length; j++){
+      for (let i = 0; i < lastGrid[0].length; i++){
         const Y = lastGrid[j][i] / 255;
         const val = Math.pow(1 - Y, gamma);
         const cx = i*baseStep + half;
         const cy = j*baseStep + half;
-
-        if(lastHT.shape === 'dots'){
+        if (lastHT.shape === 'dots'){
           const r = half * val;
-          if(r > 0.05) svg += `<circle cx="${cx}" cy="${cy}" r="${r}"/>\n`;
-        }else if(lastHT.shape === 'squares'){
+          if (r > 0.05) svg += `<circle cx="${cx}" cy="${cy}" r="${r}"/>\n`;
+        } else if (lastHT.shape === 'squares'){
           const s = baseStep * val;
-          if(s > 0.05){
-            if(lastHT.angle !== 0){
+          if (s > 0.05){
+            if (lastHT.angle !== 0)
               svg += `<rect x="${-s/2}" y="${-s/2}" width="${s}" height="${s}" transform="translate(${cx} ${cy}) rotate(${angDeg})"/>\n`;
-            }else{
+            else
               svg += `<rect x="${cx - s/2}" y="${cy - s/2}" width="${s}" height="${s}"/>\n`;
-            }
           }
-        }else if(lastHT.shape === 'lines'){
+        } else if (lastHT.shape === 'lines'){
           const thickness = baseStep * val;
           const length = baseStep * 1.1;
-          if(thickness > 0.05){
+          if (thickness > 0.05)
             svg += `<rect x="${-length/2}" y="${-thickness/2}" width="${length}" height="${thickness}" transform="translate(${cx} ${cy}) rotate(${angDeg})"/>\n`;
-          }
         }
       }
     }
-  }else if(lastGrid){
-    // métodos binários
+  } else if (lastGrid){
     const cols = lastGrid[0].length;
     const rows = lastGrid.length;
     const bw = (lastBW && lastBWMeta && lastBWMeta.method===lastMethod) ? lastBW : bitmap(lastGrid, threshold);
     const pw = pixelSize, ph = pixelSize;
     const sx = (lastMethod==='stretch') ? stretchX : 1.0;
-    for(let y=0;y<rows;y++){
-      for(let x=0;x<cols;x++){
-        if(bw[y][x]===0){
+    for (let y = 0; y < rows; y++)
+      for (let x = 0; x < cols; x++)
+        if (bw[y][x] === 0)
           svg += `<rect x="${x*pw*sx}" y="${y*ph}" width="${pw*sx}" height="${ph}"/>\n`;
-        }
-      }
-    }
   }
 
   svg += `</g>\n</svg>`;
@@ -590,60 +552,53 @@ function _saveSVG_do(){
   const a = document.createElement('a');
   a.href = url; a.download = 'bitmap-dither.svg';
   document.body.appendChild(a); a.click(); a.remove();
-  setTimeout(()=>URL.revokeObjectURL(url), 1000);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-/* =========================
-   Gravação do Canvas (.webm)
-   ========================= */
+// gravação
 function pickMimeType(){
   const cands = ['video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm'];
-  for(const t of cands){
-    try{
-      if(typeof MediaRecorder!=='undefined' && MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(t)) return t;
-    }catch(_){}
+  for (const t of cands){
+    try { if (typeof MediaRecorder!=='undefined' && MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(t)) return t; }
+    catch(_){}
   }
   return '';
 }
 
 function startRecording(){
-  if(isRecording) return;
-  try{
-    gSrc.remove(); gProc.remove(); gSrc = createGraphics(exportW, exportH); gProc = createGraphics(exportW, exportH);
-  resizeCanvas(exportW, exportH); const stream = canvas.elt.captureStream(30); // 30 fps
-    if(srcVideo && srcVideo.elt && typeof srcVideo.elt.captureStream === 'function'){
-      try{
+  if (isRecording) return;
+  try {
+    gSrc.remove(); gProc.remove();
+    gSrc = createGraphics(exportW, exportH);
+    gProc = createGraphics(exportW, exportH);
+    resizeCanvas(exportW, exportH);
+    const stream = canvas.elt.captureStream(30);
+    if (srcVideo && srcVideo.elt && typeof srcVideo.elt.captureStream === 'function'){
+      try {
         const vstream = srcVideo.elt.captureStream();
         const audioTracks = vstream.getAudioTracks();
-        if(audioTracks && audioTracks.length){
-          stream.addTrack(audioTracks[0]);
-        }
-      }catch(err){ console.warn('Não foi possível anexar o áudio do vídeo.', err); }
+        if (audioTracks && audioTracks.length) stream.addTrack(audioTracks[0]);
+      } catch(err){ console.warn('Não foi possível anexar o áudio do vídeo.', err); }
     }
     const mimeType = pickMimeType();
     const opts = mimeType ? { mimeType, videoBitsPerSecond: 6_000_000 } : { videoBitsPerSecond: 6_000_000 };
     mediaRecorder = new MediaRecorder(stream, opts);
     recordedChunks = [];
-    mediaRecorder.ondataavailable = e => { if(e.data && e.data.size>0) recordedChunks.push(e.data); };
+    mediaRecorder.ondataavailable = e => { if (e.data && e.data.size>0) recordedChunks.push(e.data); };
     mediaRecorder.onstop = saveRecording;
     mediaRecorder.start(200);
-    if(!srcVideo) loop();
+    if (!srcVideo) loop();
     isRecording = true;
-    const btn = null;
-    
-  }catch(err){
+  } catch(err){
     alert('Falha ao iniciar gravação. Seu navegador suporta MediaRecorder/WebM?\n' + err);
   }
 }
 
 function stopRecording(){
-  if(!isRecording) return;
-  try{ mediaRecorder.stop(); }catch(err){ console.warn('Erro ao parar recorder', err); }
+  if (!isRecording) return;
+  try { mediaRecorder.stop(); } catch(err){ console.warn('Erro ao parar recorder', err); }
   isRecording = false;
-  const btn = null;
-  
-  if(!srcVideo) noLoop();
-
+  if (!srcVideo) noLoop();
 }
 
 function saveRecording(){
@@ -655,68 +610,56 @@ function saveRecording(){
   a.download = 'processed-video.webm';
   document.body.appendChild(a);
   a.click();
-  setTimeout(()=>{
-    URL.revokeObjectURL(url);
-    a.remove();
-  }, 200);
+  setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 200);
 
-  try{
-    gSrc.remove(); gProc.remove();
-  }catch(e){}
-  gSrc = createGraphics(1280, 720);
+  try { gSrc.remove(); gProc.remove(); } catch(e) {}
+  gSrc  = createGraphics(1280, 720);
   gProc = createGraphics(1280, 720);
-  // canvas will be resized back by fitToCanvas on windowResized or manually
-
-
 }
 
-
 async function renderAtSizeAndDo(w, h, action){
-  // cria buffers temporários e processa nesta resolução
   const prev_gSrc = gSrc, prev_gProc = gProc;
   const prev_lastGrid = lastGrid, prev_lastMethod = lastMethod, prev_lastHT = lastHT;
 
-  const tmpSrc = createGraphics(w, h);
+  const tmpSrc  = createGraphics(w, h);
   const tmpProc = createGraphics(w, h);
-  gSrc = tmpSrc;
+  gSrc  = tmpSrc;
   gProc = tmpProc;
 
-  if(srcImg){
+  if (srcImg){
     tmpSrc.push(); tmpSrc.clear();
     const fit = fitRect(srcImg.width, srcImg.height, w, h);
     tmpSrc.image(srcImg, fit.x, fit.y, fit.w, fit.h);
     tmpSrc.pop();
     processCurrent(tmpSrc);
-  }else if(srcVideo){
+  } else if (srcVideo){
     tmpSrc.push(); tmpSrc.clear();
     tmpSrc.image(srcVideo, 0, 0, w, h);
     tmpSrc.pop();
     processCurrent(tmpSrc);
-  }else{
-    // nada carregado => apenas background com bgColor
+  } else {
     tmpProc.push(); tmpProc.clear(); tmpProc.background(bgColor); tmpProc.pop();
   }
 
   await action({w, h, g: tmpProc});
 
-  // limpa temporários e restaura
   tmpSrc.remove();
   tmpProc.remove();
-  gSrc = prev_gSrc;
+  gSrc  = prev_gSrc;
   gProc = prev_gProc;
-  lastGrid = prev_lastGrid;
+  lastGrid   = prev_lastGrid;
   lastMethod = prev_lastMethod;
-  lastHT = prev_lastHT;
+  lastHT     = prev_lastHT;
 }
 
 function savePNG(){
-  renderAtSizeAndDo(exportW, exportH, ({w,h,g})=>{
-    return new Promise((resolve)=>{
+  renderAtSizeAndDo(exportW, exportH, ({w,h,g}) => {
+    return new Promise((resolve) => {
       const c = document.createElement('canvas');
       c.width = w; c.height = h;
       const ctx = c.getContext('2d');
       ctx.drawImage(g.elt, 0, 0, w, h);
-      c.toBlob((blob)=>{
+      c.toBlob((blob) => {
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
         a.download = `export_${w}x${h}.png`;
@@ -729,9 +672,8 @@ function savePNG(){
 }
 
 function saveSVG(){
-  // Se o tamanho desejado difere do buffer atual, reprocessa antes de salvar
-  if(gProc.width !== exportW || gProc.height !== exportH){
-    renderAtSizeAndDo(exportW, exportH, ()=>{ _saveSVG_do(); return Promise.resolve(); });
+  if (gProc.width !== exportW || gProc.height !== exportH){
+    renderAtSizeAndDo(exportW, exportH, () => { _saveSVG_do(); return Promise.resolve(); });
     return;
   }
   _saveSVG_do();

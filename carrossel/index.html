@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>carousel</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../shared/ui-theme.css"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { width: 100%; height: 100%; font-family: 'DM Sans', sans-serif; }
+
+    body {
+      background: #d5d0ca;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      touch-action: none;
+      overscroll-behavior: none;
+    }
+
+    .wrapper {
+      perspective: 700px;
+      transform-origin: center center;
+      will-change: transform;
+    }
+
+    body.orbit-mode .wrapper { cursor: grab; }
+    body.orbit-mode.dragging .wrapper { cursor: grabbing; }
+
+    .scene {
+      transform-style: preserve-3d;
+      width: 0; height: 0;
+      position: relative;
+    }
+
+    .shape {
+      position: absolute;
+      left: 0; top: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      color: #111;
+      letter-spacing: -0.02em;
+      user-select: none;
+    }
+
+    .pill   { border-radius: 9999px; }
+    .circle { border-radius: 50%; }
+    .rect   { border-radius: 32px; }
+
+    #exportCanvas { display: none; }
+
+    /* ── Menu button ── */
+    .menu-btn {
+      position: fixed;
+      top: 12px; right: 12px;
+      background: var(--ui-bg-panel);
+      color: var(--ui-fg);
+      border: 1px solid var(--ui-border);
+      border-radius: var(--ui-radius);
+      padding: 6px 10px;
+      font-family: var(--ui-font);
+      font-size: 9px;
+      font-weight: 500;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      cursor: pointer;
+      z-index: 100;
+      backdrop-filter: blur(10px);
+      transition: background 0.2s;
+    }
+    .menu-btn:hover { background: var(--ui-fg); color: var(--ui-bg); border-color: var(--ui-fg); }
+
+    /* ── Panel ── */
+    .panel {
+      position: fixed;
+      top: 0; right: 0;
+      width: 260px; height: 100%;
+      background: var(--ui-bg-panel);
+      border-left: 1px solid var(--ui-border);
+      backdrop-filter: blur(10px);
+      color: var(--ui-fg);
+      font-family: var(--ui-font);
+      transform: translateX(100%);
+      transition: transform 0.32s cubic-bezier(0.25,0.46,0.45,0.94);
+      z-index: 90;
+      overflow-y: auto;
+      padding: 56px 14px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      touch-action: pan-y;
+    }
+    .panel.open { transform: translateX(0); }
+
+    .panel h3 {
+      font-family: var(--ui-font);
+      font-size: 9px;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--ui-muted);
+      margin-bottom: 10px;
+    }
+
+    .hint-text {
+      font-family: var(--ui-font);
+      font-size: 10px;
+      color: var(--ui-muted);
+      margin-top: 8px;
+      letter-spacing: 0.03em;
+    }
+
+    .toggle-btns { display: flex; gap: 6px; }
+    .toggle-btn {
+      flex: 1;
+      padding: 6px 0;
+      background: transparent;
+      border: 1px solid var(--ui-border);
+      border-radius: var(--ui-radius);
+      color: var(--ui-fg); opacity: 0.6;
+      font-family: var(--ui-font);
+      font-size: 9px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.18s;
+    }
+    .toggle-btn.active {
+      background: var(--ui-fg);
+      border-color: var(--ui-fg);
+      color: var(--ui-bg);
+      opacity: 1;
+    }
+
+    .word-list { display: flex; flex-direction: column; gap: 7px; }
+    .word-row { display: flex; align-items: center; gap: 9px; }
+    .word-dot { width: 11px; height: 11px; border-radius: 50%; flex-shrink: 0; }
+    .word-row input {
+      flex: 1;
+      background: transparent;
+      border: 1px solid var(--ui-border);
+      border-radius: var(--ui-radius);
+      color: var(--ui-fg);
+      font-family: var(--ui-font);
+      font-size: 11px;
+      font-weight: 500;
+      padding: 5px 8px;
+      outline: none;
+      transition: border-color 0.18s;
+    }
+    .word-row input:focus { border-color: var(--ui-fg); }
+
+    .export-btns { display: flex; flex-direction: column; gap: 6px; }
+    .export-btn {
+      width: 100%;
+      padding: 7px 10px;
+      background: transparent;
+      border: 1px solid var(--ui-border);
+      border-radius: var(--ui-radius);
+      color: var(--ui-fg);
+      font-family: var(--ui-font);
+      font-size: 9px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.18s;
+      text-align: left;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+    }
+    .export-btn:hover {
+      background: var(--ui-fg);
+      border-color: var(--ui-fg);
+      color: var(--ui-bg);
+    }
+    .export-btn.recording { border-color: #e03535; color: #ff6060; }
+
+    .rec-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: #ff3535;
+      animation: blink 1s ease-in-out infinite;
+    }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.15} }
+
+    .modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.55);
+      z-index: 200;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      touch-action: auto;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: #1c1c1c;
+      border-radius: 16px;
+      padding: 22px;
+      width: min(580px, 92vw);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .modal-title { font-size: 15px; font-weight: 700; color: #fff; }
+    .modal textarea {
+      width: 100%; height: 210px;
+      background: rgba(255,255,255,0.04);
+      border: 1.5px solid rgba(255,255,255,0.09);
+      border-radius: 10px;
+      color: #bbb;
+      font-family: monospace;
+      font-size: 11px;
+      line-height: 1.5;
+      padding: 12px;
+      resize: none;
+      outline: none;
+    }
+    .modal-actions { display: flex; gap: 9px; justify-content: flex-end; }
+    .modal-actions button {
+      padding: 9px 18px;
+      border-radius: 8px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      border: none;
+    }
+    #btnCopy { background: #fff; color: #111; }
+    #btnModalClose { background: rgba(255,255,255,0.09); color: #ddd; }
+
+    /* ── Mobile ── */
+    @media (max-width: 600px) {
+      .panel {
+        width: 100%;
+        height: auto;
+        max-height: 78vh;
+        top: auto;
+        bottom: 0;
+        right: 0;
+        transform: translateY(105%);
+        border-radius: 20px 20px 0 0;
+        padding: 28px 20px 40px;
+        gap: 18px;
+      }
+      .panel.open { transform: translateY(0); }
+      .panel::before {
+        content: '';
+        position: absolute;
+        top: 10px; left: 50%;
+        transform: translateX(-50%);
+        width: 42px; height: 4px;
+        background: rgba(255,255,255,0.18);
+        border-radius: 2px;
+      }
+      .menu-btn {
+        top: auto;
+        bottom: 24px;
+        right: 50%;
+        transform: translateX(50%);
+      }
+    }
+  </style>
+</head>
+<body>
+
+<a class="ui-back" href="../index.html">&lt; back</a>
+<div class="wrapper">
+  <div class="scene" id="scene"></div>
+</div>
+
+<canvas id="exportCanvas"></canvas>
+
+<button class="menu-btn" id="menuBtn">menu</button>
+
+<div class="panel" id="panel">
+  <div style="display:flex;justify-content:flex-end;margin-top:-24px;margin-bottom:-8px;">
+    <button class="ui-invert-btn" id="ui-invert"><svg viewBox="0 0 16 16"><path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm0 12.5A5.5 5.5 0 0 1 8 2.5v11a5.5 5.5 0 0 1 0-11z"/></svg> Inverter</button>
+  </div>
+  <div>
+    <h3>Mode</h3>
+    <div class="toggle-btns">
+      <button class="toggle-btn active" id="btnAuto">auto rotate</button>
+      <button class="toggle-btn" id="btnOrbit">orbit</button>
+    </div>
+    <p class="hint-text" id="modeHint">scroll / pinch to zoom</p>
+  </div>
+
+  <div>
+    <h3>Axis</h3>
+    <div class="toggle-btns">
+      <button class="toggle-btn active" id="btnY">rotate Y</button>
+      <button class="toggle-btn" id="btnX">rotate X</button>
+    </div>
+  </div>
+
+  <div>
+    <h3>Direction</h3>
+    <div class="toggle-btns">
+      <button class="toggle-btn active" id="btnFwd">→ forward</button>
+      <button class="toggle-btn" id="btnRev">← reverse</button>
+    </div>
+  </div>
+
+  <div>
+    <h3>Words</h3>
+    <div class="word-list" id="wordList"></div>
+  </div>
+
+  <div>
+    <h3>Export</h3>
+    <div class="export-btns">
+      <button class="export-btn" id="btnPng">🖼&nbsp; Save PNG</button>
+      <button class="export-btn" id="btnRec">⏺&nbsp; Start recording</button>
+      <button class="export-btn" id="btnEmbed">&lt;/&gt;&nbsp; Get embed code</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-title">Embed code</div>
+    <textarea id="embedCode" readonly spellcheck="false"></textarea>
+    <div class="modal-actions">
+      <button id="btnModalClose">Close</button>
+      <button id="btnCopy">Copy</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Data ──────────────────────────────────────────────────────────────────────
+const shapes = [
+  { word:'wake',   type:'pill',   w:360, h:200, fs:68, g:['#ff6a2f','#ff3535'], baseAngle:0   },
+  { word:'the',    type:'circle', w:240, h:240, fs:62, g:['#a8e63d','#ffe100'], baseAngle:45  },
+  { word:'dead',   type:'rect',   w:270, h:330, fs:64, g:['#5a8fff','#9e5bff'], baseAngle:90  },
+  { word:'the',    type:'pill',   w:320, h:185, fs:62, g:['#ff9fd8','#c0a0ff'], baseAngle:135 },
+  { word:'saints', type:'circle', w:290, h:290, fs:54, g:['#ff9200','#ffe135'], baseAngle:180 },
+  { word:'are',    type:'rect',   w:255, h:305, fs:64, g:['#ff3535','#ff7a00'], baseAngle:225 },
+  { word:'in',     type:'circle', w:200, h:200, fs:60, g:['#9b45ff','#4d7fff'], baseAngle:270 },
+  { word:'hell',   type:'pill',   w:330, h:185, fs:64, g:['#ffe135','#55e000'], baseAngle:315 },
+];
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let carouselAngle = 0;
+let orbitAngle    = { x: -18, y: 0 };
+let rotAxis       = 'Y';
+let dir           = 1;
+let mode          = 'auto';
+let zoomScale     = 1;
+let baseScale     = 1;
+let recording     = false;
+let mediaRecorder = null;
+let recChunks     = [];
+const shapeDivs   = [];
+
+let isDragging = false;
+let dragLast   = { x: 0, y: 0 };
+let pinchDist  = 0;
+let touchPrev  = null;
+
+const MIN_ZOOM = 0.25, MAX_ZOOM = 4;
+const FOV = 700, RADIUS = 320, TILT = 18 * Math.PI / 180;
+
+const sceneEl   = document.getElementById('scene');
+const wrapperEl = document.querySelector('.wrapper');
+const canvas    = document.getElementById('exportCanvas');
+canvas.width = canvas.height = 800;
+const ctx = canvas.getContext('2d');
+
+// Polyfill roundRect for older Safari
+if (!CanvasRenderingContext2D.prototype.roundRect) {
+  CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+    r = Math.min(r, Math.min(w, h) / 2);
+    this.moveTo(x + r, y);
+    this.arcTo(x + w, y,     x + w, y + h, r);
+    this.arcTo(x + w, y + h, x,     y + h, r);
+    this.arcTo(x,     y + h, x,     y,     r);
+    this.arcTo(x,     y,     x + w, y,     r);
+    this.closePath();
+  };
+}
+
+// ── Matrix helpers ───────────────────────────────────────────────────────────
+function mRX(a){ const c=Math.cos(a),s=Math.sin(a); return [1,0,0, 0,c,-s, 0,s,c]; }
+function mRY(a){ const c=Math.cos(a),s=Math.sin(a); return [c,0,s, 0,1,0, -s,0,c]; }
+function mxv(m,v){ return [
+  m[0]*v[0]+m[1]*v[1]+m[2]*v[2],
+  m[3]*v[0]+m[4]*v[1]+m[5]*v[2],
+  m[6]*v[0]+m[7]*v[1]+m[8]*v[2]
+]; }
+function mxm(a,b){
+  const r = new Array(9);
+  for (let i=0;i<3;i++) for (let j=0;j<3;j++)
+    r[i*3+j] = a[i*3]*b[j] + a[i*3+1]*b[3+j] + a[i*3+2]*b[6+j];
+  return r;
+}
+
+// ── Scene ─────────────────────────────────────────────────────────────────────
+function gradientCSS(s) {
+  return s.type === 'circle'
+    ? `radial-gradient(circle at 40% 38%, ${s.g[0]} 0%, ${s.g[1]} 100%)`
+    : `linear-gradient(135deg, ${s.g[0]} 0%, ${s.g[1]} 100%)`;
+}
+
+function buildScene() {
+  sceneEl.innerHTML = '';
+  shapeDivs.length = 0;
+  shapes.forEach(s => {
+    const d = document.createElement('div');
+    d.className = `shape ${s.type}`;
+    d.textContent = s.word;
+    d.style.width      = s.w + 'px';
+    d.style.height     = s.h + 'px';
+    d.style.fontSize   = s.fs + 'px';
+    d.style.background = gradientCSS(s);
+    sceneEl.appendChild(d);
+    shapeDivs.push(d);
+  });
+  applyShapeTransforms();
+}
+
+function applyShapeTransforms() {
+  shapes.forEach((s, i) => {
+    shapeDivs[i].style.transform = rotAxis === 'Y'
+      ? `rotateY(${s.baseAngle}deg) translateZ(${RADIUS}px) translate(-50%,-50%)`
+      : `rotateX(${s.baseAngle}deg) translateZ(${RADIUS}px) translate(-50%,-50%)`;
+  });
+}
+
+function applySceneTransform() {
+  if (mode === 'auto') {
+    sceneEl.style.transform = rotAxis === 'Y'
+      ? `rotateX(-18deg) rotateY(${carouselAngle}deg)`
+      : `rotateY(-18deg) rotateX(${carouselAngle}deg)`;
+  } else {
+    sceneEl.style.transform = `rotateX(${orbitAngle.x}deg) rotateY(${orbitAngle.y}deg)`;
+  }
+}
+
+function applyWrapperScale() {
+  wrapperEl.style.transform = `scale(${baseScale * zoomScale})`;
+}
+
+function handleResize() {
+  const vp = window.visualViewport;
+  const w = vp ? vp.width  : window.innerWidth;
+  const h = vp ? vp.height : window.innerHeight;
+  const minDim = Math.min(w, h);
+  baseScale = Math.max(0.25, Math.min(1, minDim / 750));
+  applyWrapperScale();
+}
+
+// ── Animation loop ────────────────────────────────────────────────────────────
+function tick() {
+  if (mode === 'auto') {
+    carouselAngle += 0.25 * dir;
+    applySceneTransform();
+  }
+  if (recording) drawFrame();
+  requestAnimationFrame(tick);
+}
+
+// ── Projection ────────────────────────────────────────────────────────────────
+function getSceneMatrix() {
+  if (mode === 'orbit') {
+    return mxm(mRX(orbitAngle.x * Math.PI/180), mRY(orbitAngle.y * Math.PI/180));
+  }
+  if (rotAxis === 'Y') {
+    return mxm(mRX(-TILT), mRY(carouselAngle * Math.PI/180));
+  }
+  return mxm(mRY(-TILT), mRX(carouselAngle * Math.PI/180));
+}
+
+function project(baseAngle) {
+  const a = baseAngle * Math.PI / 180;
+  const sp = rotAxis === 'Y'
+    ? [Math.sin(a)*RADIUS, 0, Math.cos(a)*RADIUS]
+    : [0, -Math.sin(a)*RADIUS, Math.cos(a)*RADIUS];
+  const [x, y, z] = mxv(getSceneMatrix(), sp);
+  const scale = FOV / Math.max(FOV - z, 1);
+  return { sx: x*scale, sy: y*scale, scale, z };
+}
+
+// ── Canvas draw ───────────────────────────────────────────────────────────────
+function drawFrame() {
+  const W = 800, H = 800, CX = 400, CY = 400;
+  ctx.fillStyle = '#d5d0ca';
+  ctx.fillRect(0, 0, W, H);
+
+  const pts = shapes.map(s => ({ s, ...project(s.baseAngle) }));
+  pts.sort((a, b) => a.z - b.z);
+
+  for (const { s, sx, sy, scale } of pts) {
+    const w = s.w * scale, h = s.h * scale;
+    const x = CX + sx - w/2, y = CY + sy - h/2;
+    const cx = CX + sx, cy = CY + sy;
+    const r = s.type === 'rect'
+      ? Math.min(32*scale, Math.min(w,h)/2)
+      : Math.min(w,h)/2;
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.roundRect(x, y, w, h, r);
+
+    let grad;
+    if (s.type === 'circle') {
+      grad = ctx.createRadialGradient(cx - w*0.1, cy - h*0.12, 0, cx, cy, Math.max(w,h)/2);
+    } else {
+      grad = ctx.createLinearGradient(x, y, x + w, y + h);
+    }
+    grad.addColorStop(0, s.g[0]);
+    grad.addColorStop(1, s.g[1]);
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    ctx.font = `700 ${Math.round(s.fs*scale)}px "DM Sans", sans-serif`;
+    ctx.fillStyle = '#111';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(s.word, cx, cy);
+
+    ctx.restore();
+  }
+}
+
+// ── PNG / Video ───────────────────────────────────────────────────────────────
+function savePNG() {
+  drawFrame();
+  const a = document.createElement('a');
+  a.download = 'carousel.png';
+  a.href = canvas.toDataURL('image/png');
+  a.click();
+}
+
+const btnRec = document.getElementById('btnRec');
+
+function startRecording() {
+  recChunks = [];
+  const stream = canvas.captureStream(30);
+  const mime = MediaRecorder.isTypeSupported('video/webm;codecs=vp9')
+    ? 'video/webm;codecs=vp9' : 'video/webm';
+  mediaRecorder = new MediaRecorder(stream, { mimeType: mime });
+  mediaRecorder.ondataavailable = e => { if (e.data.size > 0) recChunks.push(e.data); };
+  mediaRecorder.onstop = () => {
+    const blob = new Blob(recChunks, { type: 'video/webm' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.download = 'carousel.webm';
+    a.href = url;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+  };
+  mediaRecorder.start();
+  recording = true;
+  btnRec.classList.add('recording');
+  btnRec.innerHTML = '<span class="rec-dot"></span>&nbsp; Stop & save video';
+}
+
+function stopRecording() {
+  mediaRecorder.stop();
+  recording = false;
+  btnRec.classList.remove('recording');
+  btnRec.innerHTML = '⏺&nbsp; Start recording';
+}
+
+// ── Embed ─────────────────────────────────────────────────────────────────────
+function generateEmbed() {
+  const data = JSON.stringify(shapes.map(({ word, type, w, h, fs, g, baseAngle }) =>
+    ({ word, type, w, h, fs, g, baseAngle })
+  ));
+
+  const lines = [
+    '<!-- Carousel 3D -->',
+    '<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@700&display=swap" rel="stylesheet">',
+    '<div id="c-wrap" style="width:500px;height:500px;background:#d5d0ca;display:flex;align-items:center;justify-content:center;overflow:hidden">',
+    '  <div id="c-scene" style="transform-style:preserve-3d;position:relative;width:0;height:0"></div>',
+    '</div>',
+    '<script>(function(){',
+    '  var S=' + data + ',a=0,ax="' + rotAxis + '",ds=[];',
+    '  var sc=document.getElementById("c-scene");',
+    '  document.getElementById("c-wrap").style.perspective="700px";',
+    '  function g(s){return s.type==="circle"?"radial-gradient(circle at 40% 38%,"+s.g[0]+" 0%,"+s.g[1]+" 100%)":"linear-gradient(135deg,"+s.g[0]+" 0%,"+s.g[1]+" 100%)"}',
+    '  S.forEach(function(s){',
+    '    var d=document.createElement("div");',
+    '    d.textContent=s.word;',
+    '    d.style.cssText="position:absolute;left:0;top:0;display:flex;align-items:center;justify-content:center;font-family:\'DM Sans\',sans-serif;font-weight:700;color:#111;letter-spacing:-0.02em;width:"+s.w+"px;height:"+s.h+"px;font-size:"+s.fs+"px;background:"+g(s)+";border-radius:"+(s.type==="pill"?"9999px":s.type==="circle"?"50%":"32px");',
+    '    d.style.transform=ax==="Y"?"rotateY("+s.baseAngle+"deg) translateZ(320px) translate(-50%,-50%)":"rotateX("+s.baseAngle+"deg) translateZ(320px) translate(-50%,-50%)";',
+    '    sc.appendChild(d);ds.push(d);',
+    '  });',
+    '  (function t(){a+=0.25;sc.style.transform=ax==="Y"?"rotateX(-18deg) rotateY("+a+"deg)":"rotateY(-18deg) rotateX("+a+"deg)";requestAnimationFrame(t)})();',
+    '})();<\/script>',
+  ];
+
+  document.getElementById('embedCode').value = lines.join('\n');
+  document.getElementById('modalOverlay').classList.add('open');
+}
+
+// ── Word list ─────────────────────────────────────────────────────────────────
+function buildWordList() {
+  const list = document.getElementById('wordList');
+  list.innerHTML = '';
+  shapes.forEach((s, i) => {
+    const row   = document.createElement('div');
+    row.className = 'word-row';
+    const dot   = document.createElement('div');
+    dot.className = 'word-dot';
+    dot.style.background = s.g[0];
+    const input = document.createElement('input');
+    input.type  = 'text';
+    input.value = s.word;
+    input.addEventListener('input', () => {
+      shapes[i].word = input.value;
+      if (shapeDivs[i]) shapeDivs[i].textContent = input.value;
+    });
+    row.append(dot, input);
+    list.appendChild(row);
+  });
+}
+
+// ── Mode switching ────────────────────────────────────────────────────────────
+function setMode(m) {
+  if (m === mode) return;
+  if (m === 'orbit') {
+    orbitAngle.y = carouselAngle;
+    orbitAngle.x = -18;
+    document.body.classList.add('orbit-mode');
+    document.getElementById('modeHint').textContent = 'drag to rotate · scroll / pinch to zoom';
+    document.getElementById('btnOrbit').classList.add('active');
+    document.getElementById('btnAuto').classList.remove('active');
+  } else {
+    carouselAngle = orbitAngle.y;
+    document.body.classList.remove('orbit-mode');
+    document.getElementById('modeHint').textContent = 'scroll / pinch to zoom';
+    document.getElementById('btnAuto').classList.add('active');
+    document.getElementById('btnOrbit').classList.remove('active');
+  }
+  mode = m;
+  applySceneTransform();
+}
+
+// ── Interaction helpers ───────────────────────────────────────────────────────
+const clampZoom = () => { zoomScale = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoomScale)); };
+const clampTilt = () => { orbitAngle.x = Math.max(-80, Math.min(80, orbitAngle.x)); };
+const isUIEvent = e => !!e.target.closest('.panel, .menu-btn, .modal-overlay');
+
+// ── Mouse drag (orbit) ────────────────────────────────────────────────────────
+document.addEventListener('mousedown', e => {
+  if (mode !== 'orbit' || isUIEvent(e)) return;
+  isDragging = true;
+  dragLast = { x: e.clientX, y: e.clientY };
+  document.body.classList.add('dragging');
+});
+
+document.addEventListener('mousemove', e => {
+  if (!isDragging) return;
+  const dx = e.clientX - dragLast.x;
+  const dy = e.clientY - dragLast.y;
+  orbitAngle.y += dx * 0.4;
+  orbitAngle.x += dy * 0.4;
+  clampTilt();
+  dragLast = { x: e.clientX, y: e.clientY };
+  applySceneTransform();
+});
+
+document.addEventListener('mouseup', () => {
+  isDragging = false;
+  document.body.classList.remove('dragging');
+});
+
+// ── Wheel / trackpad ──────────────────────────────────────────────────────────
+document.addEventListener('wheel', e => {
+  if (isUIEvent(e)) return;
+  e.preventDefault();
+
+  if (e.ctrlKey) {
+    // Pinch gesture on trackpad (or Ctrl+scroll)
+    zoomScale *= (1 - e.deltaY * 0.01);
+    clampZoom();
+    applyWrapperScale();
+    return;
+  }
+
+  if (mode === 'orbit' && !isDragging) {
+    // Two-finger pan on trackpad in orbit → rotate
+    orbitAngle.y += e.deltaX * 0.3;
+    orbitAngle.x += e.deltaY * 0.3;
+    clampTilt();
+    applySceneTransform();
+    return;
+  }
+
+  // Default: scroll = zoom
+  zoomScale *= (1 - e.deltaY * 0.003);
+  clampZoom();
+  applyWrapperScale();
+}, { passive: false });
+
+// ── Touch (mobile: drag + pinch) ──────────────────────────────────────────────
+document.addEventListener('touchstart', e => {
+  if (isUIEvent(e)) return;
+  touchPrev = Array.from(e.touches);
+  if (e.touches.length === 2) {
+    pinchDist = Math.hypot(
+      e.touches[0].clientX - e.touches[1].clientX,
+      e.touches[0].clientY - e.touches[1].clientY
+    );
+  }
+}, { passive: true });
+
+document.addEventListener('touchmove', e => {
+  if (isUIEvent(e)) return;
+  e.preventDefault();
+
+  if (e.touches.length === 2) {
+    const d = Math.hypot(
+      e.touches[0].clientX - e.touches[1].clientX,
+      e.touches[0].clientY - e.touches[1].clientY
+    );
+    if (pinchDist > 0) {
+      zoomScale *= d / pinchDist;
+      clampZoom();
+      applyWrapperScale();
+    }
+    pinchDist = d;
+  } else if (e.touches.length === 1 && mode === 'orbit' && touchPrev && touchPrev[0]) {
+    const dx = e.touches[0].clientX - touchPrev[0].clientX;
+    const dy = e.touches[0].clientY - touchPrev[0].clientY;
+    orbitAngle.y += dx * 0.4;
+    orbitAngle.x += dy * 0.4;
+    clampTilt();
+    applySceneTransform();
+  }
+  touchPrev = Array.from(e.touches);
+}, { passive: false });
+
+document.addEventListener('touchend', () => {
+  touchPrev = null;
+  pinchDist = 0;
+});
+
+// ── Menu wiring ───────────────────────────────────────────────────────────────
+document.getElementById('menuBtn').addEventListener('click', function () {
+  const open = document.getElementById('panel').classList.toggle('open');
+  this.textContent = open ? 'close' : 'menu';
+});
+
+document.getElementById('btnAuto').addEventListener('click',  () => setMode('auto'));
+document.getElementById('btnOrbit').addEventListener('click', () => setMode('orbit'));
+
+document.getElementById('btnY').addEventListener('click', () => {
+  rotAxis = 'Y';
+  document.getElementById('btnY').classList.add('active');
+  document.getElementById('btnX').classList.remove('active');
+  applyShapeTransforms();
+});
+
+document.getElementById('btnX').addEventListener('click', () => {
+  rotAxis = 'X';
+  document.getElementById('btnX').classList.add('active');
+  document.getElementById('btnY').classList.remove('active');
+  applyShapeTransforms();
+});
+
+document.getElementById('btnFwd').addEventListener('click', () => {
+  dir = 1;
+  document.getElementById('btnFwd').classList.add('active');
+  document.getElementById('btnRev').classList.remove('active');
+});
+
+document.getElementById('btnRev').addEventListener('click', () => {
+  dir = -1;
+  document.getElementById('btnRev').classList.add('active');
+  document.getElementById('btnFwd').classList.remove('active');
+});
+
+document.getElementById('btnPng').addEventListener('click', savePNG);
+btnRec.addEventListener('click', () => recording ? stopRecording() : startRecording());
+document.getElementById('btnEmbed').addEventListener('click', generateEmbed);
+
+document.getElementById('btnModalClose').addEventListener('click', () => {
+  document.getElementById('modalOverlay').classList.remove('open');
+});
+
+document.getElementById('btnCopy').addEventListener('click', () => {
+  navigator.clipboard.writeText(document.getElementById('embedCode').value);
+  const btn = document.getElementById('btnCopy');
+  btn.textContent = 'Copied!';
+  setTimeout(() => { btn.textContent = 'Copy'; }, 1500);
+});
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+window.addEventListener('resize', handleResize);
+window.visualViewport?.addEventListener('resize', handleResize);
+handleResize();
+buildScene();
+buildWordList();
+tick();
+</script>
+<script src="../shared/ui-theme-lite.js"></script>
+<script>
+document.getElementById('ui-invert').addEventListener('click', () => UITheme.toggleTheme());
+</script>
+</body>
+</html>

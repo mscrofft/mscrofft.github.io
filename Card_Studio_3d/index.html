@@ -4,26 +4,29 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Card Studio 3D</title>
+  <link rel="stylesheet" href="../shared/ui-theme.css"/>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html, body { height: 100%; }
     body {
-      background: #0a0a14;
-      font-family: 'Helvetica Neue', sans-serif;
+      background: var(--ui-bg-canvas);
+      font-family: var(--ui-font);
+      color: var(--ui-fg);
       display: flex; align-items: stretch; min-height: 100vh;
     }
-    .app { display: flex; flex-direction: column; width: 100%; min-height: 100vh; background: #0a0a14; }
+    .app { display: flex; flex-direction: column; width: 100%; min-height: 100vh; background: var(--ui-bg-canvas); }
     .main { display: flex; flex: 1; min-height: 560px; }
 
     /* ── panels (desktop) ── */
     .panel {
-      width: 156px; background: #111118; padding: 14px;
+      width: 180px; background: var(--ui-bg-panel); padding: 14px;
       display: flex; flex-direction: column; gap: 11px;
       flex-shrink: 0; overflow-y: auto;
-      scrollbar-width: thin; scrollbar-color: #2a2a3a transparent;
+      font-family: var(--ui-font); color: var(--ui-fg);
+      scrollbar-width: thin; scrollbar-color: var(--ui-border) transparent;
     }
-    .panel-left  { border-right: 1px solid #1e1e26; }
-    .panel-right { border-left:  1px solid #1e1e26; }
+    .panel-left  { border-right: 1px solid var(--ui-border); }
+    .panel-right { border-left:  1px solid var(--ui-border); }
 
     /* ── canvas ── */
     .canvas-wrap {
@@ -40,93 +43,101 @@
 
     /* ── bottom bar (desktop) ── */
     .bottom-bar {
-      background: #111118; padding: 10px 18px;
+      background: var(--ui-bg-panel); padding: 8px 14px;
       display: flex; align-items: center; justify-content: space-between;
-      border-top: 1px solid #1e1e26; gap: 8px; flex-wrap: wrap;
+      border-top: 1px solid var(--ui-border); gap: 8px; flex-wrap: wrap;
     }
     .mode-btn {
-      background: #1a1a2a; border: 1px solid #2a2a3a; color: #666;
-      padding: 6px 14px; border-radius: 20px; font-size: 12px;
-      cursor: pointer; font-family: inherit; transition: all .15s;
+      background: transparent; border: 1px solid var(--ui-border); color: var(--ui-fg); opacity: 0.7;
+      padding: 4px 10px; border-radius: var(--ui-radius); font-size: 9px;
+      font-family: var(--ui-font); letter-spacing: 0.08em; text-transform: uppercase;
+      cursor: pointer; transition: all .15s;
     }
-    .mode-btn.active { background: #2e2e88; border-color: #5555cc; color: #fff; }
+    .mode-btn.active { background: var(--ui-fg); border-color: var(--ui-fg); color: var(--ui-bg); opacity: 1; }
     .export-btn {
-      background: #4444cc; border: none; color: #fff;
-      padding: 8px 18px; border-radius: 8px; font-size: 12px;
-      cursor: pointer; font-weight: 600; font-family: inherit; transition: background .15s;
+      background: var(--ui-fg); border: none; color: var(--ui-bg);
+      padding: 6px 14px; border-radius: var(--ui-radius); font-size: 9px;
+      cursor: pointer; font-weight: 500; font-family: var(--ui-font);
+      letter-spacing: 0.08em; text-transform: uppercase; transition: opacity .15s;
     }
-    .export-btn:hover { background: #5555ee; }
+    .export-btn:hover { opacity: 0.85; }
     .mode-btns { display: flex; gap: 6px; flex-wrap: wrap; }
 
     /* ── shared panel typography ── */
     .panel-label {
-      color: #555; font-size: 10px; letter-spacing: .12em;
+      font-family: var(--ui-font);
+      color: var(--ui-muted); font-size: 9px; font-weight: 600; letter-spacing: .14em;
       text-transform: uppercase; margin-bottom: 4px;
       display: flex; justify-content: space-between; align-items: center;
     }
-    .panel-label span { color: #444; font-size: 10px; font-weight: 400; letter-spacing: 0; text-transform: none; }
-    .section-title { color: #555; font-size: 10px; letter-spacing: .10em; text-transform: uppercase; }
+    .panel-label span { color: var(--ui-muted); font-size: 9px; font-weight: 400; letter-spacing: 0; text-transform: none; }
+    .section-title { color: var(--ui-muted); font-size: 9px; letter-spacing: .14em; text-transform: uppercase; font-family: var(--ui-font); }
     .slider-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px; }
-    .slider-val { color: #5566aa; font-size: 10px; min-width: 28px; text-align: right; }
-    .divider { height: 1px; background: #1a1a22; margin: 1px 0; flex-shrink: 0; }
+    .slider-val { color: var(--ui-muted); font-size: 9px; min-width: 28px; text-align: right; font-family: var(--ui-font); }
+    .divider { height: 1px; background: var(--ui-border); margin: 1px 0; flex-shrink: 0; }
 
     .fp, .lp, .cp {
-      background: transparent; border: 1px solid #252530; color: #777;
-      padding: 6px 10px; border-radius: 7px; font-size: 12px; cursor: pointer;
-      text-align: left; width: 100%; transition: all .15s; font-family: inherit;
+      background: transparent; border: 1px solid var(--ui-border); color: var(--ui-fg); opacity: 0.75;
+      padding: 5px 8px; border-radius: var(--ui-radius); font-size: 9px; cursor: pointer;
+      font-family: var(--ui-font); letter-spacing: 0.06em; text-transform: uppercase;
+      text-align: left; width: 100%; transition: all .15s;
     }
-    .fp:hover, .lp:hover, .cp:hover { border-color: #444; color: #ccc; }
-    .fp.active, .lp.active, .cp.active { background: #1e1e38; border-color: #5555cc; color: #fff; }
+    .fp:hover, .lp:hover, .cp:hover { border-color: var(--ui-fg); opacity: 1; }
+    .fp.active, .lp.active, .cp.active { background: var(--ui-fg); border-color: var(--ui-fg); color: var(--ui-bg); opacity: 1; }
 
-    input[type=range]  { width: 100%; accent-color: #5555cc; cursor: pointer; }
-    input[type=color]  { width: 100%; height: 30px; border: none; border-radius: 7px; cursor: pointer; background: none; padding: 0; }
+    input[type=range]  { width: 100%; accent-color: var(--ui-fg); cursor: pointer; }
+    input[type=color]  { width: 100%; height: 20px; border: 1px solid var(--ui-border); border-radius: 1px; cursor: pointer; background: none; padding: 0; }
 
     .upload-label {
-      display: block; background: #18182a; border: 1px dashed #2e2e44; color: #555;
-      padding: 8px; border-radius: 7px; font-size: 11px; cursor: pointer;
+      display: block; background: transparent; border: 1px dashed var(--ui-border); color: var(--ui-muted);
+      padding: 6px; border-radius: var(--ui-radius); font-size: 9px; cursor: pointer;
+      font-family: var(--ui-font); letter-spacing: 0.06em; text-transform: uppercase;
       text-align: center; transition: border-color .15s; line-height: 1.4;
     }
-    .upload-label:hover { border-color: #5555cc; color: #aaa; }
-    .upload-label.has-file { border-color: #3a3a88; color: #8888ff; background: #14142a; }
+    .upload-label:hover { border-color: var(--ui-fg); color: var(--ui-fg); }
+    .upload-label.has-file { border-color: var(--ui-fg); color: var(--ui-fg); border-style: solid; }
 
     .clear-btn {
       display: none; margin-top: 4px; width: 100%; background: transparent;
-      border: 1px solid #3a2222; color: #995555; padding: 5px; border-radius: 6px;
-      font-size: 11px; cursor: pointer; font-family: inherit; transition: background .15s;
+      border: 1px solid var(--ui-border); color: var(--ui-muted); padding: 5px; border-radius: var(--ui-radius);
+      font-size: 9px; cursor: pointer; font-family: var(--ui-font); letter-spacing: 0.06em; text-transform: uppercase;
+      transition: background .15s;
     }
-    .clear-btn:hover { background: #2a1414; color: #cc6666; }
+    .clear-btn:hover { background: var(--ui-fg); color: var(--ui-bg); border-color: var(--ui-fg); }
 
     .add-card-btn {
-      width: 100%; background: #16162a; border: 1px dashed #333366; color: #5555aa;
-      padding: 8px; border-radius: 7px; font-size: 12px; cursor: pointer;
-      font-family: inherit; transition: all .15s; text-align: center;
+      width: 100%; background: transparent; border: 1px dashed var(--ui-border); color: var(--ui-muted);
+      padding: 6px; border-radius: var(--ui-radius); font-size: 9px; cursor: pointer;
+      font-family: var(--ui-font); letter-spacing: 0.06em; text-transform: uppercase;
+      transition: all .15s; text-align: center;
     }
-    .add-card-btn:hover { border-color: #5555cc; color: #9999ee; background: #1a1a38; }
+    .add-card-btn:hover { border-color: var(--ui-fg); color: var(--ui-fg); }
 
     .card-list { display: flex; flex-direction: column; gap: 4px; }
     .card-item {
-      display: flex; align-items: center; gap: 6px; padding: 5px 8px;
-      border: 1px solid #252530; border-radius: 6px; cursor: pointer;
-      transition: all .15s; font-size: 11px; color: #666;
+      display: flex; align-items: center; gap: 6px; padding: 4px 6px;
+      border: 1px solid var(--ui-border); border-radius: var(--ui-radius); cursor: pointer;
+      transition: all .15s; font-size: 9px; color: var(--ui-fg); opacity: 0.7;
+      font-family: var(--ui-font); letter-spacing: 0.06em; text-transform: uppercase;
     }
-    .card-item:hover { border-color: #444; color: #bbb; }
-    .card-item.active { border-color: #5555cc; color: #aaaaee; background: #16163a; }
-    .card-item-dot { width: 9px; height: 9px; border-radius: 3px; flex-shrink: 0; }
+    .card-item:hover { border-color: var(--ui-fg); opacity: 1; }
+    .card-item.active { border-color: var(--ui-fg); color: var(--ui-bg); background: var(--ui-fg); opacity: 1; }
+    .card-item-dot { width: 8px; height: 8px; border-radius: 1px; flex-shrink: 0; }
     .card-item-del {
-      margin-left: auto; color: #333; background: none; border: none;
-      cursor: pointer; font-size: 15px; line-height: 1; padding: 0 2px;
-      transition: color .15s; font-family: inherit;
+      margin-left: auto; color: var(--ui-muted); background: none; border: none;
+      cursor: pointer; font-size: 13px; line-height: 1; padding: 0 2px;
+      transition: color .15s; font-family: var(--ui-font);
     }
-    .card-item-del:hover { color: #cc4444; }
+    .card-item-del:hover { color: var(--ui-fg); }
 
     .arr-preset-row { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
     .rot-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; }
     .rot-btn {
-      background: #16162a; border: 1px solid #2a2a44; color: #6677aa;
-      padding: 5px 0; border-radius: 6px; font-size: 13px; cursor: pointer;
-      font-family: inherit; transition: all .15s; text-align: center;
+      background: transparent; border: 1px solid var(--ui-border); color: var(--ui-fg); opacity: 0.7;
+      padding: 5px 0; border-radius: var(--ui-radius); font-size: 11px; cursor: pointer;
+      font-family: var(--ui-font); transition: all .15s; text-align: center;
     }
-    .rot-btn:hover { border-color: #5555cc; color: #aaaaee; background: #1a1a3a; }
+    .rot-btn:hover { border-color: var(--ui-fg); opacity: 1; }
     .rot-btn:active { transform: scale(0.93); }
 
     /* ════════════════════════════════════
@@ -411,6 +422,46 @@
         </label>
         <button class="clear-btn" id="clear-back" onclick="clearBackImage()">✕ Clear back</button>
       </div>
+      <div class="divider"></div>
+      <div>
+        <div class="panel-label">Chip</div>
+        <label class="upload-label" id="lbl-chip">
+          + Custom Chip (PNG)
+          <input type="file" accept="image/*" onchange="loadChipImage(event)" style="display:none;">
+        </label>
+        <button class="clear-btn" id="clear-chip" onclick="clearChipImage()">✕ Remover</button>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:6px;">
+          <div>
+            <div class="slider-header"><div class="section-title">X</div><span class="slider-val" id="val-chipX">-0.8</span></div>
+            <input type="range" min="-150" max="150" value="-80" step="1" id="chipX" oninput="updateChipPos()">
+          </div>
+          <div>
+            <div class="slider-header"><div class="section-title">Y</div><span class="slider-val" id="val-chipY">0.2</span></div>
+            <input type="range" min="-90" max="90" value="15" step="1" id="chipY" oninput="updateChipPos()">
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="panel-label" style="margin-top:8px;">Logo / Nome</div>
+        <input type="text" id="logo-text" value="STUDIO" placeholder="Texto do logo"
+          style="width:100%;background:#18182a;border:1px solid #2e2e44;color:#aaa;padding:6px 8px;border-radius:7px;font-size:12px;font-family:inherit;margin-bottom:6px;"
+          oninput="updateLogoText()">
+        <label class="upload-label" id="lbl-logo">
+          + Logo (PNG/SVG)
+          <input type="file" accept="image/*,.svg" onchange="loadLogoImage(event)" style="display:none;">
+        </label>
+        <button class="clear-btn" id="clear-logo" onclick="clearLogoImage()">✕ Remover</button>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:6px;">
+          <div>
+            <div class="slider-header"><div class="section-title">X</div><span class="slider-val" id="val-logoX">0.3</span></div>
+            <input type="range" min="-150" max="150" value="30" step="1" id="logoX" oninput="updateLogoPos()">
+          </div>
+          <div>
+            <div class="slider-header"><div class="section-title">Y</div><span class="slider-val" id="val-logoY">0.7</span></div>
+            <input type="range" min="-90" max="90" value="70" step="1" id="logoY" oninput="updateLogoPos()">
+          </div>
+        </div>
+      </div>
     </div>
     <!-- Canvas -->
     <div class="canvas-wrap" id="canvasWrap">
@@ -508,6 +559,15 @@
         <div class="slider-header"><div class="section-title">Depth</div></div>
         <input type="range" min="1" max="30" value="10" id="depth" oninput="updateDepth()">
       </div>
+      <div class="divider"></div>
+      <div>
+        <div class="slider-header"><div class="section-title">Bloom</div><span class="slider-val" id="val-bloom">0.4</span></div>
+        <input type="range" min="0" max="20" value="4" step="1" id="bloomStr" oninput="setBloom()">
+      </div>
+      <div>
+        <div class="slider-header"><div class="section-title">Depth of Field</div><span class="slider-val" id="val-dof">Off</span></div>
+        <input type="range" min="0" max="10" value="0" step="1" id="dofStr" oninput="setDOF()">
+      </div>
     </div>
   </div><!-- /main -->
   <div class="bottom-bar">
@@ -520,11 +580,21 @@
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<!-- Post-processing -->
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/BokehShader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/BokehPass.js"></script>
 <script>
 /* ════════════════════════════════════
    GLOBALS
 ════════════════════════════════════ */
 let scene, camera, renderer, pivot, lights = [], autoRotate = true;
+let composer, bloomPass, bokehPass, pmrem, envMaps = {}, rimLight;
 let isDragging = false, lastX = 0, lastY = 0;
 let currentFinish = 'matte', currentLight = 'beauty';
 
@@ -570,12 +640,29 @@ function init(){
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.2;
 
+  // IBL — precompute per-preset environment maps for physical reflections
+  pmrem   = new THREE.PMREMGenerator(renderer);
+  envMaps = buildEnvMaps();
+
   scene  = new THREE.Scene();
   camera = new THREE.PerspectiveCamera(40, W/H, 0.1, 100);
   camera.position.set(0, 0, 5.5);
 
   pivot = new THREE.Group();
   scene.add(pivot);
+
+  // Fixed rim light behind/below cards — adds edge highlight on metallic finishes
+  rimLight = new THREE.PointLight(0xaaccff, 0.5, 30);
+  rimLight.position.set(0, -2.5, -3);
+  scene.add(rimLight);
+
+  // Post-processing: Bloom + Depth of Field
+  composer = new THREE.EffectComposer(renderer);
+  composer.addPass(new THREE.RenderPass(scene, camera));
+  bloomPass = new THREE.UnrealBloomPass(new THREE.Vector2(W, H), 0.35, 0.6, 0.82);
+  composer.addPass(bloomPass);
+  bokehPass = new THREE.BokehPass(scene, camera, {focus:5.5, aperture:0, maxblur:0.01});
+  composer.addPass(bokehPass);
 
   // 👉 DEFAULT STATE
   currentArrangement = 'fan';
@@ -595,6 +682,71 @@ function init(){
   setupPinch(canvas);
   animate();
   window.addEventListener('resize', onResize);
+}
+
+/* ════════════════════════════════════
+   IBL ENVIRONMENT MAPS
+════════════════════════════════════ */
+function buildEnvMaps(){
+  function gradEnv(top, mid, bot){
+    const W=64, H=64, d=new Uint8Array(W*H*4);
+    const tc=new THREE.Color(top), mc=new THREE.Color(mid), bc=new THREE.Color(bot);
+    for(let y=0;y<H;y++){
+      const t=y/(H-1);
+      let r,g,b;
+      if(t<0.5){ const s=t*2; r=tc.r+(mc.r-tc.r)*s; g=tc.g+(mc.g-tc.g)*s; b=tc.b+(mc.b-tc.b)*s; }
+      else      { const s=(t-0.5)*2; r=mc.r+(bc.r-mc.r)*s; g=mc.g+(bc.g-mc.g)*s; b=mc.b+(bc.b-mc.b)*s; }
+      for(let x=0;x<W;x++){
+        const i=(y*W+x)*4;
+        d[i]=Math.min(255,r*255); d[i+1]=Math.min(255,g*255); d[i+2]=Math.min(255,b*255); d[i+3]=255;
+      }
+    }
+    const dt=new THREE.DataTexture(d,W,H,THREE.RGBAFormat); dt.needsUpdate=true;
+    return pmrem.fromEquirectangular(dt).texture;
+  }
+  return {
+    natural: gradEnv(0xc8d8ff, 0xffffff, 0x888899),
+    beauty:  gradEnv(0x220055, 0xff5533, 0x001133),
+    glow:    gradEnv(0x002244, 0x00ffcc, 0x440044),
+    amber:   gradEnv(0x220800, 0xff8800, 0x110400)
+  };
+}
+
+/* ════════════════════════════════════
+   PROCEDURAL NORMAL MAPS
+════════════════════════════════════ */
+const _normalMapCache = {};
+function getNormalMap(finish){
+  if(_normalMapCache[finish]) return _normalMapCache[finish];
+  const size=512;
+  const canvas=document.createElement('canvas'); canvas.width=canvas.height=size;
+  const ctx=canvas.getContext('2d');
+  const img=ctx.createImageData(size,size);
+  const cfg={matte:{s:22,h:false},glossy:{s:6,h:false},metal:{s:14,h:true},gold:{s:9,h:false},holo:{s:4,h:false},chrome:{s:2,h:false}}[finish]||{s:8,h:false};
+  if(cfg.h){
+    // Brushed metal: horizontal streaks
+    for(let y=0;y<size;y++){
+      const lx=(Math.random()-0.5)*cfg.s;
+      for(let x=0;x<size;x++){
+        const i=(y*size+x)*4;
+        img.data[i]  =Math.min(255,Math.max(0,128+lx+(Math.random()-0.5)*2));
+        img.data[i+1]=Math.min(255,Math.max(0,128+(Math.random()-0.5)*2));
+        img.data[i+2]=255; img.data[i+3]=255;
+      }
+    }
+  } else {
+    for(let i=0;i<size*size;i++){
+      const nx=(Math.random()-0.5)*cfg.s, ny=(Math.random()-0.5)*cfg.s;
+      img.data[i*4]  =Math.min(255,Math.max(0,128+nx));
+      img.data[i*4+1]=Math.min(255,Math.max(0,128+ny));
+      img.data[i*4+2]=255; img.data[i*4+3]=255;
+    }
+  }
+  ctx.putImageData(img,0,0);
+  const tex=new THREE.CanvasTexture(canvas);
+  tex.wrapS=tex.wrapT=THREE.RepeatWrapping; tex.repeat.set(3,3);
+  _normalMapCache[finish]=tex;
+  return tex;
 }
 
 /* ════════════════════════════════════
@@ -621,6 +773,14 @@ function makeMaterial(finish, colorHex, frontTex){
   }[finish] || {color:col, metalness:0, roughness:0.9};
   const mat = new THREE.MeshPhysicalMaterial({...p});
   if(frontTex){ mat.map = frontTex; mat.color.set(0xffffff); }
+  // Normal map for surface micro-texture
+  mat.normalMap = getNormalMap(finish);
+  mat.normalScale = new THREE.Vector2(
+    {matte:0.08,glossy:0.04,metal:0.12,gold:0.06,holo:0.03,chrome:0.015}[finish]||0.05,
+    {matte:0.08,glossy:0.04,metal:0.12,gold:0.06,holo:0.03,chrome:0.015}[finish]||0.05
+  );
+  // IBL reflection intensity per finish
+  mat.envMapIntensity = {matte:0.4,glossy:1.2,metal:1.5,gold:1.8,holo:1.3,chrome:2.2}[finish]||1.0;
   return mat;
 }
 
@@ -635,31 +795,50 @@ function buildCardGroup(state){
   mesh.castShadow = true; mesh.receiveShadow = true;
   group.add(mesh);
 
-  // Chip
-  const chip = new THREE.Mesh(
-    new THREE.BoxGeometry(0.22, 0.16, 0.02),
-    new THREE.MeshStandardMaterial({color:0xd4af37, metalness:0.9, roughness:0.2})
-  );
-  chip.position.set(-0.8, 0.15, d+0.01); group.add(chip);
-  for(let i=0;i<3;i++){
-    const stripe = new THREE.Mesh(
-      new THREE.BoxGeometry(0.22, 0.01, 0.001),
-      new THREE.MeshStandardMaterial({color:0xaa8800, metalness:0.95, roughness:0.1})
+  // Chip — grouped so position can be updated without rebuild
+  const chipGroup = new THREE.Group();
+  chipGroup.name = 'chip';
+  const cx = state.chipX !== undefined ? state.chipX : -0.8;
+  const cy = state.chipY !== undefined ? state.chipY :  0.15;
+  chipGroup.position.set(cx, cy, 0);
+  if(state.chipTex){
+    chipGroup.add(new THREE.Mesh(
+      new THREE.PlaneGeometry(0.28, 0.20),
+      new THREE.MeshPhysicalMaterial({map:state.chipTex, metalness:0.85, roughness:0.2, transparent:true, alphaTest:0.05})
+    ));
+    chipGroup.children[0].position.z = d+0.02;
+  } else {
+    const chipMesh = new THREE.Mesh(
+      new THREE.BoxGeometry(0.22, 0.16, 0.02),
+      new THREE.MeshStandardMaterial({color:0xd4af37, metalness:0.9, roughness:0.2})
     );
-    stripe.position.set(-0.8, 0.1+i*0.04, d+0.025); group.add(stripe);
+    chipMesh.position.z = d+0.01; chipGroup.add(chipMesh);
+    for(let i=0;i<3;i++){
+      const stripe = new THREE.Mesh(
+        new THREE.BoxGeometry(0.22, 0.01, 0.001),
+        new THREE.MeshStandardMaterial({color:0xaa8800, metalness:0.95, roughness:0.1})
+      );
+      stripe.position.set(0, -0.05+i*0.04, d+0.025); chipGroup.add(stripe);
+    }
   }
+  group.add(chipGroup);
 
-  // Brand label
-  const tc = document.createElement('canvas'); tc.width=512; tc.height=80;
-  const ctx = tc.getContext('2d'); ctx.clearRect(0,0,512,80);
-  ctx.font = 'bold 48px Helvetica Neue, Arial';
-  ctx.fillStyle = 'rgba(255,255,255,0.5)';
-  ctx.textAlign = 'right'; ctx.fillText('STUDIO', 500, 56);
-  const tp = new THREE.Mesh(
-    new THREE.PlaneGeometry(1.4, 0.22),
-    new THREE.MeshBasicMaterial({map: new THREE.CanvasTexture(tc), transparent:true, depthWrite:false})
-  );
-  tp.position.set(0.3, 0.7, d+0.012); group.add(tp);
+  // Brand label / logo — named so position can be updated without rebuild
+  const lx = state.logoX !== undefined ? state.logoX : 0.3;
+  const ly = state.logoY !== undefined ? state.logoY : 0.7;
+  const logoMat = state.logoTex
+    ? new THREE.MeshBasicMaterial({map:state.logoTex, transparent:true, depthWrite:false})
+    : (() => {
+        const tc = document.createElement('canvas'); tc.width=512; tc.height=80;
+        const ctx = tc.getContext('2d'); ctx.clearRect(0,0,512,80);
+        ctx.font = 'bold 48px Helvetica Neue, Arial';
+        ctx.fillStyle = 'rgba(255,255,255,0.5)';
+        ctx.textAlign = 'right'; ctx.fillText(state.logoText || 'STUDIO', 500, 56);
+        return new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(tc), transparent:true, depthWrite:false});
+      })();
+  const tp = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 0.22), logoMat);
+  tp.name = 'logo';
+  tp.position.set(lx, ly, d+0.012); group.add(tp);
 
   // Back texture
   if(state.backTex){
@@ -820,6 +999,8 @@ function addCard(){
   const state = {
     finish: 'matte', color: PALETTE[idx % PALETTE.length],
     frontTex: null, backTex: null,
+    chipTex: null, logoTex: null, logoText: 'STUDIO',
+    chipX: -0.8, chipY: 0.15, logoX: 0.3, logoY: 0.7,
     basePos: new THREE.Vector3(),
     baseRotOffset: new THREE.Euler(),
     userRot: {x:0, y:0, z:0},
@@ -861,6 +1042,30 @@ function syncPanel(){
   document.querySelectorAll('.fp').forEach(b=>b.classList.remove('active'));
   const fb = document.getElementById('f-'+s.finish); if(fb) fb.classList.add('active');
   currentFinish = s.finish;
+  // Chip position sliders
+  const cxv = s.chipX !== undefined ? s.chipX : -0.8;
+  const cyv = s.chipY !== undefined ? s.chipY :  0.15;
+  const elCX = document.getElementById('chipX'); if(elCX) elCX.value = Math.round(cxv*100);
+  const elCY = document.getElementById('chipY'); if(elCY) elCY.value = Math.round(cyv*100);
+  const vCX = document.getElementById('val-chipX'); if(vCX) vCX.textContent = cxv.toFixed(2);
+  const vCY = document.getElementById('val-chipY'); if(vCY) vCY.textContent = cyv.toFixed(2);
+  // Logo position sliders
+  const lxv = s.logoX !== undefined ? s.logoX : 0.3;
+  const lyv = s.logoY !== undefined ? s.logoY : 0.7;
+  const elLX = document.getElementById('logoX'); if(elLX) elLX.value = Math.round(lxv*100);
+  const elLY = document.getElementById('logoY'); if(elLY) elLY.value = Math.round(lyv*100);
+  const vLX = document.getElementById('val-logoX'); if(vLX) vLX.textContent = lxv.toFixed(2);
+  const vLY = document.getElementById('val-logoY'); if(vLY) vLY.textContent = lyv.toFixed(2);
+  // Chip
+  const lblChip = document.getElementById('lbl-chip');
+  if(lblChip){ lblChip.classList.toggle('has-file', !!s.chipTex); lblChip.childNodes[0].textContent = s.chipTex ? '✓ Chip carregado' : '+ Custom Chip (PNG)'; }
+  const clrChip = document.getElementById('clear-chip'); if(clrChip) clrChip.style.display = s.chipTex ? 'block' : 'none';
+  // Logo text
+  const lt = document.getElementById('logo-text'); if(lt) lt.value = s.logoText || 'STUDIO';
+  // Logo image
+  const lblLogo = document.getElementById('lbl-logo');
+  if(lblLogo){ lblLogo.classList.toggle('has-file', !!s.logoTex); lblLogo.childNodes[0].textContent = s.logoTex ? '✓ Logo carregado' : '+ Logo (PNG/SVG)'; }
+  const clrLogo = document.getElementById('clear-logo'); if(clrLogo) clrLogo.style.display = s.logoTex ? 'block' : 'none';
 }
 
 function renderCardList(){
@@ -901,6 +1106,7 @@ function updateCardColor(val){
 function loadFrontImage(ev){
   const file = ev.target.files[0]; if(!file) return;
   new THREE.TextureLoader().load(URL.createObjectURL(file), tex=>{
+    tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
     const s = cards[activeCardIdx]; if(!s) return;
     s.frontTex = tex;
     const mesh = s.group.children[0];
@@ -925,6 +1131,7 @@ function clearFrontImage(){
 function loadBackImage(ev){
   const file = ev.target.files[0]; if(!file) return;
   new THREE.TextureLoader().load(URL.createObjectURL(file), tex=>{
+    tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
     const s = cards[activeCardIdx]; if(!s) return;
     s.backTex = tex; rebuildCard(activeCardIdx);
     const lbl = document.getElementById('lbl-back');
@@ -1003,11 +1210,10 @@ function setLight(name){
   cfg.lights.forEach((ld, i)=>{
     const dl = new THREE.DirectionalLight(ld.col, ld.i);
     dl.position.set(...ld.pos);
-    // Only the first (key) light casts shadows
     if(i === 0){
       dl.castShadow = true;
-      dl.shadow.mapSize.width  = 2048;
-      dl.shadow.mapSize.height = 2048;
+      dl.shadow.mapSize.width  = 4096;
+      dl.shadow.mapSize.height = 4096;
       dl.shadow.camera.near = 0.5;
       dl.shadow.camera.far  = 30;
       dl.shadow.camera.left   = -6;
@@ -1018,6 +1224,15 @@ function setLight(name){
     }
     scene.add(dl); lights.push(dl);
   });
+  // IBL: apply per-preset environment map
+  if(envMaps[name]) scene.environment = envMaps[name];
+  // Bloom: tune strength per preset
+  const presetBloom = {natural:0.2, beauty:0.35, glow:0.7, amber:0.45}[name] || 0.35;
+  if(bloomPass){
+    bloomPass.strength = presetBloom;
+    const el = document.getElementById('bloomStr');
+    if(el){ el.value = Math.round(presetBloom*10); document.getElementById('val-bloom').textContent = presetBloom.toFixed(1); }
+  }
 }
 
 /* ════════════════════════════════════
@@ -1108,35 +1323,127 @@ function animate(){
       s.group.children[0].material.color.setHSL((Math.sin(t*2+i)*0.5+0.5), 0.85, 0.55);
     }
   });
-  renderer.render(scene, camera);
+  composer.render();
 }
 
 function onResize(){
   const canvas = document.getElementById('c3d');
   const W = canvas.parentElement.clientWidth;
   const H = canvas.parentElement.clientHeight;
-  camera.aspect = W/H; camera.updateProjectionMatrix(); renderer.setSize(W,H);
+  camera.aspect = W/H; camera.updateProjectionMatrix();
+  renderer.setSize(W,H); composer.setSize(W,H);
 }
 
 function exportPNG(){
   const W4K = 3840, H4K = 2160;
-  // Save current size
   const canvas = document.getElementById('c3d');
   const prevW = canvas.parentElement.clientWidth;
   const prevH = canvas.parentElement.clientHeight;
-  // Upscale to 4K
-  renderer.setSize(W4K, H4K);
-  camera.aspect = W4K / H4K;
-  camera.updateProjectionMatrix();
-  renderer.render(scene, camera);
+  renderer.setSize(W4K, H4K); composer.setSize(W4K, H4K);
+  camera.aspect = W4K / H4K; camera.updateProjectionMatrix();
+  composer.render();
   const a = document.createElement('a');
   a.href = renderer.domElement.toDataURL('image/png');
   a.download = 'card-studio-4k.png';
   a.click();
-  // Restore
-  renderer.setSize(prevW, prevH);
-  camera.aspect = prevW / prevH;
-  camera.updateProjectionMatrix();
+  renderer.setSize(prevW, prevH); composer.setSize(prevW, prevH);
+  camera.aspect = prevW / prevH; camera.updateProjectionMatrix();
+}
+
+/* ════════════════════════════════════
+   CHIP & LOGO CONTROLS
+════════════════════════════════════ */
+function updateChipPos(){
+  const s = cards[activeCardIdx]; if(!s||!s.group) return;
+  const x = parseInt(document.getElementById('chipX').value) / 100;
+  const y = parseInt(document.getElementById('chipY').value) / 100;
+  s.chipX = x; s.chipY = y;
+  document.getElementById('val-chipX').textContent = x.toFixed(2);
+  document.getElementById('val-chipY').textContent = y.toFixed(2);
+  const el = s.group.getObjectByName('chip');
+  if(el){ el.position.x = x; el.position.y = y; }
+}
+function updateLogoPos(){
+  const s = cards[activeCardIdx]; if(!s||!s.group) return;
+  const x = parseInt(document.getElementById('logoX').value) / 100;
+  const y = parseInt(document.getElementById('logoY').value) / 100;
+  s.logoX = x; s.logoY = y;
+  document.getElementById('val-logoX').textContent = x.toFixed(2);
+  document.getElementById('val-logoY').textContent = y.toFixed(2);
+  const el = s.group.getObjectByName('logo');
+  if(el){ el.position.x = x; el.position.y = y; }
+}
+function loadChipImage(ev){
+  const file = ev.target.files[0]; if(!file) return;
+  new THREE.TextureLoader().load(URL.createObjectURL(file), tex=>{
+    tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+    const s = cards[activeCardIdx]; if(!s) return;
+    s.chipTex = tex; rebuildCard(activeCardIdx);
+    const lbl = document.getElementById('lbl-chip');
+    lbl.classList.add('has-file'); lbl.childNodes[0].textContent = '✓ '+file.name.slice(0,16);
+    document.getElementById('clear-chip').style.display = 'block';
+  });
+}
+function clearChipImage(){
+  const s = cards[activeCardIdx]; if(!s) return;
+  s.chipTex = null; rebuildCard(activeCardIdx);
+  const lbl = document.getElementById('lbl-chip');
+  lbl.classList.remove('has-file'); lbl.childNodes[0].textContent = '+ Custom Chip (PNG)';
+  document.getElementById('clear-chip').style.display = 'none';
+}
+function updateLogoText(){
+  const s = cards[activeCardIdx]; if(!s) return;
+  s.logoText = document.getElementById('logo-text').value;
+  if(!s.logoTex) rebuildCard(activeCardIdx);
+}
+function loadLogoImage(ev){
+  const file = ev.target.files[0]; if(!file) return;
+  // SVG files: convert via Blob URL and render to canvas for Three.js compatibility
+  if(file.type === 'image/svg+xml'){
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = ()=>{
+      const cv = document.createElement('canvas'); cv.width=512; cv.height=180;
+      cv.getContext('2d').drawImage(img, 0, 0, 512, 180);
+      const tex = new THREE.CanvasTexture(cv);
+      tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+      _applyLogoTex(tex, file.name);
+    };
+    img.src = url;
+    return;
+  }
+  new THREE.TextureLoader().load(URL.createObjectURL(file), tex=>{
+    tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+    _applyLogoTex(tex, file.name);
+  });
+}
+function _applyLogoTex(tex, name){
+  const s = cards[activeCardIdx]; if(!s) return;
+  s.logoTex = tex; rebuildCard(activeCardIdx);
+  const lbl = document.getElementById('lbl-logo');
+  lbl.classList.add('has-file'); lbl.childNodes[0].textContent = '✓ '+(name||'logo').slice(0,16);
+  document.getElementById('clear-logo').style.display = 'block';
+}
+function clearLogoImage(){
+  const s = cards[activeCardIdx]; if(!s) return;
+  s.logoTex = null; rebuildCard(activeCardIdx);
+  const lbl = document.getElementById('lbl-logo');
+  lbl.classList.remove('has-file'); lbl.childNodes[0].textContent = '+ Logo (PNG/SVG)';
+  document.getElementById('clear-logo').style.display = 'none';
+}
+
+/* ════════════════════════════════════
+   BLOOM & DOF CONTROLS
+════════════════════════════════════ */
+function setBloom(){
+  const v = parseInt(document.getElementById('bloomStr').value) / 10;
+  document.getElementById('val-bloom').textContent = v.toFixed(1);
+  if(bloomPass) bloomPass.strength = v;
+}
+function setDOF(){
+  const v = parseInt(document.getElementById('dofStr').value);
+  document.getElementById('val-dof').textContent = v === 0 ? 'Off' : v;
+  if(bokehPass) bokehPass.uniforms['aperture'].value = v * 0.000035;
 }
 
 /* ════════════════════════════════════
@@ -1299,6 +1606,10 @@ window.updateBgMob=updateBgMob;
 /* ════════════════════════════════════
    EXPOSE GLOBALS
 ════════════════════════════════════ */
+window.loadChipImage=loadChipImage; window.clearChipImage=clearChipImage;
+window.updateLogoText=updateLogoText; window.loadLogoImage=loadLogoImage; window.clearLogoImage=clearLogoImage;
+window.updateChipPos=updateChipPos; window.updateLogoPos=updateLogoPos;
+window.setBloom=setBloom; window.setDOF=setDOF;
 window.setFinish=setFinish; window.setLight=setLight; window.updateCardColor=updateCardColor;
 window.updateTilt=updateTilt; window.updateDepth=updateDepth; window.setMode=setMode;
 window.loadFrontImage=loadFrontImage; window.clearFrontImage=clearFrontImage;
