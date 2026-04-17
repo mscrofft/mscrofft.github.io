@@ -101,67 +101,59 @@
       justify-content: space-between;
     }
 
-    /* Grid */
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 0;
-    }
-
-    @media (max-width: 900px) {
-      .grid { grid-template-columns: repeat(2, 1fr); }
-      header { padding: 32px 28px 24px; }
-      .section-label { padding: 16px 28px; }
-    }
-    @media (max-width: 560px) {
-      .grid { grid-template-columns: 1fr; }
-    }
-
-    /* Cards */
-    .card {
-      position: relative;
-      border-right: 1px solid var(--border);
-      border-bottom: 1px solid var(--border);
-      padding: 40px 36px 36px;
-      text-decoration: none;
-      color: var(--fg);
+    /* List */
+    .list {
       display: flex;
       flex-direction: column;
-      justify-content: space-between;
-      min-height: 220px;
+    }
+
+    /* Row */
+    .row {
+      position: relative;
+      display: grid;
+      grid-template-columns: auto 1fr auto auto;
+      align-items: center;
+      gap: 32px;
+      padding: 28px 60px;
+      border-bottom: 1px solid var(--border);
+      text-decoration: none;
+      color: var(--fg);
       overflow: hidden;
       transition: background 0.3s ease;
     }
 
-    .card:nth-child(3n) { border-right: none; }
-
-    .card::before {
+    .row::before {
       content: '';
       position: absolute;
       inset: 0;
       background: var(--accent);
-      transform: translateY(100%);
+      transform: translateX(-100%);
       transition: transform 0.5s cubic-bezier(0.76, 0, 0.24, 1);
       z-index: 0;
     }
 
-    .card:hover::before {
-      transform: translateY(0);
+    .row:hover::before {
+      transform: translateX(0);
     }
 
-    .card:hover .card-number,
-    .card:hover .card-title,
-    .card:hover .card-tag,
-    .card:hover .card-arrow {
+    .row:hover .row-number,
+    .row:hover .row-title,
+    .row:hover .row-tag,
+    .row:hover .row-arrow {
       color: var(--bg);
     }
 
-    .card:hover .card-tag {
+    .row:hover .row-tag {
       border-color: var(--bg);
       opacity: 1;
     }
 
-    .card-number {
+    .row:hover .row-arrow {
+      opacity: 1;
+      transform: translate(4px, -4px);
+    }
+
+    .row-number {
       font-size: 11px;
       letter-spacing: 0.2em;
       opacity: 0.3;
@@ -170,23 +162,19 @@
       transition: color 0.3s ease, opacity 0.3s ease;
     }
 
-    .card:hover .card-number { opacity: 0.5; }
+    .row:hover .row-number { opacity: 0.5; }
 
-    .card-body {
-      position: relative;
-      z-index: 1;
-    }
-
-    .card-title {
+    .row-title {
       font-family: 'Bebas Neue', sans-serif;
-      font-size: clamp(28px, 3vw, 42px);
+      font-size: clamp(24px, 3vw, 42px);
       letter-spacing: 0.03em;
       line-height: 1;
-      margin-bottom: 16px;
+      position: relative;
+      z-index: 1;
       transition: color 0.3s ease;
     }
 
-    .card-tag {
+    .row-tag {
       display: inline-block;
       font-size: 9px;
       letter-spacing: 0.2em;
@@ -194,22 +182,36 @@
       border: 1px solid rgba(240, 236, 227, 0.2);
       padding: 4px 10px;
       opacity: 0.5;
+      white-space: nowrap;
+      position: relative;
+      z-index: 1;
       transition: color 0.3s ease, border-color 0.3s ease, opacity 0.3s ease;
     }
 
-    .card-arrow {
-      position: absolute;
-      bottom: 36px;
-      right: 36px;
+    .row-arrow {
       font-size: 22px;
       opacity: 0.3;
-      transition: color 0.3s ease, opacity 0.3s ease, transform 0.3s ease;
+      position: relative;
       z-index: 1;
+      transition: color 0.3s ease, opacity 0.3s ease, transform 0.3s ease;
     }
 
-    .card:hover .card-arrow {
-      opacity: 1;
-      transform: translate(4px, -4px);
+    @media (max-width: 900px) {
+      header { padding: 32px 28px 24px; }
+      .section-label { padding: 16px 28px; }
+      .row {
+        padding: 22px 28px;
+        gap: 20px;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .row {
+        grid-template-columns: auto 1fr auto;
+        padding: 20px 22px;
+        gap: 16px;
+      }
+      .row-tag { display: none; }
     }
 
     /* Ticker */
@@ -250,18 +252,25 @@
       opacity: 0.25;
     }
 
+    @media (max-width: 560px) {
+      footer { padding: 24px 22px; }
+    }
+
     /* Entrance animation */
-    .card {
+    .row {
       opacity: 0;
       transform: translateY(20px);
       animation: fadeUp 0.6s forwards;
     }
-    .card:nth-child(1) { animation-delay: 0.05s; }
-    .card:nth-child(2) { animation-delay: 0.12s; }
-    .card:nth-child(3) { animation-delay: 0.19s; }
-    .card:nth-child(4) { animation-delay: 0.26s; }
-    .card:nth-child(5) { animation-delay: 0.33s; }
-    .card:nth-child(6) { animation-delay: 0.40s; }
+    .row:nth-child(1) { animation-delay: 0.05s; }
+    .row:nth-child(2) { animation-delay: 0.12s; }
+    .row:nth-child(3) { animation-delay: 0.19s; }
+    .row:nth-child(4) { animation-delay: 0.26s; }
+    .row:nth-child(5) { animation-delay: 0.33s; }
+    .row:nth-child(6) { animation-delay: 0.40s; }
+    .row:nth-child(7) { animation-delay: 0.47s; }
+    .row:nth-child(8) { animation-delay: 0.54s; }
+    .row:nth-child(9) { animation-delay: 0.61s; }
 
     @keyframes fadeUp {
       to { opacity: 1; transform: translateY(0); }
@@ -280,70 +289,76 @@
   </header>
 
   <div class="section-label">
-    <span>Projetos / 06</span>
+    <span>Projetos / 09</span>
     <span>JavaScript — Canvas — WebGL</span>
   </div>
 
-  <main class="grid">
+  <main class="list">
 
-    <a class="card" href="TypeExtrude3D/index.html">
-      <span class="card-number">04</span>
-      <div class="card-body">
-        <div class="card-title">Type Extrude 3D</div>
-        <span class="card-tag">3D · Tipografia</span>
-      </div>
-      <span class="card-arrow">↗</span>
+    <a class="row" href="Dither_halftone/index.html">
+      <span class="row-number">01</span>
+      <span class="row-title">Dither Halftone</span>
+      <span class="row-tag">Imagem · Filtro</span>
+      <span class="row-arrow">↗</span>
     </a>
 
-    <a class="card" href="Card_Studio_3d/index.html">
-      <span class="card-number">05</span>
-      <div class="card-body">
-        <div class="card-title">Card Studio 3D</div>
-        <span class="card-tag">3D</span>
-      </div>
-      <span class="card-arrow">↗</span>
+    <a class="row" href="Grid_painter/index.html">
+      <span class="row-number">02</span>
+      <span class="row-title">Grid Painter</span>
+      <span class="row-tag">Canvas · Interativo</span>
+      <span class="row-arrow">↗</span>
     </a>
 
-    <a class="card" href="visuals_app/index.html">
-      <span class="card-number">06</span>
-      <div class="card-body">
-        <div class="card-title">Visuals App</div>
-        <span class="card-tag">Visual · App</span>
-      </div>
-      <span class="card-arrow">↗</span>
-    </a>
-        <a class="card" href="emoji_gravity/index.html">
-      <span class="card-number">03</span>
-      <div class="card-body">
-        <div class="card-title">Emoji Particles</div>
-        <span class="card-tag">Particle system</span>
-      </div>
-      <span class="card-arrow">↗</span>
-    </a>
-    <a class="card" href="Dither_halftone/index.html">
-      <span class="card-number">01</span>
-      <div class="card-body">
-        <div class="card-title">Dither Halftone</div>
-        <span class="card-tag">Imagem · Filtro</span>
-      </div>
-      <span class="card-arrow">↗</span>
+    <a class="row" href="emoji_gravity/index.html">
+      <span class="row-number">03</span>
+      <span class="row-title">Emoji Particles</span>
+      <span class="row-tag">Particle system</span>
+      <span class="row-arrow">↗</span>
     </a>
 
-    <a class="card" href="Grid_painter/index.html">
-      <span class="card-number">02</span>
-      <div class="card-body">
-        <div class="card-title">Grid Painter</div>
-        <span class="card-tag">Canvas · Interativo</span>
-      </div>
-      <span class="card-arrow">↗</span>
+    <a class="row" href="TypeExtrude3D/index.html">
+      <span class="row-number">04</span>
+      <span class="row-title">Type Extrude 3D</span>
+      <span class="row-tag">3D · Tipografia</span>
+      <span class="row-arrow">↗</span>
     </a>
 
+    <a class="row" href="Card_Studio_3d/index.html">
+      <span class="row-number">05</span>
+      <span class="row-title">Card Studio 3D</span>
+      <span class="row-tag">3D</span>
+      <span class="row-arrow">↗</span>
+    </a>
 
+    <a class="row" href="visuals_app/index.html">
+      <span class="row-number">06</span>
+      <span class="row-title">Visuals App</span>
+      <span class="row-tag">Visual · App</span>
+      <span class="row-arrow">↗</span>
+    </a>
 
-    
+    <a class="row" href="carrossel/index.html">
+      <span class="row-number">07</span>
+      <span class="row-title">Carrossel</span>
+      <span class="row-tag">Words</span>
+      <span class="row-arrow">↗</span>
+    </a>
+
+    <a class="row" href="iris_p5/index.html">
+      <span class="row-number">08</span>
+      <span class="row-title">Iris</span>
+      <span class="row-tag">Lines· P5</span>
+      <span class="row-arrow">↗</span>
+    </a>
+
+    <a class="row" href="relogio/index.html">
+      <span class="row-number">09</span>
+      <span class="row-title">Relógio</span>
+      <span class="row-tag">JS</span>
+      <span class="row-arrow">↗</span>
+    </a>
+
   </main>
-
-
 
   <footer>
     <span>Manuel Scrofft</span>
