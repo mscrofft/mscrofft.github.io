@@ -1,0 +1,80 @@
+/* ============================================================
+   ui-theme.css — tokens visuais compartilhados
+   Baseado em Dither_halftone/ui-theme.js
+   Fonte: IBM Plex Mono · estética monocromática minimalista
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+:root {
+  --ui-bg:         #000000;
+  --ui-fg:         #ffffff;
+  --ui-bg-canvas:  #0b0b0d;
+  --ui-bg-panel:   rgba(0,0,0,0.82);
+  --ui-border:     rgba(255,255,255,0.12);
+  --ui-accent:     #ffffff;
+  --ui-muted:      rgba(255,255,255,0.45);
+  --ui-font:       'IBM Plex Mono', monospace;
+  --ui-radius:     2px;
+  --ui-transition: 180ms ease;
+}
+
+body[data-theme="light"] {
+  --ui-bg:         #ffffff;
+  --ui-fg:         #000000;
+  --ui-bg-canvas:  #f0f0ee;
+  --ui-bg-panel:   rgba(255,255,255,0.88);
+  --ui-border:     rgba(0,0,0,0.12);
+  --ui-accent:     #000000;
+  --ui-muted:      rgba(0,0,0,0.45);
+}
+
+/* ── link "< back" para a home ────────────────────────────── */
+.ui-back {
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  z-index: 200;
+  font-family: var(--ui-font);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ui-fg);
+  opacity: 0.7;
+  text-decoration: none;
+  padding: 4px 8px;
+  border-radius: var(--ui-radius);
+  transition: opacity var(--ui-transition), background var(--ui-transition);
+}
+.ui-back:hover { opacity: 1; background: var(--ui-bg-panel); }
+
+/* ── botão Inverter padrão ────────────────────────────────── */
+.ui-invert-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--ui-font);
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ui-fg);
+  background: transparent;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius);
+  padding: 4px 8px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--ui-transition), border-color var(--ui-transition), color var(--ui-transition);
+}
+.ui-invert-btn:hover {
+  background: var(--ui-fg);
+  color: var(--ui-bg);
+  border-color: var(--ui-fg);
+}
+.ui-invert-btn svg {
+  width: 10px; height: 10px;
+  fill: currentColor;
+  flex-shrink: 0;
+}
