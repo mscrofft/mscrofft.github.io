@@ -4,9 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Sistema de Partículas</title>
+<link rel="stylesheet" href="../shared/ui-theme.css"/>
 <style>
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-  html,body{width:100%;height:100%;overflow:hidden;background:#0e0e12;font-family:sans-serif;touch-action:none}
+  html,body{width:100%;height:100%;overflow:hidden;background:var(--ui-bg-canvas);font-family:var(--ui-font);touch-action:none}
 
   #canvas-wrap{position:fixed;inset:0;cursor:crosshair}
   canvas{display:block}
@@ -14,9 +15,9 @@
   /* ── toggle button ── */
   #toggle{
     position:fixed;z-index:30;
-    width:40px;height:40px;border-radius:10px;
-    background:rgba(20,20,26,0.88);border:1px solid #2e2e3a;
-    color:#aaa;font-size:20px;cursor:pointer;
+    width:40px;height:40px;border-radius:var(--ui-radius);
+    background:var(--ui-bg-panel);border:1px solid var(--ui-border);
+    color:var(--ui-fg);font-size:18px;cursor:pointer;font-family:var(--ui-font);
     display:flex;align-items:center;justify-content:center;
     backdrop-filter:blur(8px);
     /* desktop: top-right */
@@ -34,14 +35,15 @@
   #panel{
     position:fixed;top:0;right:0;bottom:0;z-index:20;
     width:248px;
-    background:rgba(14,14,18,0.93);
-    border-left:1px solid #1e1e28;
+    background:var(--ui-bg-panel);
+    border-left:1px solid var(--ui-border);
     backdrop-filter:blur(10px);
     overflow-y:auto;-webkit-overflow-scrolling:touch;
     padding:14px 14px 24px;
     display:flex;flex-direction:column;gap:14px;
     transform:translateX(0);
     transition:transform 0.28s cubic-bezier(.4,0,.2,1);
+    font-family:var(--ui-font);color:var(--ui-fg);
   }
   #panel.hidden{ transform:translateX(100%); }
 
@@ -52,7 +54,7 @@
       width:100%;
       max-height:70vh;
       border-left:none;
-      border-top:1px solid #1e1e28;
+      border-top:1px solid var(--ui-border);
       border-radius:16px 16px 0 0;
       padding:0 16px calc(16px + env(safe-area-inset-bottom));
       transform:translateY(0);
@@ -64,7 +66,7 @@
     #panel::before{
       content:'';display:block;
       width:36px;height:4px;border-radius:2px;
-      background:#2e2e3a;
+      background:var(--ui-border);
       margin:10px auto 12px;
       flex-shrink:0;
     }
@@ -81,38 +83,40 @@
   }
 
   .panel-title{
-    font-size:10px;font-weight:600;letter-spacing:.08em;
-    text-transform:uppercase;color:#444;margin-bottom:2px;
+    font-family:var(--ui-font);
+    font-size:9px;font-weight:600;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--ui-muted);margin-bottom:2px;
     flex-shrink:0;
   }
   .group{display:flex;flex-direction:column;gap:7px}
-  .row{display:flex;align-items:center;gap:6px;font-size:12px;color:#777}
+  .row{display:flex;align-items:center;gap:6px;font-size:10px;color:var(--ui-fg);opacity:0.85;font-family:var(--ui-font)}
   .row label{flex:1;min-width:0;line-height:1.3}
-  .row input[type=range]{width:80px;flex-shrink:0;accent-color:#5c8ee0;cursor:pointer}
-  .row span.v{font-size:11px;font-weight:500;color:#bbb;min-width:32px;text-align:right}
+  .row input[type=range]{width:80px;flex-shrink:0;accent-color:var(--ui-fg);cursor:pointer}
+  .row span.v{font-size:9px;font-weight:500;color:var(--ui-muted);min-width:32px;text-align:right}
 
-  .sep{height:1px;background:#1e1e28;flex-shrink:0}
+  .sep{height:1px;background:var(--ui-border);flex-shrink:0}
 
   #btn-row{display:flex;gap:8px;flex-shrink:0}
   button{
-    flex:1;padding:8px 0;font-size:13px;cursor:pointer;
-    border:1px solid #2a2a35;background:#1a1a22;color:#aaa;
-    border-radius:8px;transition:background 0.15s;
+    flex:1;padding:6px 0;font-size:9px;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;
+    border:1px solid var(--ui-border);background:transparent;color:var(--ui-fg);
+    font-family:var(--ui-font);
+    border-radius:var(--ui-radius);transition:background 0.15s;
     /* bigger tap target on mobile */
     min-height:40px;
   }
-  button:hover,button:active{background:#252530}
+  button:hover,button:active{background:var(--ui-fg);color:var(--ui-bg);border-color:var(--ui-fg)}
 
-  #hint{font-size:11px;color:#3a3a4a;line-height:1.7;flex-shrink:0}
-  #hint b{color:#4a4a60}
+  #hint{font-size:10px;color:var(--ui-muted);line-height:1.7;flex-shrink:0;font-family:var(--ui-font)}
+  #hint b{color:var(--ui-fg);opacity:0.8}
 
   /* hide keyboard hint on mobile */
   @media(max-width:600px){
     #hint .kb{display:none}
   }
 
-  #pcount-wrap{font-size:11px;color:#3a3a4a;flex-shrink:0}
-  #pcount,#icount{color:#555}
+  #pcount-wrap{font-size:10px;color:var(--ui-muted);flex-shrink:0;font-family:var(--ui-font)}
+  #pcount,#icount{color:var(--ui-fg);opacity:0.7}
 
   /* mobile touch force hint */
   #touch-hint{
@@ -128,11 +132,15 @@
 </head>
 <body>
 
+<a class="ui-back" href="../index.html">&lt; back</a>
 <div id="canvas-wrap"><canvas id="c"></canvas></div>
 <div id="touch-hint">toque para spawnar · segure para arrastar</div>
 <button id="toggle" title="Painel">⚙</button>
 
 <div id="panel">
+  <div style="display:flex;justify-content:flex-end;margin-bottom:4px;">
+    <button class="ui-invert-btn" id="ui-invert"><svg viewBox="0 0 16 16"><path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm0 12.5A5.5 5.5 0 0 1 8 2.5v11a5.5 5.5 0 0 1 0-11z"/></svg> Inverter</button>
+  </div>
 
   <div>
     <div class="panel-title">Mundo</div>
@@ -206,6 +214,10 @@
 
 </div>
 
+<script src="../shared/ui-theme-lite.js"></script>
+<script>
+document.getElementById('ui-invert').addEventListener('click', () => UITheme.toggleTheme());
+</script>
 <script>
 const canvas = document.getElementById('c');
 const ctx    = canvas.getContext('2d');
