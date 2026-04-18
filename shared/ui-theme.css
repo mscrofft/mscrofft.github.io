@@ -11,6 +11,8 @@
   --ui-fg:         #ffffff;
   --ui-bg-canvas:  #0b0b0d;
   --ui-bg-panel:   rgba(0,0,0,0.82);
+  --ui-bg-input:   rgba(255,255,255,0.05);
+  --ui-bg-hover:   rgba(255,255,255,0.10);
   --ui-border:     rgba(255,255,255,0.12);
   --ui-accent:     #ffffff;
   --ui-muted:      rgba(255,255,255,0.45);
@@ -24,6 +26,8 @@ body[data-theme="light"] {
   --ui-fg:         #000000;
   --ui-bg-canvas:  #f0f0ee;
   --ui-bg-panel:   rgba(255,255,255,0.88);
+  --ui-bg-input:   rgba(0,0,0,0.04);
+  --ui-bg-hover:   rgba(0,0,0,0.08);
   --ui-border:     rgba(0,0,0,0.12);
   --ui-accent:     #000000;
   --ui-muted:      rgba(0,0,0,0.45);
