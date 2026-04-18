@@ -297,16 +297,16 @@
   <div>
     <h3>Axis</h3>
     <div class="toggle-btns">
-      <button class="toggle-btn active" id="btnY">rotate Y</button>
-      <button class="toggle-btn" id="btnX">rotate X</button>
+      <button class="toggle-btn" id="btnY">rotate Y</button>
+      <button class="toggle-btn active" id="btnX">rotate X</button>
     </div>
   </div>
 
   <div>
     <h3>Direction</h3>
     <div class="toggle-btns">
-      <button class="toggle-btn active" id="btnFwd">→ forward</button>
-      <button class="toggle-btn" id="btnRev">← reverse</button>
+      <button class="toggle-btn" id="btnFwd">→ forward</button>
+      <button class="toggle-btn active" id="btnRev">← reverse</button>
     </div>
   </div>
 
@@ -336,24 +336,24 @@
   </div>
 </div>
 
+
 <script>
 // ── Data ──────────────────────────────────────────────────────────────────────
 const shapes = [
-  { word:'wake',   type:'pill',   w:360, h:200, fs:68, g:['#ff6a2f','#ff3535'], baseAngle:0   },
-  { word:'the',    type:'circle', w:240, h:240, fs:62, g:['#a8e63d','#ffe100'], baseAngle:45  },
-  { word:'dead',   type:'rect',   w:270, h:330, fs:64, g:['#5a8fff','#9e5bff'], baseAngle:90  },
-  { word:'the',    type:'pill',   w:320, h:185, fs:62, g:['#ff9fd8','#c0a0ff'], baseAngle:135 },
-  { word:'saints', type:'circle', w:290, h:290, fs:54, g:['#ff9200','#ffe135'], baseAngle:180 },
-  { word:'are',    type:'rect',   w:255, h:305, fs:64, g:['#ff3535','#ff7a00'], baseAngle:225 },
-  { word:'in',     type:'circle', w:200, h:200, fs:60, g:['#9b45ff','#4d7fff'], baseAngle:270 },
-  { word:'hell',   type:'pill',   w:330, h:185, fs:64, g:['#ffe135','#55e000'], baseAngle:315 },
+  { word:'get',   type:'pill',   w:360, h:200, fs:68, g:['#ff6a2f','#ff3535'], baseAngle:0   },
+  { word:'up,',    type:'circle', w:240, h:240, fs:62, g:['#a8e63d','#ffe100'], baseAngle:45  },
+  { word:'everybody',  type:'rect',   w:370, h:330, fs:64, g:['#5a8fff','#9e5bff'], baseAngle:90  },
+  { word:'gonna',    type:'pill',   w:320, h:185, fs:62, g:['#ff9fd8','#c0a0ff'], baseAngle:135 },
+  { word:'move', type:'circle', w:290, h:290, fs:54, g:['#ff9200','#ffe135'], baseAngle:180 },
+  { word:'their',    type:'rect',   w:255, h:305, fs:64, g:['#ff3535','#ff7a00'], baseAngle:225 },
+  { word:'feet',     type:'circle', w:200, h:200, fs:60, g:['#9b45ff','#4d7fff'], baseAngle:270 },
 ];
 
 // ── State ─────────────────────────────────────────────────────────────────────
 let carouselAngle = 0;
 let orbitAngle    = { x: -18, y: 0 };
-let rotAxis       = 'Y';
-let dir           = 1;
+let rotAxis       = 'X';
+let dir           = -1;
 let mode          = 'auto';
 let zoomScale     = 1;
 let baseScale     = 1;

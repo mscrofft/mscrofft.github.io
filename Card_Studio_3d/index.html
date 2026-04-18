@@ -158,34 +158,35 @@
     /* Bottom sheet drawer */
     .sheet {
       position: fixed; left: 0; right: 0; bottom: 0;
-      background: #111118;
-      border-radius: 18px 18px 0 0;
-      border-top: 1px solid #252530;
+      background: var(--ui-bg-panel);
+      border-radius: var(--ui-radius) var(--ui-radius) 0 0;
+      border-top: 1px solid var(--ui-border);
+      font-family: var(--ui-font); color: var(--ui-fg);
       z-index: 100;
       max-height: 75vh;
       overflow-y: auto;
       padding: 0 16px 24px;
       transform: translateY(100%);
       transition: transform .28s cubic-bezier(.32,.72,0,1);
-      scrollbar-width: thin; scrollbar-color: #2a2a3a transparent;
+      scrollbar-width: thin; scrollbar-color: var(--ui-border) transparent;
     }
     .sheet.open { transform: translateY(0); }
 
     /* Drag handle */
     .sheet-handle {
-      width: 36px; height: 4px; background: #2e2e3e;
+      width: 36px; height: 4px; background: var(--ui-border);
       border-radius: 2px; margin: 12px auto 16px; flex-shrink: 0;
     }
 
     /* Sheet title bar */
     .sheet-title {
       display: flex; align-items: center; justify-content: space-between;
-      padding-bottom: 12px; border-bottom: 1px solid #1a1a22; margin-bottom: 14px;
-      color: #888; font-size: 11px; letter-spacing: .12em; text-transform: uppercase;
+      padding-bottom: 10px; border-bottom: 1px solid var(--ui-border); margin-bottom: 14px;
+      color: var(--ui-muted); font-family: var(--ui-font); font-size: 9px; letter-spacing: .14em; text-transform: uppercase;
     }
     .sheet-close {
-      background: none; border: none; color: #555; font-size: 20px;
-      cursor: pointer; padding: 0 2px; line-height: 1; font-family: inherit;
+      background: none; border: none; color: var(--ui-muted); font-size: 18px;
+      cursor: pointer; padding: 0 2px; line-height: 1; font-family: var(--ui-font);
     }
 
     /* Sheet inner content: two columns on wide mobile, one on narrow */
@@ -225,14 +226,14 @@
       /* Floating action buttons */
       .mob-fab {
         display: flex; align-items: center; justify-content: center;
-        position: fixed; width: 44px; height: 44px;
-        background: #1a1a2e; border: 1px solid #2e2e50;
-        border-radius: 12px; cursor: pointer; z-index: 79;
-        color: #8888cc; font-size: 18px;
+        position: fixed; width: 40px; height: 40px;
+        background: var(--ui-bg-panel); border: 1px solid var(--ui-border);
+        border-radius: var(--ui-radius); cursor: pointer; z-index: 79;
+        color: var(--ui-fg); font-size: 16px;
+        font-family: var(--ui-font);
         transition: background .15s, border-color .15s;
-        box-shadow: 0 2px 12px rgba(0,0,0,0.4);
       }
-      .mob-fab:active { background: #252540; border-color: #5555cc; }
+      .mob-fab:active { background: var(--ui-fg); color: var(--ui-bg); border-color: var(--ui-fg); }
       .mob-fab-left  { top: 12px; left: 12px; }
       .mob-fab-right { top: 12px; right: 12px; }
 
@@ -347,12 +348,12 @@
     <div class="full divider"></div>
     <div>
       <div class="panel-label">Background</div>
-      <input type="color" id="sbgColor" value="#f0f0f4" onchange="updateBgMob()" style="margin-bottom:6px;">
+      <input type="color" id="sbgColor" value="#1a0a2e" onchange="updateBgMob()" style="margin-bottom:6px;">
       <div style="display:flex;flex-direction:column;gap:4px;">
-        <button onclick="setBgPreset('white')"  class="cp active" id="sbg-white">White</button>
+        <button onclick="setBgPreset('white')"  class="cp" id="sbg-white">White</button>
         <button onclick="setBgPreset('dark')"   class="cp" id="sbg-dark">Dark</button>
         <button onclick="setBgPreset('blue')"   class="cp" id="sbg-blue">Deep Blue</button>
-        <button onclick="setBgPreset('studio')" class="cp" id="sbg-studio">Studio</button>
+        <button onclick="setBgPreset('studio')" class="cp active" id="sbg-studio">Studio</button>
       </div>
     </div>
     <div>
@@ -383,13 +384,16 @@
   </div>
 </div>
 
+<a class="ui-back" href="../index.html">&lt; back</a>
 <div class="app">
   <div class="main">
     <!-- Desktop left panel -->
     <div class="panel panel-left">
       <div>
-        <div class="panel-label"><b>CARD STUDIO 3D</b></div>
-        <br>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+          <div class="panel-label" style="margin:0;"><b>CARD STUDIO 3D</b></div>
+          <button class="ui-invert-btn" id="ui-invert"><svg viewBox="0 0 16 16"><path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm0 12.5A5.5 5.5 0 0 1 8 2.5v11a5.5 5.5 0 0 1 0-11z"/></svg> Inverter</button>
+        </div>
         <div class="panel-label">Finish</div>
         <div style="display:flex;flex-direction:column;gap:4px;">
           <button onclick="setFinish('matte')"  class="fp active" id="f-matte">Matte</button>
@@ -528,12 +532,12 @@
       <div class="divider"></div>
       <div>
         <div class="panel-label">Background</div>
-        <input type="color" id="bgColor" value="#f0f0f4" onchange="updateBg()" style="margin-bottom:6px;">
+        <input type="color" id="bgColor" value="#1a0a2e" onchange="updateBg()" style="margin-bottom:6px;">
         <div style="display:flex;flex-direction:column;gap:4px;">
-          <button onclick="setBgPreset('white')"  class="cp active" id="bg-white">White</button>
+          <button onclick="setBgPreset('white')"  class="cp" id="bg-white">White</button>
           <button onclick="setBgPreset('dark')"   class="cp" id="bg-dark">Dark</button>
           <button onclick="setBgPreset('blue')"   class="cp" id="bg-blue">Deep Blue</button>
-          <button onclick="setBgPreset('studio')" class="cp" id="bg-studio">Studio</button>
+          <button onclick="setBgPreset('studio')" class="cp active" id="bg-studio">Studio</button>
         </div>
       </div>
       <div class="divider"></div>
@@ -561,8 +565,8 @@
       </div>
       <div class="divider"></div>
       <div>
-        <div class="slider-header"><div class="section-title">Bloom</div><span class="slider-val" id="val-bloom">0.4</span></div>
-        <input type="range" min="0" max="20" value="4" step="1" id="bloomStr" oninput="setBloom()">
+        <div class="slider-header"><div class="section-title">Bloom</div><span class="slider-val" id="val-bloom">0.1</span></div>
+        <input type="range" min="0" max="20" value="1" step="1" id="bloomStr" oninput="setBloom()">
       </div>
       <div>
         <div class="slider-header"><div class="section-title">Depth of Field</div><span class="slider-val" id="val-dof">Off</span></div>
@@ -579,6 +583,10 @@
   </div>
 </div>
 
+<script src="../shared/ui-theme-lite.js"></script>
+<script>
+document.getElementById('ui-invert').addEventListener('click', () => UITheme.toggleTheme());
+</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <!-- Post-processing -->
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
@@ -620,7 +628,7 @@ let targetY = 0.44;       // target for drag / tilt-slider lerp on Y
 let currentX = -0.26;
 let targetX  = -0.26;
 
-let t = 0, bgColor = '#f0f0f4';
+let t = 0, bgColor = '#1a0a2e';
 let cards = [], activeCardIdx = 0, cardCount = 0;
 let currentArrangement = 'stack';
 
@@ -659,7 +667,7 @@ function init(){
   // Post-processing: Bloom + Depth of Field
   composer = new THREE.EffectComposer(renderer);
   composer.addPass(new THREE.RenderPass(scene, camera));
-  bloomPass = new THREE.UnrealBloomPass(new THREE.Vector2(W, H), 0.35, 0.6, 0.82);
+  bloomPass = new THREE.UnrealBloomPass(new THREE.Vector2(W, H), 0.1, 0.6, 0.82);
   composer.addPass(bloomPass);
   bokehPass = new THREE.BokehPass(scene, camera, {focus:5.5, aperture:0, maxblur:0.01});
   composer.addPass(bokehPass);

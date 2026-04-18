@@ -6,20 +6,20 @@ let gSrc;             // p5.Graphics (fonte)
 let gProc;            // p5.Graphics (resultado)
 
 // UI state
-let threshold = 128;
+let threshold = 55;
 let pixelSize = 8;
 let stretchX = 1.0;
-let method = 'bitmap';
+let method = 'halftone';
 let processEveryN = 1;
 
 // Halftone controls
-let htShape = 'dots';
-let htAngle = 0;
-let htSpacing = 1.0;
+let htShape = 'lines';
+let htAngle = -24;
+let htSpacing = 1.59;
 
 // colors — sincronizados com UITheme
-let bgColor = '#000000';
-let fgColor = '#ffffff';
+let bgColor = '#ffffff';
+let fgColor = '#000000';
 
 // frame throttling (vídeo)
 let frameCountForN = 0;
@@ -48,7 +48,7 @@ let ctrl = {};
 // ── inicializa painel ────────────────────────────────────────
 function initUI() {
   UITheme.init({
-    initial: 'dark',
+    initial: 'light',
     onToggle(themeName, tokens) {
       // sincroniza bgColor/fgColor com o tema de UI
       bgColor = tokens.bg;
@@ -81,7 +81,7 @@ function initUI() {
   });
 
   ctrl.threshold = fD.slider('Threshold / Gamma', {
-    min: 0, max: 255, step: 1, value: threshold,
+    min: 0, max: 255, step: 1, value: 55,
     onChange(v) { threshold = v; processAll(); },
   });
 
@@ -101,20 +101,20 @@ function initUI() {
   });
 
   // ── Halftone ────────────────────────────────────────────────
-  const fH = UIPanel.section('Halftone', { collapsed: true });
+  const fH = UIPanel.section('Halftone');
 
   ctrl.htShape = fH.select('Shape', ['dots','squares','lines'], {
-    value: htShape,
+    value: 'lines',
     onChange(v) { htShape = v; processAll(); },
   });
 
   ctrl.htAngle = fH.slider('Angle', {
-    min: -90, max: 90, step: 1, value: htAngle,
+    min: -90, max: 90, step: 1, value: -24,
     onChange(v) { htAngle = v; processAll(); },
   });
 
   ctrl.htSpacing = fH.slider('Spacing %', {
-    min: 50, max: 200, step: 1, value: Math.round(htSpacing * 100),
+    min: 50, max: 200, step: 1, value: 159,
     onChange(v) { htSpacing = v / 100; processAll(); },
   });
 
@@ -122,12 +122,12 @@ function initUI() {
   const fC = UIPanel.section('Colors');
 
   ctrl.bgColor = fC.color('BG', {
-    value: bgColor,
+    value: '#ffffff',
     onChange(v) { bgColor = v; processAll(); },
   });
 
   ctrl.fgColor = fC.color('FG', {
-    value: fgColor,
+    value: '#000000',
     onChange(v) { fgColor = v; processAll(); },
   });
 
@@ -239,6 +239,13 @@ function setup(){
   if (fileInput) fileInput.addEventListener('change', onFile);
 
   initUI();
+
+  // imagem default
+  loadImage('./man.jpg', img => {
+    srcImg = img;
+    fitToCanvas();
+    processAll();
+  });
 }
 
 function windowResized(){
