@@ -455,6 +455,19 @@ pre {
             <button class="btn" onclick="toggleVocabForm()">Cancelar</button>
           </div>
         </div>
+        <div class="field" style="margin-top:10px;">
+          <label class="field-label">Imagem do flashcard (opcional)</label>
+          <div style="display:flex; gap:12px; align-items:center;">
+            <img id="vocab-img-preview" src="" alt=""
+                 style="display:none; width:72px; height:72px; object-fit:cover; border-radius:8px; border:1px solid var(--border);">
+            <input class="inp" type="file" id="vocab-img-file" accept="image/*"
+                   onchange="uploadVocabImg(event)" style="flex:1;">
+            <button type="button" class="btn btn-sm" onclick="removerVocabImg()"
+                    id="vocab-img-remove" style="display:none;">Remover</button>
+          </div>
+          <input type="hidden" id="vocab-img-url">
+          <div id="vocab-img-status" style="font-size:12px; color:var(--ink3); margin-top:4px;"></div>
+        </div>
       </div>
 
       <!-- Tabela vocab -->
@@ -1121,9 +1134,10 @@ async function loadVocab() {
   if (!rows.length) { document.getElementById('vocab-table-wrap').innerHTML = '<div class="empty">Nenhuma palavra encontrada.</div>'; return; }
   document.getElementById('vocab-table-wrap').innerHTML = `
     <table class="vtable">
-      <thead><tr><th>Aula</th><th>Espanhol</th><th>Português</th><th>Categoria</th><th>Exemplo</th><th></th></tr></thead>
+      <thead><tr><th>Img</th><th>Aula</th><th>Espanhol</th><th>Português</th><th>Categoria</th><th>Exemplo</th><th></th></tr></thead>
       <tbody>${rows.map(r => `
         <tr>
+          <td>${r.imagem_url ? `<img src="${r.imagem_url}" style="width:40px;height:40px;object-fit:cover;border-radius:6px;">` : '—'}</td>
           <td><span class="badge badge-blue">Aula ${r.aulas?.numero || '?'}</span></td>
           <td><strong>${r.espanhol}</strong></td>
           <td>${r.portugues}</td>
@@ -1146,9 +1160,41 @@ function toggleVocabForm() {
 }
 
 function limparVocabForm() {
-  ['vocab-id','vocab-es','vocab-pt','vocab-ex'].forEach(id => document.getElementById(id).value = '');
+  ['vocab-id','vocab-es','vocab-pt','vocab-ex','vocab-img-url','vocab-img-file'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('vocab-cat').value = 'geral';
   document.getElementById('vocab-form-title').textContent = 'Nova palavra';
+  document.getElementById('vocab-img-status').textContent = '';
+  setVocabImgPreview('');
+}
+
+async function uploadVocabImg(e) {
+  const file = e.target.files[0];
+  if (!file || !sb) return;
+  const status = document.getElementById('vocab-img-status');
+  status.textContent = 'Enviando...';
+  const ext = (file.name.split('.').pop() || 'png').toLowerCase();
+  const path = `${Date.now()}-${Math.random().toString(36).slice(2,8)}.${ext}`;
+  const { error } = await sb.storage.from('flashcards')
+    .upload(path, file, { cacheControl: '31536000', upsert: false });
+  if (error) { status.textContent = 'Erro: ' + error.message; return; }
+  const { data: pub } = sb.storage.from('flashcards').getPublicUrl(path);
+  document.getElementById('vocab-img-url').value = pub.publicUrl;
+  setVocabImgPreview(pub.publicUrl);
+  status.textContent = '✓ Imagem carregada';
+}
+
+function setVocabImgPreview(url) {
+  const img = document.getElementById('vocab-img-preview');
+  const rm = document.getElementById('vocab-img-remove');
+  if (url) { img.src = url; img.style.display = ''; rm.style.display = ''; }
+  else { img.src = ''; img.style.display = 'none'; rm.style.display = 'none'; }
+}
+
+function removerVocabImg() {
+  document.getElementById('vocab-img-url').value = '';
+  document.getElementById('vocab-img-file').value = '';
+  document.getElementById('vocab-img-status').textContent = '';
+  setVocabImgPreview('');
 }
 
 async function editarVocab(id) {
@@ -1161,6 +1207,10 @@ async function editarVocab(id) {
   document.getElementById('vocab-pt').value = data.portugues;
   document.getElementById('vocab-cat').value = data.categoria;
   document.getElementById('vocab-ex').value = data.exemplo || '';
+  document.getElementById('vocab-img-url').value = data.imagem_url || '';
+  setVocabImgPreview(data.imagem_url || '');
+  document.getElementById('vocab-img-status').textContent = '';
+  document.getElementById('vocab-img-file').value = '';
   document.getElementById('vocab-form-title').textContent = 'Editando palavra';
   document.getElementById('vocab-form').style.display = '';
   document.getElementById('vocab-form').scrollIntoView({ behavior: 'smooth' });
@@ -1175,6 +1225,7 @@ async function salvarVocab() {
     portugues: document.getElementById('vocab-pt').value.trim(),
     categoria: document.getElementById('vocab-cat').value,
     exemplo: document.getElementById('vocab-ex').value.trim() || null,
+    imagem_url: document.getElementById('vocab-img-url').value || null,
   };
   if (!payload.espanhol || !payload.portugues) { toast('Preencha espanhol e português.', 'err'); return; }
   const { error } = id
