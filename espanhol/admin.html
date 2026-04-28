@@ -384,6 +384,7 @@ pre {
                 <select class="inp" id="aula-voz" style="flex:1;"></select>
                 <button type="button" class="btn" onclick="previewTtsFromSelect('aula-voz')">▶</button>
               </div>
+              <div id="aula-voz-hint" style="font-size:11px; margin-top:4px; color:var(--ink3);"></div>
             </div>
             <div class="btn-row">
               <button class="btn btn-accent" onclick="salvarAula()">Salvar aula</button>
@@ -468,6 +469,7 @@ pre {
             <select class="inp" id="vocab-voz" style="flex:1;"></select>
             <button type="button" class="btn" onclick="previewTtsFromSelect('vocab-voz')">▶</button>
           </div>
+          <div id="vocab-voz-hint" style="font-size:11px; margin-top:4px; color:var(--ink3);"></div>
         </div>
         <div class="field" style="margin-top:10px;">
           <label class="field-label">Imagem do flashcard (opcional)</label>
@@ -551,6 +553,7 @@ pre {
             <select class="inp" id="frase-voz" style="flex:1;"></select>
             <button type="button" class="btn" onclick="previewTtsFromSelect('frase-voz')">▶</button>
           </div>
+          <div id="frase-voz-hint" style="font-size:11px; margin-top:4px; color:var(--ink3);"></div>
         </div>
         <div class="btn-row" style="margin-top:10px;">
           <button class="btn btn-green" onclick="salvarFrase()">Salvar frase</button>
@@ -652,6 +655,7 @@ pre {
             <select class="inp" id="ex-voz" style="flex:1;"></select>
             <button type="button" class="btn" onclick="previewTtsFromSelect('ex-voz')">▶</button>
           </div>
+          <div id="ex-voz-hint" style="font-size:11px; margin-top:4px; color:var(--ink3);"></div>
         </div>
 
         <div class="btn-row">
@@ -1038,17 +1042,187 @@ async function previewTtsFromSelect(selectId, textOverride) {
   }
 }
 
+// Pré-gera (e cacheia) todos os áudios de uma aula chamando a Edge Function tts.
+// Cada texto resolve voz na ordem: item.voz_tts → aula.voz_tts → padrão global.
+async function pregerarAudiosAula(aulaId) {
+  if (!sb) { toast('Configure o Supabase primeiro.', 'err'); return; }
+  const aula = aulasList.find(a => a.id === aulaId);
+  if (!aula) { toast('Aula não encontrada.', 'err'); return; }
+  if (!confirm(`Pré-gerar áudios da Aula ${aula.numero} — "${aula.titulo}"?\n\nIsso varre vocabulário, frases, exercícios e verbos. Itens já em cache são pulados (custo zero). Pode levar alguns minutos.`)) return;
+
+  // Coletar [{texto, voz}] de todas as fontes
+  const [vocabRes, frasesRes, exRes] = await Promise.all([
+    sb.from('vocabulario').select('espanhol,exemplo,voz_tts').eq('aula_id', aulaId),
+    sb.from('frases').select('espanhol,voz_tts').eq('aula_id', aulaId),
+    sb.from('exercicios').select('frase,tipo,voz_tts').eq('aula_id', aulaId),
+  ]);
+
+  const vozPadrao = getVozPadrao();
+  const aulaVoz = aula.voz_tts || vozPadrao;
+  const itens = [];
+
+  (vocabRes.data || []).forEach(v => {
+    const voz = v.voz_tts || aulaVoz;
+    if (v.espanhol) itens.push({ texto: v.espanhol, voz, label: `vocab "${v.espanhol}"` });
+    if (v.exemplo)  itens.push({ texto: v.exemplo, voz, label: `exemplo "${v.exemplo.slice(0,30)}..."` });
+  });
+  (frasesRes.data || []).forEach(f => {
+    if (f.espanhol) itens.push({ texto: f.espanhol, voz: f.voz_tts || aulaVoz, label: `frase "${f.espanhol.slice(0,30)}..."` });
+  });
+  (exRes.data || []).forEach(e => {
+    // Para escrita_audio, gerar a frase completa; para outros tipos a frase tem ___ (não vale gerar áudio).
+    if (e.tipo === 'escrita_audio' && e.frase) {
+      itens.push({ texto: e.frase, voz: e.voz_tts || aulaVoz, label: `exercício "${e.frase.slice(0,30)}..."` });
+    }
+  });
+  (aula.verbos || []).forEach(v => {
+    if (v) itens.push({ texto: v, voz: aulaVoz, label: `verbo "${v}"` });
+  });
+
+  if (!itens.length) { toast('Nada pra gerar nesta aula.', 'err'); return; }
+
+  // Modal de progresso simples
+  let modal = document.getElementById('pregen-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'pregen-modal';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:9999;';
+    modal.innerHTML = `
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:24px;min-width:360px;max-width:520px;">
+        <div style="font-weight:700;font-size:16px;margin-bottom:8px;" id="pregen-title">Pré-gerando áudios...</div>
+        <div style="font-size:13px;color:var(--ink2);margin-bottom:12px;" id="pregen-detail">—</div>
+        <div style="background:var(--surface2);border-radius:8px;height:10px;overflow:hidden;margin-bottom:12px;">
+          <div id="pregen-bar" style="background:var(--accent);height:100%;width:0%;transition:width 0.2s;"></div>
+        </div>
+        <div style="font-size:12px;color:var(--ink3);" id="pregen-stats">0 / 0</div>
+        <div class="btn-row" style="margin-top:16px;">
+          <button class="btn" id="pregen-close" onclick="document.getElementById('pregen-modal').remove()" style="display:none;">Fechar</button>
+        </div>
+      </div>`;
+    document.body.appendChild(modal);
+  }
+  const setBar = (pct) => document.getElementById('pregen-bar').style.width = pct + '%';
+  const setDetail = (s) => document.getElementById('pregen-detail').textContent = s;
+  const setStats = (s) => document.getElementById('pregen-stats').textContent = s;
+
+  let done = 0, hits = 0, misses = 0, fails = 0;
+  const total = itens.length;
+  setStats(`0 / ${total}`);
+
+  // Concorrência limitada (3 em paralelo) pra não estourar rate limit do Google.
+  const CONCURRENCY = 3;
+  const queue = [...itens];
+
+  async function worker() {
+    while (queue.length) {
+      const item = queue.shift();
+      setDetail(item.label);
+      try {
+        const { data, error } = await sb.functions.invoke('tts', {
+          body: { texto: item.texto, voz: item.voz },
+        });
+        if (error || !data?.url) {
+          fails++;
+          console.warn('Falha:', item.label, error || data);
+        } else if (data.cached) {
+          hits++;
+        } else {
+          misses++;
+        }
+      } catch (e) {
+        fails++;
+        console.warn('Erro:', item.label, e);
+      }
+      done++;
+      setBar(Math.round(done / total * 100));
+      setStats(`${done} / ${total}  ·  ${hits} em cache  ·  ${misses} novos  ·  ${fails} falhas`);
+    }
+  }
+
+  await Promise.all(Array.from({ length: CONCURRENCY }, worker));
+
+  document.getElementById('pregen-title').textContent = '✓ Pré-geração concluída';
+  setDetail(`Aula ${aula.numero} — "${aula.titulo}"`);
+  document.getElementById('pregen-close').style.display = '';
+  toast(`Áudios prontos: ${hits} em cache + ${misses} gerados${fails ? ` · ${fails} falhas` : ''}`, fails ? 'err' : 'ok');
+}
+
 function popularSelectsVoz() {
   const padrao = getVozPadrao();
   const selPadrao = document.getElementById('cfg-voz-padrao');
   if (selPadrao) selPadrao.innerHTML = vozOptionsHtml(false, padrao);
   ['aula-voz', 'vocab-voz', 'frase-voz', 'ex-voz'].forEach(id => {
     const el = document.getElementById(id);
-    if (el && !el.dataset.populated) {
+    if (!el) return;
+    if (!el.dataset.populated) {
       el.innerHTML = vozOptionsHtml(true, '');
       el.dataset.populated = '1';
+      el.addEventListener('change', () => atualizarHintsVoz());
     }
   });
+  // Sub-items dependem da aula selecionada — atualiza hint quando aula muda.
+  ['vocab-aula-id', 'frase-aula-id', 'ex-aula-id'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el && !el.dataset.hintWired) {
+      el.addEventListener('change', () => atualizarHintsVoz());
+      el.dataset.hintWired = '1';
+    }
+  });
+  atualizarHintsVoz();
+}
+
+// Mostra texto explicando se a voz está herdada ou sobrescrita.
+function atualizarHintsVoz() {
+  const padrao = getVozPadrao();
+  const labelDe = (id) => {
+    if (!id) return id;
+    for (const g of TTS_VOICES) {
+      const found = g.voices.find(([vid]) => vid === id);
+      if (found) return `${found[1]} (${id})`;
+    }
+    return id;
+  };
+
+  // aula: herda só do padrão global.
+  const aulaSel = document.getElementById('aula-voz');
+  if (aulaSel) {
+    const v = aulaSel.value;
+    setHint('aula-voz-hint',
+      v
+        ? `🔧 Sobrescrevendo padrão (${labelDe(padrao)})`
+        : `↳ Herdando padrão: ${labelDe(padrao)}`,
+      v ? 'override' : 'inherit'
+    );
+  }
+
+  // sub-itens: primeiro tentam aula, depois padrão.
+  [
+    ['vocab-voz', 'vocab-aula-id', 'vocab-voz-hint'],
+    ['frase-voz', 'frase-aula-id', 'frase-voz-hint'],
+    ['ex-voz',    'ex-aula-id',    'ex-voz-hint'],
+  ].forEach(([vozId, aulaIdSel, hintId]) => {
+    const sel = document.getElementById(vozId);
+    if (!sel) return;
+    const v = sel.value;
+    if (v) {
+      setHint(hintId, `🔧 Sobrescrevendo herança`, 'override');
+      return;
+    }
+    const aulaId = document.getElementById(aulaIdSel)?.value;
+    const aula = aulaId ? aulasList.find(a => String(a.id) === String(aulaId)) : null;
+    if (aula?.voz_tts) {
+      setHint(hintId, `↳ Herdando da Aula ${aula.numero}: ${labelDe(aula.voz_tts)}`, 'inherit');
+    } else {
+      setHint(hintId, `↳ Herdando padrão: ${labelDe(padrao)}`, 'inherit');
+    }
+  });
+}
+
+function setHint(id, text, kind) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.textContent = text;
+  el.style.color = kind === 'override' ? 'var(--accent)' : 'var(--ink3)';
 }
 
 function loadConfig() {
@@ -1171,6 +1345,8 @@ function renderAulasList() {
         <div class="aula-titulo">${a.titulo}</div>
         <div class="aula-meta">${a.nivel} · ${a.tema || '—'}</div>
       </div>
+      <button class="btn btn-sm" title="Pré-gerar áudios desta aula"
+              onclick="event.stopPropagation(); pregerarAudiosAula(${a.id})">🔊</button>
       <button class="btn btn-red btn-sm" onclick="event.stopPropagation(); deletarAula(${a.id})">✕</button>
     </div>`).join('');
 }
@@ -1196,6 +1372,7 @@ function editarAula(id) {
   document.getElementById('aula-obs').value = a.observacoes || '';
   document.getElementById('aula-voz').value = a.voz_tts || '';
   document.getElementById('aula-form-title').textContent = 'Editando Aula ' + a.numero;
+  atualizarHintsVoz();
 }
 
 async function salvarAula() {
@@ -1348,6 +1525,7 @@ async function editarVocab(id) {
   document.getElementById('vocab-form-title').textContent = 'Editando palavra';
   document.getElementById('vocab-form').style.display = '';
   document.getElementById('vocab-form').scrollIntoView({ behavior: 'smooth' });
+  atualizarHintsVoz();
 }
 
 async function salvarVocab() {
@@ -1440,6 +1618,7 @@ async function editarFrase(id) {
   document.getElementById('frase-form-title').textContent = 'Editando frase';
   document.getElementById('frase-form').style.display = '';
   document.getElementById('frase-form').scrollIntoView({ behavior: 'smooth' });
+  atualizarHintsVoz();
 }
 
 async function salvarFrase() {
@@ -1574,6 +1753,7 @@ async function editarExercicio(id) {
   document.getElementById('ex-form').style.display = '';
   updateExFormTipo();
   document.getElementById('ex-form').scrollIntoView({ behavior: 'smooth' });
+  atualizarHintsVoz();
 }
 
 async function salvarExercicio() {
@@ -2022,6 +2202,16 @@ function logoutProf() {
 // INIT
 // ============================================================
 // Check login first — if not logged in, show overlay and stop
+// Limpeza one-shot: remover a Resend key antiga que ficou seedada em
+// localStorage de quem abriu o admin antes de ela ser revogada.
+(function purgeLeakedResendKey() {
+  const LEAKED = 're_CDoToUah_EmWMmuAUCuvcexLu8p9mr4KG';
+  if (localStorage.getItem('resend_key') === LEAKED) {
+    localStorage.removeItem('resend_key');
+    console.warn('[security] Resend key vazada removida do localStorage. Recadastre uma key nova em Configuração se for usar email.');
+  }
+})();
+
 if (!checkProfLogin()) {
   // Wait for login — loadConfig and loadAulas called inside loginProf()
 } else {
