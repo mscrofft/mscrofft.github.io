@@ -378,6 +378,13 @@ pre {
               <label class="field-label">Observações para o professor</label>
               <textarea class="inp" id="aula-obs" placeholder="Dicas pedagógicas, pontos de atenção..."></textarea>
             </div>
+            <div class="field">
+              <label class="field-label">Voz TTS desta aula (opcional — vazio = usa a padrão)</label>
+              <div style="display:flex; gap:8px;">
+                <select class="inp" id="aula-voz" style="flex:1;"></select>
+                <button type="button" class="btn" onclick="previewTtsFromSelect('aula-voz')">▶</button>
+              </div>
+            </div>
             <div class="btn-row">
               <button class="btn btn-accent" onclick="salvarAula()">Salvar aula</button>
               <button class="btn" onclick="limparFormAula()">Cancelar</button>
@@ -456,6 +463,13 @@ pre {
           </div>
         </div>
         <div class="field" style="margin-top:10px;">
+          <label class="field-label">Voz TTS desta palavra (opcional — vazio = herda da aula / padrão)</label>
+          <div style="display:flex; gap:8px;">
+            <select class="inp" id="vocab-voz" style="flex:1;"></select>
+            <button type="button" class="btn" onclick="previewTtsFromSelect('vocab-voz')">▶</button>
+          </div>
+        </div>
+        <div class="field" style="margin-top:10px;">
           <label class="field-label">Imagem do flashcard (opcional)</label>
           <div style="display:flex; gap:12px; align-items:center;">
             <img id="vocab-img-preview" src="" alt=""
@@ -529,6 +543,13 @@ pre {
           <div class="field" style="margin:0;">
             <label class="field-label">Tradução em português</label>
             <input class="inp" type="text" id="frase-pt" placeholder="Qual é o seu nome?">
+          </div>
+        </div>
+        <div class="field" style="margin-top:10px;">
+          <label class="field-label">Voz TTS desta frase (opcional — vazio = herda da aula / padrão)</label>
+          <div style="display:flex; gap:8px;">
+            <select class="inp" id="frase-voz" style="flex:1;"></select>
+            <button type="button" class="btn" onclick="previewTtsFromSelect('frase-voz')">▶</button>
           </div>
         </div>
         <div class="btn-row" style="margin-top:10px;">
@@ -623,6 +644,14 @@ pre {
           <label class="field-label">URL da imagem (opcional)</label>
           <input class="inp" type="text" id="ex-imagem"
             placeholder="https://exemplo.com/imagem.jpg">
+        </div>
+
+        <div class="field">
+          <label class="field-label">Voz TTS deste exercício (opcional — vazio = herda da aula / padrão)</label>
+          <div style="display:flex; gap:8px;">
+            <select class="inp" id="ex-voz" style="flex:1;"></select>
+            <button type="button" class="btn" onclick="previewTtsFromSelect('ex-voz')">▶</button>
+          </div>
         </div>
 
         <div class="btn-row">
@@ -789,6 +818,21 @@ pre {
         </div>
       </div>
 
+      <div class="card" style="margin-top:12px;">
+        <div class="card-header"><span class="card-title">Voz padrão TTS</span></div>
+        <div style="font-size:13px; color:var(--ink2); margin-bottom:10px; line-height:1.6;">
+          Voz usada quando o item ou a aula não definem uma própria. Requer a Edge Function <code>tts</code> deployada e o secret <code>GOOGLE_TTS_API_KEY</code> configurado no Supabase.
+        </div>
+        <div class="field">
+          <label class="field-label">Voz padrão (Google Cloud TTS)</label>
+          <select class="inp" id="cfg-voz-padrao"></select>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-accent" onclick="saveVozPadrao()">Salvar voz padrão</button>
+          <button class="btn" onclick="previewTtsFromSelect('cfg-voz-padrao')">▶ Pré-ouvir</button>
+        </div>
+      </div>
+
       <div class="card" id="sql-card" style="display:none;">
         <div class="card-header">
           <span class="card-title">Criar tabelas no banco</span>
@@ -801,17 +845,17 @@ pre {
 CREATE TABLE IF NOT EXISTS aulas (
   id BIGSERIAL PRIMARY KEY, numero INTEGER NOT NULL, titulo TEXT NOT NULL,
   nivel TEXT DEFAULT 'A1', tema TEXT, verbos TEXT[], observacoes TEXT,
-  video_url TEXT, imagem_url TEXT, criado_em TIMESTAMPTZ DEFAULT NOW()
+  video_url TEXT, imagem_url TEXT, voz_tts TEXT, criado_em TIMESTAMPTZ DEFAULT NOW()
 );
 CREATE TABLE IF NOT EXISTS vocabulario (
   id BIGSERIAL PRIMARY KEY, aula_id BIGINT REFERENCES aulas(id) ON DELETE CASCADE,
   espanhol TEXT NOT NULL, portugues TEXT NOT NULL, categoria TEXT DEFAULT 'geral',
-  exemplo TEXT, imagem_url TEXT, criado_em TIMESTAMPTZ DEFAULT NOW()
+  exemplo TEXT, imagem_url TEXT, voz_tts TEXT, criado_em TIMESTAMPTZ DEFAULT NOW()
 );
 CREATE TABLE IF NOT EXISTS frases (
   id BIGSERIAL PRIMARY KEY, aula_id BIGINT REFERENCES aulas(id) ON DELETE CASCADE,
   espanhol TEXT NOT NULL, portugues TEXT NOT NULL, categoria TEXT DEFAULT 'geral',
-  imagem_url TEXT, criado_em TIMESTAMPTZ DEFAULT NOW()
+  imagem_url TEXT, voz_tts TEXT, criado_em TIMESTAMPTZ DEFAULT NOW()
 );
 -- Alunos
 CREATE TABLE IF NOT EXISTS alunos (
@@ -927,6 +971,86 @@ CREATE POLICY "escrita autenticada frases" ON frases FOR ALL USING (true);</pre>
 let sb = null;
 let aulasList = [];
 
+// ---------- TTS / vozes ----------
+const TTS_VOICES = [
+  { group: 'Espanha (ES-ES)', voices: [
+    ['es-ES-Neural2-F', 'Neural2-F (feminina)'],
+    ['es-ES-Neural2-B', 'Neural2-B (masculina)'],
+    ['es-ES-Neural2-A', 'Neural2-A (feminina)'],
+    ['es-ES-Neural2-C', 'Neural2-C (feminina)'],
+    ['es-ES-Neural2-D', 'Neural2-D (feminina)'],
+    ['es-ES-Neural2-E', 'Neural2-E (feminina)'],
+    ['es-ES-Studio-F',  'Studio-F (premium fem.)'],
+    ['es-ES-Studio-C',  'Studio-C (premium fem.)'],
+  ]},
+  { group: 'América Latina (ES-US)', voices: [
+    ['es-US-Neural2-A', 'Neural2-A (feminina)'],
+    ['es-US-Neural2-B', 'Neural2-B (masculina)'],
+    ['es-US-Neural2-C', 'Neural2-C (masculina)'],
+    ['es-US-Studio-B',  'Studio-B (premium)'],
+  ]},
+];
+
+function vozOptionsHtml(includeInherit, selected) {
+  let html = includeInherit ? '<option value="">— herdar (padrão / aula) —</option>' : '';
+  TTS_VOICES.forEach(g => {
+    html += `<optgroup label="${g.group}">`;
+    g.voices.forEach(([id, label]) => {
+      const sel = id === (selected || '') ? ' selected' : '';
+      html += `<option value="${id}"${sel}>${label}</option>`;
+    });
+    html += `</optgroup>`;
+  });
+  return html;
+}
+
+function getVozPadrao() {
+  return localStorage.getItem('tts_voz_padrao') || 'es-ES-Neural2-F';
+}
+
+function saveVozPadrao() {
+  const sel = document.getElementById('cfg-voz-padrao');
+  if (!sel || !sel.value) return;
+  localStorage.setItem('tts_voz_padrao', sel.value);
+  toast('Voz padrão salva! ✓', 'ok');
+}
+
+async function previewTtsFromSelect(selectId, textOverride) {
+  if (!sb) { toast('Configure o Supabase primeiro.', 'err'); return; }
+  const sel = document.getElementById(selectId);
+  let voz = sel?.value || getVozPadrao();
+  let texto = textOverride;
+  if (!texto) {
+    // tenta pegar de campos relacionados ao form
+    const map = { 'aula-voz': 'aula-titulo', 'vocab-voz': 'vocab-es', 'frase-voz': 'frase-es', 'ex-voz': 'ex-frase' };
+    const candidate = document.getElementById(map[selectId])?.value?.trim();
+    texto = candidate || prompt('Texto em espanhol pra ouvir:', 'Hola, ¿cómo estás?');
+  }
+  texto = (texto || '').trim();
+  if (!texto) return;
+  try {
+    const { data, error } = await sb.functions.invoke('tts', { body: { texto, voz } });
+    if (error) throw error;
+    if (!data?.url) throw new Error(data?.error || 'Sem URL retornada');
+    await new Audio(data.url).play();
+  } catch (e) {
+    toast('Erro TTS: ' + (e.message || e), 'err');
+  }
+}
+
+function popularSelectsVoz() {
+  const padrao = getVozPadrao();
+  const selPadrao = document.getElementById('cfg-voz-padrao');
+  if (selPadrao) selPadrao.innerHTML = vozOptionsHtml(false, padrao);
+  ['aula-voz', 'vocab-voz', 'frase-voz', 'ex-voz'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el && !el.dataset.populated) {
+      el.innerHTML = vozOptionsHtml(true, '');
+      el.dataset.populated = '1';
+    }
+  });
+}
+
 function loadConfig() {
   const url = localStorage.getItem('sb_url') || '';
   const key = localStorage.getItem('sb_key') || '';
@@ -934,6 +1058,7 @@ function loadConfig() {
   document.getElementById('cfg-key').value = key;
   const resend = localStorage.getItem('resend_key') || '';
   document.getElementById('cfg-resend').value = resend;
+  popularSelectsVoz();
   if (url && key) { initSupabase(url, key); return true; }
   return false;
 }
@@ -1052,12 +1177,14 @@ function renderAulasList() {
 
 function showNovaAula() {
   limparFormAula();
+  popularSelectsVoz();
   document.getElementById('aula-form-title').textContent = 'Nova aula';
 }
 
 function editarAula(id) {
   const a = aulasList.find(x => x.id === id);
   if (!a) return;
+  popularSelectsVoz();
   document.querySelectorAll('.aula-item').forEach(el => el.classList.remove('selected'));
   document.getElementById('aula-item-' + id)?.classList.add('selected');
   document.getElementById('aula-id').value = a.id;
@@ -1067,6 +1194,7 @@ function editarAula(id) {
   document.getElementById('aula-tema').value = a.tema || '';
   document.getElementById('aula-verbos').value = (a.verbos || []).join(', ');
   document.getElementById('aula-obs').value = a.observacoes || '';
+  document.getElementById('aula-voz').value = a.voz_tts || '';
   document.getElementById('aula-form-title').textContent = 'Editando Aula ' + a.numero;
 }
 
@@ -1080,6 +1208,7 @@ async function salvarAula() {
     tema: document.getElementById('aula-tema').value.trim() || null,
     verbos: document.getElementById('aula-verbos').value.split(',').map(v => v.trim()).filter(Boolean),
     observacoes: document.getElementById('aula-obs').value.trim() || null,
+    voz_tts: document.getElementById('aula-voz').value || null,
   };
   if (!payload.numero || !payload.titulo) { toast('Preencha número e título.', 'err'); return; }
   const { error } = id
@@ -1102,6 +1231,7 @@ async function deletarAula(id) {
 function limparFormAula() {
   ['aula-id','aula-numero','aula-titulo','aula-tema','aula-verbos','aula-obs'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('aula-nivel').value = 'A1';
+  const vsel = document.getElementById('aula-voz'); if (vsel) vsel.value = '';
   document.getElementById('aula-form-title').textContent = 'Nova aula';
   document.querySelectorAll('.aula-item').forEach(el => el.classList.remove('selected'));
 }
@@ -1162,9 +1292,11 @@ function toggleVocabForm() {
 function limparVocabForm() {
   ['vocab-id','vocab-es','vocab-pt','vocab-ex','vocab-img-url','vocab-img-file'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('vocab-cat').value = 'geral';
+  const vsel = document.getElementById('vocab-voz'); if (vsel) vsel.value = '';
   document.getElementById('vocab-form-title').textContent = 'Nova palavra';
   document.getElementById('vocab-img-status').textContent = '';
   setVocabImgPreview('');
+  popularSelectsVoz();
 }
 
 async function uploadVocabImg(e) {
@@ -1199,6 +1331,7 @@ function removerVocabImg() {
 
 async function editarVocab(id) {
   if (!sb) return;
+  popularSelectsVoz();
   const { data } = await sb.from('vocabulario').select('*').eq('id', id).single();
   if (!data) return;
   document.getElementById('vocab-id').value = data.id;
@@ -1207,6 +1340,7 @@ async function editarVocab(id) {
   document.getElementById('vocab-pt').value = data.portugues;
   document.getElementById('vocab-cat').value = data.categoria;
   document.getElementById('vocab-ex').value = data.exemplo || '';
+  document.getElementById('vocab-voz').value = data.voz_tts || '';
   document.getElementById('vocab-img-url').value = data.imagem_url || '';
   setVocabImgPreview(data.imagem_url || '');
   document.getElementById('vocab-img-status').textContent = '';
@@ -1226,6 +1360,7 @@ async function salvarVocab() {
     categoria: document.getElementById('vocab-cat').value,
     exemplo: document.getElementById('vocab-ex').value.trim() || null,
     imagem_url: document.getElementById('vocab-img-url').value || null,
+    voz_tts: document.getElementById('vocab-voz').value || null,
   };
   if (!payload.espanhol || !payload.portugues) { toast('Preencha espanhol e português.', 'err'); return; }
   const { error } = id
@@ -1286,11 +1421,14 @@ function toggleFraseForm() {
 function limparFraseForm() {
   ['frase-id','frase-es','frase-pt'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('frase-cat').value = 'geral';
+  const vsel = document.getElementById('frase-voz'); if (vsel) vsel.value = '';
   document.getElementById('frase-form-title').textContent = 'Nova frase';
+  popularSelectsVoz();
 }
 
 async function editarFrase(id) {
   if (!sb) return;
+  popularSelectsVoz();
   const { data } = await sb.from('frases').select('*').eq('id', id).single();
   if (!data) return;
   document.getElementById('frase-id').value = data.id;
@@ -1298,6 +1436,7 @@ async function editarFrase(id) {
   document.getElementById('frase-es').value = data.espanhol;
   document.getElementById('frase-pt').value = data.portugues;
   document.getElementById('frase-cat').value = data.categoria;
+  document.getElementById('frase-voz').value = data.voz_tts || '';
   document.getElementById('frase-form-title').textContent = 'Editando frase';
   document.getElementById('frase-form').style.display = '';
   document.getElementById('frase-form').scrollIntoView({ behavior: 'smooth' });
@@ -1311,6 +1450,7 @@ async function salvarFrase() {
     espanhol: document.getElementById('frase-es').value.trim(),
     portugues: document.getElementById('frase-pt').value.trim(),
     categoria: document.getElementById('frase-cat').value,
+    voz_tts: document.getElementById('frase-voz').value || null,
   };
   if (!payload.espanhol || !payload.portugues) { toast('Preencha espanhol e português.', 'err'); return; }
   const { error } = id
@@ -1390,8 +1530,10 @@ function limparExForm() {
     if (el) el.value = '';
   });
   document.getElementById('ex-tipo').value = 'lacuna_escolha';
+  const vsel = document.getElementById('ex-voz'); if (vsel) vsel.value = '';
   document.getElementById('ex-form-title').textContent = 'Novo exercício';
   document.getElementById('ex-preview').style.display = 'none';
+  popularSelectsVoz();
 }
 
 function updateExFormTipo() {
@@ -1417,6 +1559,7 @@ function updateExFormTipo() {
 
 async function editarExercicio(id) {
   if (!sb) return;
+  popularSelectsVoz();
   const { data } = await sb.from('exercicios').select('*').eq('id', id).single();
   if (!data) return;
   document.getElementById('ex-id').value = data.id;
@@ -1426,6 +1569,7 @@ async function editarExercicio(id) {
   document.getElementById('ex-resposta').value = data.resposta || '';
   document.getElementById('ex-opcoes').value = (data.opcoes || []).join(', ');
   document.getElementById('ex-imagem').value = data.imagem_url || '';
+  document.getElementById('ex-voz').value = data.voz_tts || '';
   document.getElementById('ex-form-title').textContent = 'Editando exercício';
   document.getElementById('ex-form').style.display = '';
   updateExFormTipo();
@@ -1451,6 +1595,7 @@ async function salvarExercicio() {
     aula_id: document.getElementById('ex-aula-id').value || null,
     tipo, frase, resposta, opcoes,
     imagem_url: imagem || null,
+    voz_tts: document.getElementById('ex-voz').value || null,
   };
 
   const { error } = id
@@ -1882,12 +2027,6 @@ if (!checkProfLogin()) {
 } else {
   const connected = loadConfig();
   if (connected) loadAulas();
-  // Pre-seed Resend key if not set
-  if (!localStorage.getItem('resend_key')) {
-    localStorage.setItem('resend_key', 're_CDoToUah_EmWMmuAUCuvcexLu8p9mr4KG');
-    const el = document.getElementById('cfg-resend');
-    if (el) el.value = 're_CDoToUah_EmWMmuAUCuvcexLu8p9mr4KG';
-  }
 }
 </script>
 </body>

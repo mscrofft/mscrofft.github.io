@@ -614,7 +614,7 @@ body { font-family: 'Nunito', sans-serif; background: var(--bg); color: var(--na
         <div class="fc-controls">
           <button class="btn" onclick="prevFC()">← Anterior</button>
           <button class="btn btn-coral" onclick="nextFC()">Próxima →</button>
-          <button class="speak-btn" onclick="speak(document.getElementById('fc-es').textContent,'es')">🔊</button>
+          <button class="speak-btn" onclick="speakFC()">🔊</button>
           <span style="font-size:13px; color:var(--ink3); margin-left:auto; font-weight:600;" id="fc-counter">0/0</span>
         </div>
         <div class="fc-cats" id="fc-cats"></div>
@@ -1043,15 +1043,44 @@ function updateQuizProgressBar() {
 }
 
 // ============================================================
-// SPEECH
+// SPEECH (Edge Function tts → Google TTS, com cache; fallback browser)
 // ============================================================
-function speak(text, lang='es', rate=1) {
+let _ttsAudio = null;
+
+function _resolverVoz(vozItem) {
+  // item.voz_tts → currentAula.voz_tts → padrão local → fallback
+  return vozItem
+    || (currentAula && currentAula.voz_tts)
+    || localStorage.getItem('tts_voz_padrao')
+    || 'es-ES-Neural2-F';
+}
+
+function _speakBrowser(text, lang, rate) {
   if (!window.speechSynthesis) return;
   window.speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(text);
   u.lang = lang === 'es' ? 'es-ES' : 'pt-BR';
   u.rate = rate;
   window.speechSynthesis.speak(u);
+}
+
+async function speak(text, lang='es', rate=1, voz=null) {
+  if (!text) return;
+  // Português ainda usa o sintetizador do navegador.
+  if (lang !== 'es' || !sb) return _speakBrowser(text, lang, rate);
+  const vozFinal = _resolverVoz(voz);
+  try {
+    const { data, error } = await sb.functions.invoke('tts', {
+      body: { texto: text, voz: vozFinal, rate },
+    });
+    if (error || !data?.url) throw error || new Error('sem url');
+    if (_ttsAudio) { try { _ttsAudio.pause(); } catch (e) {} }
+    _ttsAudio = new Audio(data.url);
+    await _ttsAudio.play();
+  } catch (e) {
+    console.warn('TTS Edge Function falhou, fallback navegador:', e?.message || e);
+    _speakBrowser(text, lang, rate);
+  }
 }
 
 // ============================================================
@@ -1113,6 +1142,11 @@ function renderFC() {
 function flipFC() { fcFlipped=!fcFlipped; document.getElementById('fc').classList.toggle('flipped',fcFlipped); }
 function nextFC() { if(!vocabFiltered.length)return; fcIdx=(fcIdx+1)%vocabFiltered.length; renderFC(); }
 function prevFC() { if(!vocabFiltered.length)return; fcIdx=(fcIdx-1+vocabFiltered.length)%vocabFiltered.length; renderFC(); }
+function speakFC() {
+  const w = vocabFiltered[fcIdx];
+  if (!w) return;
+  speak(w.espanhol, 'es', 1, w.voz_tts);
+}
 
 // ============================================================
 // QUIZ
@@ -1452,6 +1486,7 @@ function renderEscritaAudio(ex) {
     : ex.frase;
   // Store frase on window to avoid inline string issues
   window._exAudioFrase = ex.frase;
+  window._exAudioVoz = ex.voz_tts || null;
   return `<div class="ex-audio-btns">
     <button class="ex-audio-btn" onclick="speakExStored(1)">🔊</button>
     <button class="ex-audio-btn" onclick="speakExStored(0.6)">🐢</button>
@@ -1462,8 +1497,8 @@ function renderEscritaAudio(ex) {
     onkeydown="if(event.key==='Enter')checkExercicio()">`;
 }
 
-function speakExStored(rate) { speak(window._exAudioFrase || '', 'es', rate); }
-function speakEx(text, rate) { speak(text, 'es', rate); }
+function speakExStored(rate) { speak(window._exAudioFrase || '', 'es', rate, window._exAudioVoz); }
+function speakEx(text, rate, voz) { speak(text, 'es', rate, voz); }
 
 function normalize(s) {
   return (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
@@ -1593,7 +1628,15 @@ function renderFrases() {
 function revealAllFrases() { document.querySelectorAll('.frase-card').forEach(c=>c.classList.add('revealed')); }
 function hideAllFrases() { document.querySelectorAll('.frase-card').forEach(c=>c.classList.remove('revealed')); }
 function speakFrases() {
-  let i=0; function next() { if(i>=frasesData.length)return; speak(frasesData[i].espanhol,'es'); i++; setTimeout(next,2800); } next();
+  let i=0;
+  function next() {
+    if (i >= frasesData.length) return;
+    const f = frasesData[i];
+    speak(f.espanhol, 'es', 1, f.voz_tts);
+    i++;
+    setTimeout(next, 2800);
+  }
+  next();
 }
 
 // ============================================================
