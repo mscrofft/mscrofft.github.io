@@ -834,7 +834,9 @@ pre {
         <div class="btn-row">
           <button class="btn btn-accent" onclick="saveVozPadrao()">Salvar voz padrão</button>
           <button class="btn" onclick="previewTtsFromSelect('cfg-voz-padrao')">▶ Pré-ouvir</button>
+          <button class="btn" onclick="atualizarVozesDoGoogle()" style="margin-left:auto;">🔄 Atualizar vozes do Google</button>
         </div>
+        <div id="vozes-fetch-status" style="font-size:12px; color:var(--ink3); margin-top:8px;"></div>
       </div>
 
       <div class="card" id="sql-card" style="display:none;">
@@ -1009,7 +1011,104 @@ function vozOptionsHtml(includeInherit, selected) {
 }
 
 function getVozPadrao() {
-  return localStorage.getItem('tts_voz_padrao') || 'es-ES-Neural2-F';
+  return localStorage.getItem('tts_voz_padrao') || 'es-ES-Neural2-A';
+}
+
+// Busca lista oficial de vozes do Google via Edge Function e re-popula TTS_VOICES.
+// Cached em localStorage por 7 dias pra evitar chamadas repetidas.
+async function atualizarVozesDoGoogle(force = false) {
+  if (!sb) { toast('Configure o Supabase primeiro.', 'err'); return; }
+  const status = document.getElementById('vozes-fetch-status');
+  const setStatus = (s, c='') => { if (status) { status.textContent = s; status.style.color = c || 'var(--ink3)'; } };
+
+  // Cache local 7d
+  const CACHE_KEY = 'tts_voices_cache_v1';
+  const CACHE_TTL = 7 * 24 * 60 * 60 * 1000;
+  if (!force) {
+    try {
+      const raw = localStorage.getItem(CACHE_KEY);
+      if (raw) {
+        const { ts, voices } = JSON.parse(raw);
+        if (Date.now() - ts < CACHE_TTL && Array.isArray(voices) && voices.length) {
+          aplicarVozes(voices);
+          setStatus(`Vozes carregadas do cache local (atualizado ${new Date(ts).toLocaleString()}). Clique de novo pra forçar refresh.`);
+          return;
+        }
+      }
+    } catch {}
+  }
+
+  setStatus('Buscando vozes do Google...');
+  try {
+    const { data, error } = await sb.functions.invoke('tts', {
+      body: { action: 'list', languageCode: 'es' },
+    });
+    if (error) throw error;
+    if (!data?.voices) throw new Error(data?.error || 'Sem vozes retornadas');
+
+    const filtradas = data.voices.filter(v =>
+      /Neural2|Studio|Wavenet|Chirp/.test(v.name)
+    );
+    localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), voices: filtradas }));
+    aplicarVozes(filtradas);
+    setStatus(`✓ ${filtradas.length} vozes em espanhol carregadas.`, 'var(--green)');
+    toast('Vozes atualizadas do Google.', 'ok');
+  } catch (e) {
+    setStatus('❌ ' + (e.message || e), 'var(--red)');
+    toast('Falha ao buscar vozes: ' + (e.message || e), 'err');
+  }
+}
+
+// Recebe a lista crua da API e regenera TTS_VOICES agrupando por idioma.
+function aplicarVozes(voices) {
+  const NOMES_IDIOMA = {
+    'es-ES': 'Espanha (ES-ES)',
+    'es-US': 'América Latina (ES-US)',
+    'es-MX': 'México (ES-MX)',
+    'es-AR': 'Argentina (ES-AR)',
+    'es-CO': 'Colômbia (ES-CO)',
+    'es-CL': 'Chile (ES-CL)',
+    'es-PE': 'Peru (ES-PE)',
+  };
+  const generoLabel = { FEMALE: 'feminina', MALE: 'masculina', NEUTRAL: 'neutra' };
+  const tierRank = (name) => name.includes('Studio') ? 0 : name.includes('Chirp') ? 1 : name.includes('Neural2') ? 2 : name.includes('Wavenet') ? 3 : 4;
+
+  // Agrupa por languageCode (cada voz tem um array, mas pra ES geralmente 1)
+  const groups = {};
+  voices.forEach(v => {
+    const lang = (v.languageCodes || []).find(l => l.startsWith('es-')) || v.languageCodes?.[0];
+    if (!lang) return;
+    if (!groups[lang]) groups[lang] = [];
+    const tier = v.name.match(/Studio|Chirp[^-]*|Neural2|Wavenet|Standard/)?.[0] || 'Other';
+    const letter = v.name.split('-').pop();
+    const gender = generoLabel[v.ssmlGender] || v.ssmlGender?.toLowerCase() || '?';
+    const isPremium = /Studio|Chirp/.test(v.name);
+    const label = `${tier}-${letter} (${gender}${isPremium ? ' · premium' : ''})`;
+    groups[lang].push({ id: v.name, label, sortKey: [tierRank(v.name), v.ssmlGender || '', letter] });
+  });
+
+  TTS_VOICES.length = 0;
+  Object.keys(groups).sort().forEach(lang => {
+    const voices = groups[lang]
+      .sort((a, b) => {
+        if (a.sortKey[0] !== b.sortKey[0]) return a.sortKey[0] - b.sortKey[0];
+        if (a.sortKey[1] !== b.sortKey[1]) return a.sortKey[1] < b.sortKey[1] ? -1 : 1;
+        return a.sortKey[2] < b.sortKey[2] ? -1 : 1;
+      })
+      .map(v => [v.id, v.label]);
+    TTS_VOICES.push({ group: NOMES_IDIOMA[lang] || lang, voices });
+  });
+
+  // Re-renderiza todos os selects.
+  ['cfg-voz-padrao', 'aula-voz', 'vocab-voz', 'frase-voz', 'ex-voz'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const isMain = id === 'cfg-voz-padrao';
+    const current = el.value;
+    el.innerHTML = vozOptionsHtml(!isMain, current || (isMain ? getVozPadrao() : ''));
+    if (!isMain) el.dataset.populated = '1';
+  });
+  atualizarHintsVoz();
 }
 
 function saveVozPadrao() {
@@ -1232,6 +1331,14 @@ function loadConfig() {
   document.getElementById('cfg-key').value = key;
   const resend = localStorage.getItem('resend_key') || '';
   document.getElementById('cfg-resend').value = resend;
+  // Tenta restaurar lista de vozes do cache local (sem chamar a API).
+  try {
+    const raw = localStorage.getItem('tts_voices_cache_v1');
+    if (raw) {
+      const { voices } = JSON.parse(raw);
+      if (Array.isArray(voices) && voices.length) aplicarVozes(voices);
+    }
+  } catch {}
   popularSelectsVoz();
   if (url && key) { initSupabase(url, key); return true; }
   return false;
