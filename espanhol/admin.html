@@ -588,6 +588,7 @@ pre {
               <option value="lacuna_escolha">Complete o espaço</option>
               <option value="lacuna_banco">Complete com palavras</option>
               <option value="escrita_audio">Escreva o que ouviu</option>
+              <option value="pares">Combine os pares</option>
             </select>
           </div>
           <div class="field" style="margin:0; display:flex; align-items:flex-end;">
@@ -612,10 +613,12 @@ pre {
               <option value="lacuna_escolha">Complete o espaço (múltipla escolha)</option>
               <option value="lacuna_banco">Complete com banco de palavras</option>
               <option value="escrita_audio">Ouça e escreva</option>
+              <option value="pares">Combine os pares</option>
             </select>
           </div>
         </div>
 
+        <div id="ex-fields-padrao">
         <div class="field" style="margin-top:10px;">
           <label class="field-label">Frase (use ___ para marcar a lacuna)</label>
           <input class="inp" type="text" id="ex-frase"
@@ -640,6 +643,19 @@ pre {
             placeholder="es, soy, están, somos">
           <div style="font-size:11px; color:var(--ink3); margin-top:4px;">
             Inclua a resposta correta + 3 distratores. Para banco de palavras, inclua todas as palavras disponíveis.
+          </div>
+        </div>
+        </div>
+
+        <div id="ex-pares-field" style="display:none;">
+          <div class="field" style="margin-top:10px;">
+            <label class="field-label">Pares (um por linha, formato "esquerda | direita")</label>
+            <textarea class="inp" id="ex-pares" rows="6"
+              placeholder="lá | there&#10;festa | party&#10;não pode | cannot&#10;prato | dish&#10;lavar | wash"
+              style="font-family:inherit; resize:vertical;"></textarea>
+            <div style="font-size:11px; color:var(--ink3); margin-top:4px;">
+              Mínimo 3 pares. A coluna esquerda aparece à esquerda e a direita à direita — embaralhadas pro aluno.
+            </div>
           </div>
         </div>
 
@@ -1784,7 +1800,9 @@ async function loadExercicios() {
     document.getElementById('ex-list-wrap').innerHTML = '<div class="empty">Nenhum exercício encontrado.</div>';
     return;
   }
-  const tipoLabel = t => t==='lacuna_escolha'?'Complete o espaço':t==='lacuna_banco'?'Banco de palavras':'Ouça e escreva';
+  const tipoLabel = t => t==='lacuna_escolha'?'Complete o espaço':t==='lacuna_banco'?'Banco de palavras':t==='escrita_audio'?'Ouça e escreva':t==='pares'?'Combine os pares':t;
+  const fraseResumo = r => r.tipo === 'pares' ? `${(r.opcoes||[]).length} pares` : (r.frase || '—');
+  const respResumo = r => r.tipo === 'pares' ? '—' : (r.resposta || '—');
   document.getElementById('ex-list-wrap').innerHTML = `
     <table class="vtable">
       <thead><tr><th>Aula</th><th>Tipo</th><th>Frase</th><th>Resposta</th><th></th></tr></thead>
@@ -1792,8 +1810,8 @@ async function loadExercicios() {
         <tr>
           <td><span class="badge badge-blue">Aula ${r.aulas?.numero||'?'}</span></td>
           <td><span class="badge badge-orange">${tipoLabel(r.tipo)}</span></td>
-          <td style="max-width:260px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${r.frase||'—'}</td>
-          <td style="color:var(--green); font-weight:500;">${r.resposta||'—'}</td>
+          <td style="max-width:260px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${fraseResumo(r)}</td>
+          <td style="color:var(--green); font-weight:500;">${respResumo(r)}</td>
           <td>
             <button class="btn btn-sm" onclick="editarExercicio(${r.id})">✏️</button>
             <button class="btn btn-red btn-sm" onclick="deletarExercicio(${r.id})" style="margin-left:4px;">✕</button>
@@ -1811,7 +1829,7 @@ function toggleExForm() {
 }
 
 function limparExForm() {
-  ['ex-id','ex-frase','ex-resposta','ex-opcoes','ex-imagem'].forEach(id => {
+  ['ex-id','ex-frase','ex-resposta','ex-opcoes','ex-imagem','ex-pares'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
@@ -1820,6 +1838,7 @@ function limparExForm() {
   document.getElementById('ex-form-title').textContent = 'Novo exercício';
   document.getElementById('ex-preview').style.display = 'none';
   popularSelectsVoz();
+  updateExFormTipo();
 }
 
 function updateExFormTipo() {
@@ -1827,6 +1846,17 @@ function updateExFormTipo() {
   const opField = document.getElementById('ex-opcoes-field');
   const fraseHint = document.getElementById('ex-frase-hint');
   const respHint = document.getElementById('ex-resp-hint');
+  const padraoBlock = document.getElementById('ex-fields-padrao');
+  const paresBlock = document.getElementById('ex-pares-field');
+
+  if (tipo === 'pares') {
+    if (padraoBlock) padraoBlock.style.display = 'none';
+    if (paresBlock) paresBlock.style.display = '';
+    return;
+  }
+
+  if (padraoBlock) padraoBlock.style.display = '';
+  if (paresBlock) paresBlock.style.display = 'none';
 
   if (tipo === 'lacuna_escolha') {
     opField.style.display = '';
@@ -1843,6 +1873,27 @@ function updateExFormTipo() {
   }
 }
 
+// Helpers de serialização do tipo "pares" — usa o array opcoes existente.
+// Cada par fica como "esquerda||direita" pra evitar conflito com o separador "|" eventual no texto.
+function paresFromTextarea(raw) {
+  return raw.split('\n')
+    .map(line => {
+      const parts = line.split('|').map(s => s.trim()).filter(Boolean);
+      if (parts.length < 2) return null;
+      // Junta sobras (caso o texto contenha "|") em um só lado
+      const left = parts[0];
+      const right = parts.slice(1).join(' | ');
+      return `${left}||${right}`;
+    })
+    .filter(Boolean);
+}
+
+function paresToTextarea(opcoes) {
+  return (opcoes || [])
+    .map(p => p.split('||').map(s => s.trim()).join(' | '))
+    .join('\n');
+}
+
 async function editarExercicio(id) {
   if (!sb) return;
   popularSelectsVoz();
@@ -1853,7 +1904,8 @@ async function editarExercicio(id) {
   document.getElementById('ex-tipo').value = data.tipo;
   document.getElementById('ex-frase').value = data.frase || '';
   document.getElementById('ex-resposta').value = data.resposta || '';
-  document.getElementById('ex-opcoes').value = (data.opcoes || []).join(', ');
+  document.getElementById('ex-opcoes').value = (data.tipo === 'pares') ? '' : (data.opcoes || []).join(', ');
+  document.getElementById('ex-pares').value = (data.tipo === 'pares') ? paresToTextarea(data.opcoes) : '';
   document.getElementById('ex-imagem').value = data.imagem_url || '';
   document.getElementById('ex-voz').value = data.voz_tts || '';
   document.getElementById('ex-form-title').textContent = 'Editando exercício';
@@ -1867,23 +1919,38 @@ async function salvarExercicio() {
   if (!sb) { toast('Sem conexão.', 'err'); return; }
   const id = document.getElementById('ex-id').value;
   const tipo = document.getElementById('ex-tipo').value;
-  const frase = document.getElementById('ex-frase').value.trim();
-  const resposta = document.getElementById('ex-resposta').value.trim();
-  const opcoesRaw = document.getElementById('ex-opcoes').value.trim();
   const imagem = document.getElementById('ex-imagem').value.trim();
 
-  if (!frase) { toast('Escreva a frase.', 'err'); return; }
-  if (!resposta) { toast('Escreva a resposta correta.', 'err'); return; }
-  if (tipo !== 'escrita_audio' && !opcoesRaw) { toast('Adicione as opções de resposta.', 'err'); return; }
-  if (!frase.includes('___')) { toast('A frase deve conter ___ para marcar a lacuna.', 'err'); return; }
-
-  const opcoes = opcoesRaw ? opcoesRaw.split(',').map(o => o.trim()).filter(Boolean) : [];
-  const payload = {
-    aula_id: document.getElementById('ex-aula-id').value || null,
-    tipo, frase, resposta, opcoes,
-    imagem_url: imagem || null,
-    voz_tts: document.getElementById('ex-voz').value || null,
-  };
+  let payload;
+  if (tipo === 'pares') {
+    const paresRaw = document.getElementById('ex-pares').value;
+    const pares = paresFromTextarea(paresRaw);
+    if (pares.length < 3) { toast('Adicione pelo menos 3 pares (formato "esquerda | direita").', 'err'); return; }
+    payload = {
+      aula_id: document.getElementById('ex-aula-id').value || null,
+      tipo,
+      frase: 'Combine os pares',
+      resposta: '',
+      opcoes: pares,
+      imagem_url: imagem || null,
+      voz_tts: document.getElementById('ex-voz').value || null,
+    };
+  } else {
+    const frase = document.getElementById('ex-frase').value.trim();
+    const resposta = document.getElementById('ex-resposta').value.trim();
+    const opcoesRaw = document.getElementById('ex-opcoes').value.trim();
+    if (!frase) { toast('Escreva a frase.', 'err'); return; }
+    if (!resposta) { toast('Escreva a resposta correta.', 'err'); return; }
+    if (tipo !== 'escrita_audio' && !opcoesRaw) { toast('Adicione as opções de resposta.', 'err'); return; }
+    if (!frase.includes('___')) { toast('A frase deve conter ___ para marcar a lacuna.', 'err'); return; }
+    const opcoes = opcoesRaw ? opcoesRaw.split(',').map(o => o.trim()).filter(Boolean) : [];
+    payload = {
+      aula_id: document.getElementById('ex-aula-id').value || null,
+      tipo, frase, resposta, opcoes,
+      imagem_url: imagem || null,
+      voz_tts: document.getElementById('ex-voz').value || null,
+    };
+  }
 
   const { error } = id
     ? await sb.from('exercicios').update(payload).eq('id', id)
@@ -1904,11 +1971,31 @@ async function deletarExercicio(id) {
 
 function testarExercicio() {
   const tipo = document.getElementById('ex-tipo').value;
+  const preview = document.getElementById('ex-preview');
+  const content = document.getElementById('ex-preview-content');
+
+  // Caso "pares" tem layout próprio.
+  if (tipo === 'pares') {
+    const pares = paresFromTextarea(document.getElementById('ex-pares').value)
+      .map(p => p.split('||').map(s => s.trim()));
+    if (pares.length < 3) { toast('Adicione pelo menos 3 pares.', 'err'); return; }
+    const lefts  = pares.map(p => p[0]);
+    const rights = pares.map(p => p[1]).slice().sort(() => Math.random() - 0.5);
+    let html = `<div style="font-size:13px; font-weight:600; color:var(--ink); margin-bottom:8px;">Combine os pares</div>`;
+    html += `<div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; max-width:520px;">`;
+    for (let i = 0; i < pares.length; i++) {
+      html += `<div style="padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);font-size:14px;">${lefts[i]||''}</div>`;
+      html += `<div style="padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);font-size:14px;">${rights[i]||''}</div>`;
+    }
+    html += `</div>`;
+    content.innerHTML = html;
+    preview.style.display = '';
+    return;
+  }
+
   const frase = document.getElementById('ex-frase').value.trim();
   const resposta = document.getElementById('ex-resposta').value.trim();
   const opcoes = document.getElementById('ex-opcoes').value.split(',').map(o=>o.trim()).filter(Boolean);
-  const preview = document.getElementById('ex-preview');
-  const content = document.getElementById('ex-preview-content');
   if (!frase) { toast('Preencha a frase primeiro.', 'err'); return; }
 
   let html = `<div style="font-size:13px; font-weight:600; color:var(--ink); margin-bottom:8px;">${

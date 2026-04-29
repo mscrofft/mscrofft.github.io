@@ -1396,6 +1396,7 @@ function renderExercicio() {
   if (ex.tipo === 'lacuna_escolha') body = renderLacunaEscolha(ex);
   else if (ex.tipo === 'lacuna_banco') body = renderLacunaBanco(ex);
   else if (ex.tipo === 'escrita_audio') body = renderEscritaAudio(ex);
+  else if (ex.tipo === 'pares') body = renderPares(ex);
 
   area.innerHTML = `
     <div class="ex-prog"><div class="ex-prog-fill" style="width:${pct}%"></div></div>
@@ -1413,7 +1414,7 @@ function renderExercicio() {
 }
 
 function tipoLabel(t) {
-  return t==='lacuna_escolha'?'Complete o espaço':t==='lacuna_banco'?'Complete com as palavras':t==='escrita_audio'?'Escreva o que ouviu':'Exercício';
+  return t==='lacuna_escolha'?'Complete o espaço':t==='lacuna_banco'?'Complete com as palavras':t==='escrita_audio'?'Escreva o que ouviu':t==='pares'?'Combine os pares':'Exercício';
 }
 
 function renderLacunaEscolha(ex) {
@@ -1500,6 +1501,104 @@ function renderEscritaAudio(ex) {
 function speakExStored(rate) { speak(window._exAudioFrase || '', 'es', rate, window._exAudioVoz); }
 function speakEx(text, rate, voz) { speak(text, 'es', rate, voz); }
 
+// ============================================================
+// COMBINE OS PARES
+// ============================================================
+let _paresState = null; // { lefts, rights, leftSel, rightSel, matchedLefts:Set, matchedRights:Set, total, hits }
+
+function renderPares(ex) {
+  const opcoes = ex.opcoes || [];
+  const pares = opcoes
+    .map(p => p.split('||').map(s => s.trim()))
+    .filter(p => p.length === 2 && p[0] && p[1]);
+
+  if (!pares.length) {
+    return `<div class="ex-frase">Exercício sem pares cadastrados.</div>`;
+  }
+
+  // Embaralhar lados independentemente.
+  const lefts  = pares.map((p, i) => ({ idx: i, txt: p[0] })).sort(() => Math.random() - 0.5);
+  const rights = pares.map((p, i) => ({ idx: i, txt: p[1] })).sort(() => Math.random() - 0.5);
+
+  _paresState = {
+    pares, lefts, rights,
+    leftSel: null, rightSel: null,
+    matched: new Set(),
+    total: pares.length,
+  };
+
+  const col = (items, side) => items.map((it, pos) => `
+    <button class="ex-opcao pares-cell" id="pares-${side}-${pos}"
+            data-idx="${it.idx}" data-side="${side}"
+            onclick="selecionarParesCell('${side}', ${pos})"
+            style="text-align:left; min-height:44px;">
+      <span style="display:inline-block; width:22px; opacity:0.5;">${pos + 1}.</span>
+      <span>${it.txt}</span>
+    </button>`).join('');
+
+  return `
+    <div style="font-size:14px; color:var(--ink2); margin-bottom:12px;">
+      Toque uma palavra à esquerda e depois sua tradução à direita.
+    </div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+      <div style="display:flex; flex-direction:column; gap:8px;">${col(_paresState.lefts, 'L')}</div>
+      <div style="display:flex; flex-direction:column; gap:8px;">${col(_paresState.rights, 'R')}</div>
+    </div>
+    <div style="margin-top:14px; font-size:13px; color:var(--ink3);" id="pares-progress">
+      0 / ${_paresState.total} pares
+    </div>`;
+}
+
+function selecionarParesCell(side, pos) {
+  const st = _paresState;
+  if (!st) return;
+  const id = `pares-${side}-${pos}`;
+  const btn = document.getElementById(id);
+  if (!btn || btn.disabled) return;
+
+  // Toggle desseleção se o mesmo lado for re-clicado.
+  if (side === 'L') {
+    document.querySelectorAll('.pares-cell[data-side="L"]').forEach(b => b.classList.remove('selected'));
+    if (st.leftSel?.pos === pos) { st.leftSel = null; return; }
+    btn.classList.add('selected');
+    st.leftSel = { pos, idx: parseInt(btn.dataset.idx) };
+  } else {
+    document.querySelectorAll('.pares-cell[data-side="R"]').forEach(b => b.classList.remove('selected'));
+    if (st.rightSel?.pos === pos) { st.rightSel = null; return; }
+    btn.classList.add('selected');
+    st.rightSel = { pos, idx: parseInt(btn.dataset.idx) };
+  }
+
+  // Tem L+R? checar par.
+  if (st.leftSel && st.rightSel) {
+    const acertou = st.leftSel.idx === st.rightSel.idx;
+    const lEl = document.getElementById(`pares-L-${st.leftSel.pos}`);
+    const rEl = document.getElementById(`pares-R-${st.rightSel.pos}`);
+    if (acertou) {
+      [lEl, rEl].forEach(el => {
+        if (!el) return;
+        el.classList.remove('selected');
+        el.classList.add('correct');
+        el.disabled = true;
+      });
+      st.matched.add(st.leftSel.idx);
+      document.getElementById('pares-progress').textContent = `${st.matched.size} / ${st.total} pares`;
+    } else {
+      // Animação de erro: vermelho rápido depois desseleciona.
+      [lEl, rEl].forEach(el => el?.classList.add('wrong'));
+      setTimeout(() => {
+        [lEl, rEl].forEach(el => {
+          if (!el) return;
+          el.classList.remove('wrong');
+          el.classList.remove('selected');
+        });
+      }, 600);
+    }
+    st.leftSel = null;
+    st.rightSel = null;
+  }
+}
+
 function normalize(s) {
   return (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
 }
@@ -1537,11 +1636,24 @@ function checkExercicio() {
     if(inp){inp.disabled=true;inp.classList.add(correct?'correct':'wrong');}
     const l=document.getElementById('ex-lacuna-0');
     if(l){l.textContent=ex.resposta;l.classList.add(correct?'correct':'wrong');}
+  } else if (ex.tipo === 'pares') {
+    const st = _paresState;
+    if (!st || st.total === 0) { fb.textContent = 'Exercício sem pares.'; fb.className = 'ex-feedback fail'; return; }
+    if (st.matched.size < st.total) {
+      fb.textContent = `Combine os ${st.total} pares antes de verificar (${st.matched.size}/${st.total}).`;
+      fb.className = 'ex-feedback fail';
+      return;
+    }
+    correct = true;
   }
 
   exAnswered = true;
   if (correct) exScore++;
-  fb.textContent = correct ? '✓ Correto!' : `✗ Resposta: ${ex.resposta}`;
+  if (ex.tipo === 'pares') {
+    fb.textContent = correct ? `✓ Todos os ${_paresState.total} pares corretos!` : '✗ Algo deu errado.';
+  } else {
+    fb.textContent = correct ? '✓ Correto!' : `✗ Resposta: ${ex.resposta}`;
+  }
   fb.className = 'ex-feedback '+(correct?'ok':'fail');
   document.getElementById('ex-check-btn').style.display='none';
   const nb=document.getElementById('ex-next-btn');
@@ -1550,6 +1662,7 @@ function checkExercicio() {
 
 function nextExercicio() {
   exIdx++; exAnswered=false; _exSelected=null; _exBancoSelections=[]; _bancoChipMap={};
+  _paresState = null;
   renderExercicio();
 }
 
