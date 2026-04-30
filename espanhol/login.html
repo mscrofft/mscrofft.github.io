@@ -2,213 +2,415 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Español Vivo — Entrar</title>
-<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Profesora Ana — Entrar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+/* =====================================================
+   DESIGN TOKENS — Profesora Ana
+   ===================================================== */
 :root {
-  --coral:   #E8614A;
-  --coral-d: #C94F3A;
-  --coral-l: #FEF0EE;
-  --yellow:  #F5C432;
-  --purple:  #9B8DF4;
-  --green:   #4ECFA8;
-  --navy:    #1A1F36;
-  --ink2:    #6B7A90;
-  --ink3:    #A8B4C2;
-  --bg:      #E8EEF5;
-  --white:   #FFFFFF;
-  --border:  #DDE4EE;
-  --r:       14px;
-  --r-lg:    22px;
-  --shadow:  0 4px 24px rgba(26,31,54,0.08);
-  --shadow-sm: 0 2px 10px rgba(26,31,54,0.06);
+  /* Cores neutras */
+  --bg:        #F5EEE6;
+  --surface:   #FFFFFF;
+  --ink:       #1A1612;
+  --ink-2:     #6B6259;
+  --ink-3:     #B0A89E;
+  --border:    #EFE5D8;
+
+  /* Blocos coloridos */
+  --block-pink:    #FF6B9D;
+  --block-mustard: #F4B942;
+  --block-teal:    #2DD4BF;
+  --block-lime:    #C5F056;
+  --block-lilac:   #C9B8FF;
+  --block-salmon:  #FF9472;
+  --block-yellow:  #FFE66D;
+  --block-cream:   #FFF1E0;
+  --block-peach:   #FFE0CF;
+
+  /* Marca (gradient sol/Espanha) */
+  --brand-orange: #FF8A3D;
+  --brand-yellow: #FFD24D;
+  --brand-grad:   linear-gradient(135deg, #FF8A3D 0%, #FFD24D 100%);
+
+  /* Status */
+  --success: #1ED890;
+  --warn:    #F4B942;
+  --danger:  #FF5757;
+  --danger-l:#FFE5E5;
+
+  /* Tipografia */
+  --font: 'Inter', system-ui, -apple-system, sans-serif;
+
+  /* Raios */
+  --r-sm:   8px;
+  --r:      14px;
+  --r-lg:   20px;
+  --r-xl:   28px;
+  --r-pill: 999px;
+
+  /* Sombras */
+  --shadow-sm: 0 1px 2px rgba(26,22,18,0.04);
+  --shadow:    0 4px 16px rgba(26,22,18,0.06);
+  --shadow-lg: 0 12px 40px rgba(26,22,18,0.08);
 }
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
 body {
-  font-family: 'Nunito', sans-serif;
+  font-family: var(--font);
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--ink);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* =====================================================
+   LOGO (placeholder — gradient sun)
+   ===================================================== */
+.logo-mark {
+  width: 48px; height: 48px;
+  border-radius: 50%;
+  background: var(--brand-grad);
+  display: inline-flex; align-items: center; justify-content: center;
+  position: relative;
+  flex-shrink: 0;
+}
+.logo-mark::after {
+  content: '';
+  position: absolute; inset: 6px;
+  border-radius: 50%;
+  background: var(--brand-yellow);
+  opacity: 0.4;
+  filter: blur(8px);
+}
+.logo-mark.lg { width: 64px; height: 64px; }
+.logo-mark.sm { width: 36px; height: 36px; }
+
+.brand-row {
+  display: flex; align-items: center; gap: 14px;
+}
+.brand-name {
+  font-size: 22px; font-weight: 800;
+  color: var(--ink); letter-spacing: -0.02em;
+}
+
+/* =====================================================
+   LAYOUT — split desktop / stack mobile
+   ===================================================== */
+.split {
   min-height: 100vh;
+  min-height: 100dvh;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  background: var(--bg);
 }
 
-/* LEFT PANEL */
-.brand-panel {
+/* Painel esquerdo — hero */
+.hero {
+  position: relative; overflow: hidden;
+  padding: 3rem;
+  background: var(--block-peach);
   display: flex; flex-direction: column;
   justify-content: space-between;
-  padding: 3rem;
-  background: var(--coral);
-  position: relative; overflow: hidden;
+  min-height: 100vh;
 }
-.brand-panel::before {
-  content: '';
-  position: absolute; top: -80px; right: -80px;
-  width: 320px; height: 320px; border-radius: 50%;
-  background: rgba(255,255,255,0.12);
-  pointer-events: none;
+.hero-shape-1, .hero-shape-2, .hero-shape-3 { position: absolute; pointer-events: none; }
+.hero-shape-1 {
+  top: -80px; right: -80px; width: 320px; height: 320px;
+  border-radius: 50%; background: var(--block-salmon); opacity: 0.45;
 }
-.brand-panel::after {
-  content: '';
-  position: absolute; bottom: -60px; left: -60px;
-  width: 240px; height: 240px; border-radius: 50%;
-  background: rgba(255,255,255,0.08);
-  pointer-events: none;
+.hero-shape-2 {
+  bottom: -60px; left: -100px; width: 260px; height: 260px;
+  border-radius: 50%; background: var(--block-yellow); opacity: 0.5;
 }
-.brand-logo { position: relative; z-index: 1; }
-.brand-logo-mark {
-  width: 60px; height: 60px; border-radius: 18px;
-  background: rgba(255,255,255,0.2);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 28px; margin-bottom: 1.5rem;
-  backdrop-filter: blur(8px);
-}
-.brand-logo-name {
-  font-size: 34px; font-weight: 900; color: #fff;
-  letter-spacing: -1px; line-height: 1;
-}
-.brand-logo-sub {
-  font-size: 14px; color: rgba(255,255,255,0.65);
-  margin-top: 8px; font-weight: 500;
-}
-.brand-words { position: relative; z-index: 1; }
-.brand-word-item {
-  display: flex; align-items: baseline; gap: 14px;
-  margin-bottom: 16px;
-}
-.bw-es { font-size: 24px; font-weight: 800; color: #fff; }
-.bw-pt { font-size: 14px; color: rgba(255,255,255,0.55); font-weight: 500; }
-.brand-bottom {
-  position: relative; z-index: 1;
-  font-size: 12px; color: rgba(255,255,255,0.35); font-weight: 700; letter-spacing: 0.06em;
+.hero-shape-3 {
+  top: 40%; left: 60%; width: 180px; height: 180px;
+  border-radius: 50%; background: var(--block-lilac); opacity: 0.4;
 }
 
-/* RIGHT PANEL */
+.hero-content { position: relative; z-index: 1; }
+.hero-title {
+  font-size: clamp(40px, 5vw, 56px);
+  font-weight: 900;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  margin: 2rem 0 1rem;
+  color: var(--ink);
+}
+.hero-title em {
+  font-style: normal;
+  background: var(--brand-grad);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.hero-tagline {
+  font-size: 17px;
+  color: var(--ink-2);
+  font-weight: 500;
+  max-width: 380px;
+  line-height: 1.55;
+}
+
+/* Word chips no hero */
+.word-chips {
+  position: relative; z-index: 1;
+  display: flex; flex-wrap: wrap; gap: 8px;
+  margin-top: 2rem;
+}
+.word-chip {
+  background: rgba(255,255,255,0.7);
+  backdrop-filter: blur(8px);
+  padding: 8px 14px;
+  border-radius: var(--r-pill);
+  font-size: 14px; font-weight: 600;
+  color: var(--ink);
+  border: 1px solid rgba(255,255,255,0.8);
+}
+.word-chip span {
+  color: var(--ink-2); font-weight: 500;
+  margin-left: 6px;
+}
+
+.hero-footer {
+  position: relative; z-index: 1;
+  font-size: 12px; font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--ink-2);
+  text-transform: uppercase;
+}
+
+/* Painel direito — form */
 .form-panel {
   display: flex; align-items: center; justify-content: center;
   padding: 3rem 2rem;
+  background: var(--surface);
 }
 .form-inner {
-  width: 100%; max-width: 380px;
-  animation: fadeUp 0.4s cubic-bezier(.4,0,.2,1) both;
+  width: 100%; max-width: 400px;
+  animation: fadeUp 0.5s cubic-bezier(.4,0,.2,1) both;
 }
 @keyframes fadeUp {
-  from { opacity: 0; transform: translateY(18px); }
+  from { opacity: 0; transform: translateY(16px); }
   to   { opacity: 1; transform: translateY(0); }
 }
+
+.form-eyebrow {
+  font-size: 13px; font-weight: 700;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--ink-3);
+  margin-bottom: 12px;
+}
 .form-heading {
-  font-size: 30px; font-weight: 900; color: var(--navy);
-  letter-spacing: -0.5px; margin-bottom: 6px;
+  font-size: 32px; font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  margin-bottom: 10px;
 }
-.form-subheading {
-  font-size: 15px; color: var(--ink2); margin-bottom: 2.5rem; line-height: 1.6;
+.form-sub {
+  font-size: 15px;
+  color: var(--ink-2);
+  line-height: 1.6;
+  margin-bottom: 2rem;
 }
+
 label {
-  display: block; font-size: 13px; font-weight: 700;
-  color: var(--navy); margin-bottom: 8px;
+  display: block;
+  font-size: 13px; font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 8px;
 }
 .inp {
-  width: 100%; padding: 14px 18px; font-size: 15px;
-  border: 2px solid var(--border); border-radius: var(--r);
-  background: var(--white); color: var(--navy);
-  font-family: 'Nunito', sans-serif; font-weight: 600;
-  transition: all 0.2s; outline: none;
+  width: 100%;
+  padding: 16px 18px;
+  font-size: 16px;
+  font-family: var(--font);
+  font-weight: 500;
+  border: 1.5px solid var(--border);
+  border-radius: var(--r);
+  background: var(--surface);
+  color: var(--ink);
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.05s;
+  outline: none;
 }
 .inp:focus {
-  border-color: var(--coral);
-  box-shadow: 0 0 0 4px rgba(232,97,74,0.1);
+  border-color: var(--ink);
+  box-shadow: 0 0 0 4px rgba(26,22,18,0.08);
 }
-.inp::placeholder { color: var(--ink3); font-weight: 500; }
-.form-group { margin-bottom: 1.5rem; }
-.btn-login {
-  width: 100%; padding: 15px; border-radius: var(--r);
-  background: var(--coral); color: #fff;
-  font-size: 16px; font-weight: 800;
-  font-family: 'Nunito', sans-serif; border: none; cursor: pointer;
-  transition: all 0.2s; letter-spacing: 0.02em;
-  box-shadow: 0 8px 24px rgba(232,97,74,0.35);
+.inp::placeholder { color: var(--ink-3); font-weight: 500; }
+.field { margin-bottom: 1.25rem; }
+
+.btn {
+  width: 100%;
+  padding: 16px 20px;
+  font-size: 16px;
+  font-family: var(--font);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  border: none;
+  border-radius: var(--r);
+  cursor: pointer;
+  transition: transform 0.05s, opacity 0.15s, background 0.15s;
+  display: inline-flex; align-items: center; justify-content: center;
+  gap: 8px;
 }
-.btn-login:hover { background: var(--coral-d); transform: translateY(-1px); box-shadow: 0 12px 32px rgba(232,97,74,0.4); }
-.btn-login:active { transform: translateY(0); }
-.btn-login:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+.btn-primary {
+  background: var(--ink);
+  color: var(--surface);
+}
+.btn-primary:hover { background: #2a2420; }
+.btn:active { transform: scale(0.985); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
 .err-msg {
   display: none; margin-top: 1rem;
-  background: var(--coral-l); border: 1.5px solid rgba(232,97,74,0.2);
-  border-radius: var(--r); padding: 12px 16px;
-  font-size: 13px; color: var(--coral); font-weight: 700;
-  align-items: center; gap: 8px;
+  background: var(--danger-l);
+  border-radius: var(--r);
+  padding: 12px 16px;
+  font-size: 14px;
+  color: var(--danger);
+  font-weight: 600;
+  align-items: flex-start;
+  gap: 10px;
 }
 .err-msg.show { display: flex; }
-.hint { text-align: center; font-size: 13px; color: var(--ink3); margin-top: 1.75rem; line-height: 1.6; font-weight: 500; }
-.spinner-inline {
-  display: inline-block; width: 16px; height: 16px;
-  border: 2.5px solid rgba(255,255,255,0.35); border-top-color: #fff;
-  border-radius: 50%; animation: spin 0.7s linear infinite;
-  vertical-align: middle; margin-right: 6px;
+.err-msg::before {
+  content: '!';
+  flex-shrink: 0;
+  width: 20px; height: 20px;
+  background: var(--danger);
+  color: white;
+  border-radius: 50%;
+  font-size: 13px;
+  font-weight: 800;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+
+.help-text {
+  text-align: center;
+  font-size: 13px;
+  color: var(--ink-3);
+  margin-top: 1.5rem;
+  font-weight: 500;
+}
+
+.spinner {
+  display: inline-block;
+  width: 16px; height: 16px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
-@media (max-width: 680px) {
-  body { grid-template-columns: 1fr; }
-  .brand-panel { display: none; }
-  .form-panel { min-height: 100vh; background: var(--bg); }
+
+/* =====================================================
+   MOBILE — stack
+   ===================================================== */
+@media (max-width: 720px) {
+  .split { grid-template-columns: 1fr; min-height: 100dvh; }
+  .hero {
+    min-height: 360px;
+    padding: 2rem 1.5rem 2.5rem;
+    border-radius: 0 0 var(--r-xl) var(--r-xl);
+  }
+  .hero-title { font-size: clamp(32px, 8vw, 44px); margin: 1.25rem 0 0.75rem; }
+  .hero-tagline { font-size: 15px; }
+  .word-chips { display: none; }
+  .form-panel { padding: 2rem 1.25rem 3rem; }
+  .form-heading { font-size: 26px; }
+}
+
+@media (max-width: 360px) {
+  .hero { padding: 1.5rem 1.25rem 2rem; }
+  .form-panel { padding: 1.5rem 1rem 2.5rem; }
 }
 </style>
 </head>
 <body>
 
-<div class="brand-panel">
-  <div class="brand-logo">
-    <div class="brand-logo-mark">🌍</div>
-    <div class="brand-logo-name">Español Vivo</div>
-    <div class="brand-logo-sub">Aprenda espanhol com sua professora</div>
-  </div>
-  <div class="brand-words">
-    <div class="brand-word-item"><span class="bw-es">¡Hola!</span><span class="bw-pt">Olá!</span></div>
-    <div class="brand-word-item"><span class="bw-es">Gracias</span><span class="bw-pt">Obrigado</span></div>
-    <div class="brand-word-item"><span class="bw-es">¿Cómo estás?</span><span class="bw-pt">Como você está?</span></div>
-    <div class="brand-word-item"><span class="bw-es">Me llamo…</span><span class="bw-pt">Meu nome é…</span></div>
-    <div class="brand-word-item"><span class="bw-es">¡Hasta luego!</span><span class="bw-pt">Até logo!</span></div>
-  </div>
-  <div class="brand-bottom">ESPAÑOL VIVO · SISTEMA DE AULAS</div>
-</div>
+<div class="split">
 
-<div class="form-panel">
-  <div class="form-inner">
-    <div class="form-heading">Bem-vindo! 👋</div>
-    <div class="form-subheading">Insira o código que sua professora enviou para acessar suas aulas.</div>
-    <div class="form-group">
-      <label for="codigo">Código de acesso</label>
-      <input class="inp" type="text" id="codigo"
-        placeholder="ex: ana2024"
-        autocomplete="off" autocapitalize="off"
-        onkeydown="if(event.key==='Enter')entrar()">
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-shape-1"></div>
+    <div class="hero-shape-2"></div>
+    <div class="hero-shape-3"></div>
+
+    <div class="brand-row">
+      <div class="logo-mark"></div>
+      <div class="brand-name">Profesora Ana</div>
     </div>
-    <button class="btn-login" id="btn-entrar" onclick="entrar()">Entrar →</button>
-    <div class="err-msg" id="err-msg">
-      <span>⚠</span>
-      <span>Código não encontrado. Verifique com sua professora.</span>
+
+    <div class="hero-content">
+      <div class="hero-title">
+        Aprende español <em>con cariño.</em>
+      </div>
+      <div class="hero-tagline">
+        Aulas particulares com a professora Ana — vocabulário, frases, exercícios e prática de pronúncia.
+      </div>
+      <div class="word-chips">
+        <div class="word-chip">¡Hola!<span>Olá!</span></div>
+        <div class="word-chip">Gracias<span>Obrigado</span></div>
+        <div class="word-chip">¿Cómo estás?<span>Como vai?</span></div>
+        <div class="word-chip">Me llamo…<span>Meu nome é…</span></div>
+      </div>
     </div>
-    <div class="hint">Não tem um código? Entre em contato com sua professora.</div>
+
+    <div class="hero-footer">Profesora Ana · Sistema de aulas</div>
   </div>
+
+  <!-- FORM -->
+  <div class="form-panel">
+    <div class="form-inner">
+      <div class="form-eyebrow">Bienvenido</div>
+      <h1 class="form-heading">Olá! 👋</h1>
+      <p class="form-sub">Insira o código que a professora Ana enviou pra você acessar suas aulas.</p>
+
+      <div class="field">
+        <label for="codigo">Código de acesso</label>
+        <input class="inp" type="text" id="codigo"
+          placeholder="ex: ana2024"
+          autocomplete="off" autocapitalize="off"
+          onkeydown="if(event.key==='Enter')entrar()">
+      </div>
+
+      <button class="btn btn-primary" id="btn-entrar" onclick="entrar()">
+        Entrar
+        <span aria-hidden="true">→</span>
+      </button>
+
+      <div class="err-msg" id="err-msg">
+        <span>Código não encontrado. Verifique com a professora.</span>
+      </div>
+
+      <div class="help-text">Não tem um código? Entre em contato com a professora Ana.</div>
+    </div>
+  </div>
+
 </div>
 
 <script>
-
 const SB_URL = localStorage.getItem('sb_url') || '';
 const SB_KEY = localStorage.getItem('sb_key') || '';
 let sb = null;
 
 if (!SB_URL || !SB_KEY) {
-  document.getElementById('err-msg').textContent = 'Sistema não configurado. Contate a professora.';
-  document.getElementById('err-msg').classList.add('show');
+  const e = document.getElementById('err-msg');
+  e.querySelector('span').textContent = 'Sistema não configurado. Contate a professora.';
+  e.classList.add('show');
   document.getElementById('btn-entrar').disabled = true;
 } else {
   sb = supabase.createClient(SB_URL, SB_KEY);
 }
 
-// Check if already logged in
+// Já logado? redireciona.
 const saved = localStorage.getItem('ev_codigo');
 if (saved) window.location.href = 'index.html';
 
@@ -218,28 +420,27 @@ async function entrar() {
   const btn = document.getElementById('btn-entrar');
   const err = document.getElementById('err-msg');
   btn.disabled = true;
-  btn.innerHTML = '<span class="spinner-inline"></span>Verificando...';
+  btn.innerHTML = '<span class="spinner"></span> Verificando...';
   err.classList.remove('show');
   try {
     const { data, error } = await sb.from('alunos').select('*').eq('codigo', codigo).eq('ativo', true).single();
     if (error || !data) {
-      err.textContent = 'Código não encontrado. Verifique com sua professora.';
+      err.querySelector('span').textContent = 'Código não encontrado. Verifique com a professora.';
       err.classList.add('show');
       btn.disabled = false;
-      btn.textContent = 'Entrar';
+      btn.innerHTML = 'Entrar <span aria-hidden="true">→</span>';
       return;
     }
     localStorage.setItem('ev_codigo', codigo);
     localStorage.setItem('ev_aluno', JSON.stringify(data));
     window.location.href = 'index.html';
   } catch(e) {
-    err.textContent = 'Erro de conexão. Tente novamente.';
+    err.querySelector('span').textContent = 'Erro de conexão. Tente novamente.';
     err.classList.add('show');
     btn.disabled = false;
-    btn.textContent = 'Entrar';
+    btn.innerHTML = 'Entrar <span aria-hidden="true">→</span>';
   }
 }
-
 </script>
 </body>
 </html>
