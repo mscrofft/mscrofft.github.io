@@ -1556,8 +1556,13 @@ const VERB_MEANINGS = {
 // ============================================================
 // STATE
 // ============================================================
-const SB_URL = localStorage.getItem('sb_url') || '';
-const SB_KEY = localStorage.getItem('sb_key') || '';
+// Defaults públicos do projeto (a publishable key foi feita pra ser exposta;
+// quem protege os dados é a RLS no banco). localStorage continua sobrescrevendo
+// para cenários de desenvolvimento.
+const SB_URL_DEFAULT = 'https://vyzdfsysrmvxwnkitqef.supabase.co';
+const SB_KEY_DEFAULT = 'sb_publishable_Gel8VBYyR5BrDXBjYwVqlw_Ce9Ag718';
+const SB_URL = localStorage.getItem('sb_url') || SB_URL_DEFAULT;
+const SB_KEY = localStorage.getItem('sb_key') || SB_KEY_DEFAULT;
 let sb, aluno, aulasList = [], progressoMap = {}, badgesSet = new Set();
 let currentAula = null, vocabAll = [], vocabFiltered = [], frasesData = [];
 let fcIdx = 0, fcFlipped = false, fcCatFilter = '';

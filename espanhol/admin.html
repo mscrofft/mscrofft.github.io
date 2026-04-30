@@ -1396,6 +1396,15 @@ CREATE POLICY "escrita autenticada frases" ON frases FOR ALL USING (true);</pre>
 let sb = null;
 let aulasList = [];
 
+// Defaults públicos do projeto — embutidos para que login.html/index.html
+// funcionem em qualquer dispositivo sem precisar configurar localStorage.
+// A publishable key é segura pra expor; RLS protege os dados.
+const SB_URL_DEFAULT = 'https://vyzdfsysrmvxwnkitqef.supabase.co';
+const SB_KEY_DEFAULT = 'sb_publishable_Gel8VBYyR5BrDXBjYwVqlw_Ce9Ag718';
+// Se localStorage estiver vazio, semeia com os defaults (uma vez por navegador).
+if (!localStorage.getItem('sb_url')) localStorage.setItem('sb_url', SB_URL_DEFAULT);
+if (!localStorage.getItem('sb_key')) localStorage.setItem('sb_key', SB_KEY_DEFAULT);
+
 // ---------- TTS / vozes ----------
 const TTS_VOICES = [
   { group: 'Espanha (ES-ES)', voices: [
