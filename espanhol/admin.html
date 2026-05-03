@@ -487,6 +487,14 @@ textarea.inp {
 .page { display: none; }
 .page.active { display: block; }
 
+/* Tabs de detalhe da aula */
+.ad-tab.active {
+  background: var(--surface) !important;
+  color: var(--ink) !important;
+  box-shadow: var(--shadow-sm);
+}
+.ad-tab:hover:not(.active) { color: var(--ink) !important; }
+
 /* =====================================================
    CONFIG
    ===================================================== */
@@ -704,9 +712,6 @@ pre {
     </div>
     <div class="aside-section">Conteúdo</div>
     <div class="aside-link active" onclick="goTo('aulas',this)"><span class="aside-icon">📚</span> Aulas</div>
-    <div class="aside-link" onclick="goTo('vocabulario',this)"><span class="aside-icon">🗂️</span> Vocabulário</div>
-    <div class="aside-link" onclick="goTo('frases',this)"><span class="aside-icon">💬</span> Frases</div>
-    <div class="aside-link" onclick="goTo('exercicios',this)"><span class="aside-icon">✏️</span> Exercícios</div>
     <div class="aside-section">Alunos</div>
     <div class="aside-link" onclick="goTo('alunos',this)"><span class="aside-icon">👥</span> Alunos</div>
     <div class="aside-link" onclick="goTo('progresso',this)"><span class="aside-icon">📊</span> Progresso</div>
@@ -729,23 +734,22 @@ pre {
 
     <!-- ===== AULAS ===== -->
     <div class="page active" id="page-aulas">
-      <div class="page-hd">
-        <div class="page-title">Aulas</div>
-        <div class="page-sub">Crie e organize o conteúdo por aula</div>
-      </div>
 
-      <div class="grid2" style="align-items:start;">
-        <!-- Lista -->
-        <div>
-          <div class="card-header" style="margin-bottom:10px;">
-            <span class="card-title">Suas aulas</span>
-            <button class="btn btn-accent btn-sm" onclick="showNovaAula()">+ Nova aula</button>
-          </div>
-          <div id="aulas-list"><div class="loading"><div class="spinner"></div>Carregando...</div></div>
+      <!-- ESTADO A: LISTA DE AULAS -->
+      <div id="aulas-list-view">
+        <div class="page-hd">
+          <div class="page-title">Aulas</div>
+          <div class="page-sub">Clique em uma aula para gerenciar seu conteúdo</div>
         </div>
 
-        <!-- Formulário nova/editar aula -->
-        <div id="aula-form-wrap">
+        <div class="card-header" style="margin-bottom:10px;">
+          <span class="card-title">Suas aulas</span>
+          <button class="btn btn-accent btn-sm" onclick="showNovaAula()">+ Nova aula</button>
+        </div>
+        <div id="aulas-list"><div class="loading"><div class="spinner"></div>Carregando...</div></div>
+
+        <!-- Form de Nova Aula (modal-ish, mostrado quando clica "+ Nova aula") -->
+        <div id="aula-form-wrap" style="display:none; margin-top:1.5rem;">
           <div class="card">
             <div class="card-header">
               <span class="card-title" id="aula-form-title">Nova aula</span>
@@ -790,11 +794,90 @@ pre {
             </div>
             <div class="btn-row">
               <button class="btn btn-accent" onclick="salvarAula()">Salvar aula</button>
-              <button class="btn" onclick="limparFormAula()">Cancelar</button>
+              <button class="btn" onclick="cancelarFormAula()">Cancelar</button>
             </div>
           </div>
         </div>
       </div>
+
+      <!-- ESTADO B: DETALHE DE UMA AULA (com tabs internas) -->
+      <div id="aula-detail-view" style="display:none;">
+        <div style="display:flex; align-items:center; gap:12px; margin-bottom:1rem;">
+          <button class="btn" onclick="voltarAulas()" style="padding:8px 14px;">← Voltar</button>
+        </div>
+        <div class="page-hd" style="display:flex; align-items:flex-start; justify-content:space-between; gap:1rem; flex-wrap:wrap;">
+          <div>
+            <div class="page-title" id="ad-title">Aula</div>
+            <div class="page-sub" id="ad-sub"></div>
+          </div>
+          <button class="btn btn-sm" id="ad-pregen-btn" title="Pré-gerar áudios desta aula" style="display:none;">🔊 Pré-gerar áudios</button>
+        </div>
+
+        <!-- Tab bar -->
+        <div id="ad-tabs" style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:1.25rem; padding:4px; background:var(--bg-soft); border-radius:var(--r-pill); width:fit-content; max-width:100%;">
+          <button class="ad-tab active" data-aba="detalhes" onclick="abaAula('detalhes')" style="padding:8px 18px; border-radius:var(--r-pill); border:none; background:transparent; cursor:pointer; font-family:var(--font); font-size:13px; font-weight:600; color:var(--ink2);">📋 Detalhes</button>
+          <button class="ad-tab" data-aba="vocabulario" onclick="abaAula('vocabulario')" style="padding:8px 18px; border-radius:var(--r-pill); border:none; background:transparent; cursor:pointer; font-family:var(--font); font-size:13px; font-weight:600; color:var(--ink2);">🗂️ Vocabulário</button>
+          <button class="ad-tab" data-aba="frases" onclick="abaAula('frases')" style="padding:8px 18px; border-radius:var(--r-pill); border:none; background:transparent; cursor:pointer; font-family:var(--font); font-size:13px; font-weight:600; color:var(--ink2);">💬 Frases</button>
+          <button class="ad-tab" data-aba="exercicios" onclick="abaAula('exercicios')" style="padding:8px 18px; border-radius:var(--r-pill); border:none; background:transparent; cursor:pointer; font-family:var(--font); font-size:13px; font-weight:600; color:var(--ink2);">✏️ Exercícios</button>
+        </div>
+
+        <!-- Painéis de cada aba (preenchidos por JS, slots aqui) -->
+        <div id="ad-pane-detalhes" class="ad-pane">
+          <!-- Form de detalhes da aula (clone do form de aulas) -->
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">Detalhes da aula</span>
+            </div>
+            <input type="hidden" id="ad-aula-id">
+            <div class="field">
+              <label class="field-label">Número</label>
+              <input class="inp" type="number" id="ad-aula-numero" min="1">
+            </div>
+            <div class="field">
+              <label class="field-label">Título</label>
+              <input class="inp" type="text" id="ad-aula-titulo">
+            </div>
+            <div class="field">
+              <label class="field-label">Nível</label>
+              <select class="inp" id="ad-aula-nivel">
+                <option value="A1">A1 — Iniciante</option>
+                <option value="A2">A2 — Básico</option>
+                <option value="B1">B1 — Intermediário</option>
+                <option value="B2">B2 — Intermediário avançado</option>
+              </select>
+            </div>
+            <div class="field">
+              <label class="field-label">Tema / descrição curta</label>
+              <input class="inp" type="text" id="ad-aula-tema">
+            </div>
+            <div class="field">
+              <label class="field-label">Verbos desta aula (separados por vírgula)</label>
+              <input class="inp" type="text" id="ad-aula-verbos" placeholder="ser, estar, llamarse">
+            </div>
+            <div class="field">
+              <label class="field-label">Observações para o professor</label>
+              <textarea class="inp" id="ad-aula-obs"></textarea>
+            </div>
+            <div class="field">
+              <label class="field-label">Voz TTS desta aula (opcional — vazio = usa a padrão)</label>
+              <div style="display:flex; gap:8px;">
+                <select class="inp" id="ad-aula-voz" style="flex:1;"></select>
+                <button type="button" class="btn" onclick="previewTtsFromSelect('ad-aula-voz')">▶</button>
+              </div>
+              <div id="ad-aula-voz-hint" style="font-size:11px; margin-top:4px; color:var(--ink3);"></div>
+            </div>
+            <div class="btn-row">
+              <button class="btn btn-accent" onclick="salvarAulaDetalhe()">Salvar alterações</button>
+              <button class="btn btn-red" onclick="deletarAulaAtual()" style="margin-left:auto;">Deletar aula</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="ad-pane-vocabulario" class="ad-pane" style="display:none;"></div>
+        <div id="ad-pane-frases" class="ad-pane" style="display:none;"></div>
+        <div id="ad-pane-exercicios" class="ad-pane" style="display:none;"></div>
+      </div>
+
     </div>
 
     <!-- ===== VOCABULÁRIO ===== -->
@@ -1555,7 +1638,7 @@ async function previewTtsFromSelect(selectId, textOverride) {
   let texto = textOverride;
   if (!texto) {
     // tenta pegar de campos relacionados ao form
-    const map = { 'aula-voz': 'aula-titulo', 'vocab-voz': 'vocab-es', 'frase-voz': 'frase-es', 'ex-voz': 'ex-frase' };
+    const map = { 'aula-voz': 'aula-titulo', 'ad-aula-voz': 'ad-aula-titulo', 'vocab-voz': 'vocab-es', 'frase-voz': 'frase-es', 'ex-voz': 'ex-frase' };
     const candidate = document.getElementById(map[selectId])?.value?.trim();
     texto = candidate || prompt('Texto em espanhol pra ouvir:', 'Hola, ¿cómo estás?');
   }
@@ -1688,7 +1771,7 @@ function popularSelectsVoz() {
   const padrao = getVozPadrao();
   const selPadrao = document.getElementById('cfg-voz-padrao');
   if (selPadrao) selPadrao.innerHTML = vozOptionsHtml(false, padrao);
-  ['aula-voz', 'vocab-voz', 'frase-voz', 'ex-voz'].forEach(id => {
+  ['aula-voz', 'ad-aula-voz', 'vocab-voz', 'frase-voz', 'ex-voz'].forEach(id => {
     const el = document.getElementById(id);
     if (!el) return;
     if (!el.dataset.populated) {
@@ -1720,17 +1803,18 @@ function atualizarHintsVoz() {
     return id;
   };
 
-  // aula: herda só do padrão global.
-  const aulaSel = document.getElementById('aula-voz');
-  if (aulaSel) {
-    const v = aulaSel.value;
-    setHint('aula-voz-hint',
+  // aula: herda só do padrão global. Hint mostrado em ambos os forms (lista + drill-in).
+  ['aula-voz', 'ad-aula-voz'].forEach(selId => {
+    const sel = document.getElementById(selId);
+    if (!sel) return;
+    const v = sel.value;
+    setHint(selId + '-hint',
       v
         ? `🔧 Sobrescrevendo padrão (${labelDe(padrao)})`
         : `↳ Herdando padrão: ${labelDe(padrao)}`,
       v ? 'override' : 'inherit'
     );
-  }
+  });
 
   // sub-itens: primeiro tentam aula, depois padrão.
   [
@@ -1837,11 +1921,14 @@ function copySQL() {
 function goTo(id, el) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.aside-link').forEach(a => a.classList.remove('active'));
-  document.getElementById('page-' + id).classList.add('active');
-  el.classList.add('active');
-  if (id === 'vocabulario') { populateAulaSelects(); loadVocab(); }
-  if (id === 'frases') { populateAulaSelects(); loadFrases(); }
-  if (id === 'exercicios') { populateExAulaSelects(); loadExercicios(); }
+  const target = document.getElementById('page-' + id);
+  if (target) target.classList.add('active');
+  if (el) el.classList.add('active');
+  // Sair do contexto de aula ao navegar para outra página
+  if (id !== 'aulas') aulaContext = null;
+  if (id === 'aulas') {
+    voltarAulas(); // garante estado de lista
+  }
   if (id === 'alunos') loadAlunos();
   if (id === 'progresso') { populateAlunoFilter(); loadProgresso(); }
 }
@@ -1896,28 +1983,161 @@ function renderAulasList() {
     </div>`).join('');
 }
 
+// ============================================================
+// CONTEXTO DE AULA — drill-in (lista ↔ detalhe com tabs)
+// ============================================================
+let aulaContext = null;
+
+// No init (uma vez): mover o conteúdo das antigas pages-vocabulario/frases/exercicios
+// para dentro dos painéis de aba do detalhe da aula. Os IDs internos (vocab-aula-id,
+// vocab-form, etc.) permanecem únicos, então o JS continua funcionando.
+let _pagesRelocated = false;
+function relocateOldPagesIntoTabs() {
+  if (_pagesRelocated) return;
+  _pagesRelocated = true;
+  const map = [
+    ['page-vocabulario', 'ad-pane-vocabulario'],
+    ['page-frases',      'ad-pane-frases'],
+    ['page-exercicios',  'ad-pane-exercicios'],
+  ];
+  map.forEach(([from, to]) => {
+    const src = document.getElementById(from);
+    const dst = document.getElementById(to);
+    if (!src || !dst) return;
+    src.querySelector('.page-hd')?.remove(); // título redundante (a aba já indica)
+    while (src.firstChild) dst.appendChild(src.firstChild);
+    src.style.display = 'none';
+  });
+}
+
+function abrirAula(id) {
+  const a = aulasList.find(x => x.id === id);
+  if (!a) return;
+  aulaContext = a;
+  relocateOldPagesIntoTabs();
+
+  // Esconder lista, mostrar detalhe
+  document.getElementById('aulas-list-view').style.display = 'none';
+  document.getElementById('aula-detail-view').style.display = '';
+
+  // Preencher header
+  document.getElementById('ad-title').textContent = `Aula ${a.numero} — ${a.titulo}`;
+  document.getElementById('ad-sub').textContent = `${a.nivel} · ${a.tema || ''}`;
+
+  // Botão pré-gerar áudios
+  const btnPg = document.getElementById('ad-pregen-btn');
+  if (btnPg) {
+    btnPg.style.display = '';
+    btnPg.onclick = () => pregerarAudiosAula(a.id);
+  }
+
+  // Pré-popular o form de detalhes
+  popularSelectsVoz();
+  document.getElementById('ad-aula-id').value = a.id;
+  document.getElementById('ad-aula-numero').value = a.numero;
+  document.getElementById('ad-aula-titulo').value = a.titulo;
+  document.getElementById('ad-aula-nivel').value = a.nivel;
+  document.getElementById('ad-aula-tema').value = a.tema || '';
+  document.getElementById('ad-aula-verbos').value = (a.verbos || []).join(', ');
+  document.getElementById('ad-aula-obs').value = a.observacoes || '';
+  document.getElementById('ad-aula-voz').value = a.voz_tts || '';
+
+  // Esconder filtros de aula (estamos sempre nesta aula) e o select de aula nos forms
+  ocultarSelecoesDeAula(true);
+  // Auto-preencher aula_id em forms de vocab/frases/ex
+  setAulaIdNosForms(a.id);
+
+  // Default: aba Detalhes
+  abaAula('detalhes');
+}
+
+function voltarAulas() {
+  aulaContext = null;
+  document.getElementById('aulas-list-view').style.display = '';
+  document.getElementById('aula-detail-view').style.display = 'none';
+  ocultarSelecoesDeAula(false);
+}
+
+function abaAula(aba) {
+  if (!aulaContext) return;
+  // Tabs
+  document.querySelectorAll('.ad-tab').forEach(t => {
+    t.classList.toggle('active', t.dataset.aba === aba);
+  });
+  // Painéis
+  document.querySelectorAll('.ad-pane').forEach(p => p.style.display = 'none');
+  document.getElementById('ad-pane-' + aba).style.display = '';
+
+  // Carregar conteúdo da aba
+  if (aba === 'vocabulario') {
+    const f = document.getElementById('vocab-aula-filter');
+    if (f) f.value = aulaContext.id;
+    loadVocab();
+  } else if (aba === 'frases') {
+    const f = document.getElementById('frases-aula-filter');
+    if (f) f.value = aulaContext.id;
+    loadFrases();
+  } else if (aba === 'exercicios') {
+    const f = document.getElementById('ex-aula-filter');
+    if (f) f.value = aulaContext.id;
+    populateExAulaSelects();
+    loadExercicios();
+  }
+}
+
+// Esconde/mostra os <select> globais de "aula" nos filtros e nos forms.
+// Quando estamos em contexto de aula, esses controles são redundantes.
+function ocultarSelecoesDeAula(hide) {
+  const fieldsByControl = [
+    'vocab-aula-filter', 'frases-aula-filter', 'ex-aula-filter',
+    'vocab-aula-id', 'frase-aula-id', 'ex-aula-id',
+  ];
+  fieldsByControl.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const field = el.closest('.field');
+    if (field) field.style.display = hide ? 'none' : '';
+  });
+}
+
+function setAulaIdNosForms(aulaId) {
+  ['vocab-aula-id', 'frase-aula-id', 'ex-aula-id'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    // Garantir que tenha pelo menos a opção da aula atual selecionada
+    const exists = Array.from(el.options).some(o => String(o.value) === String(aulaId));
+    if (!exists) {
+      const aula = aulasList.find(a => String(a.id) === String(aulaId));
+      if (aula) el.innerHTML = `<option value="${aula.id}">Aula ${aula.numero} — ${aula.titulo}</option>`;
+    }
+    el.value = aulaId;
+  });
+}
+
+// ============================================================
+// AULAS — fluxo de criar/editar
+// ============================================================
 function showNovaAula() {
+  // Mostra o card de "+ Nova aula" inline na lista
   limparFormAula();
   popularSelectsVoz();
+  const wrap = document.getElementById('aula-form-wrap');
+  if (wrap) {
+    wrap.style.display = '';
+    wrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
   document.getElementById('aula-form-title').textContent = 'Nova aula';
 }
 
+function cancelarFormAula() {
+  limparFormAula();
+  const wrap = document.getElementById('aula-form-wrap');
+  if (wrap) wrap.style.display = 'none';
+}
+
+// Abre detalhe ao clicar na aula (não mais form inline).
 function editarAula(id) {
-  const a = aulasList.find(x => x.id === id);
-  if (!a) return;
-  popularSelectsVoz();
-  document.querySelectorAll('.aula-item').forEach(el => el.classList.remove('selected'));
-  document.getElementById('aula-item-' + id)?.classList.add('selected');
-  document.getElementById('aula-id').value = a.id;
-  document.getElementById('aula-numero').value = a.numero;
-  document.getElementById('aula-titulo').value = a.titulo;
-  document.getElementById('aula-nivel').value = a.nivel;
-  document.getElementById('aula-tema').value = a.tema || '';
-  document.getElementById('aula-verbos').value = (a.verbos || []).join(', ');
-  document.getElementById('aula-obs').value = a.observacoes || '';
-  document.getElementById('aula-voz').value = a.voz_tts || '';
-  document.getElementById('aula-form-title').textContent = 'Editando Aula ' + a.numero;
-  atualizarHintsVoz();
+  abrirAula(id);
 }
 
 async function salvarAula() {
@@ -1933,13 +2153,38 @@ async function salvarAula() {
     voz_tts: document.getElementById('aula-voz').value || null,
   };
   if (!payload.numero || !payload.titulo) { toast('Preencha número e título.', 'err'); return; }
-  const { error } = id
-    ? await sb.from('aulas').update(payload).eq('id', id)
-    : await sb.from('aulas').insert(payload);
+  const { data, error } = id
+    ? await sb.from('aulas').update(payload).eq('id', id).select().single()
+    : await sb.from('aulas').insert(payload).select().single();
   if (error) { toast('Erro: ' + error.message, 'err'); return; }
   toast(id ? 'Aula atualizada! ✓' : 'Aula criada! ✓', 'ok');
-  limparFormAula();
-  loadAulas();
+  cancelarFormAula();
+  await loadAulas();
+  // Se foi criação nova, abrir o detalhe pra continuar adicionando conteúdo
+  if (!id && data?.id) abrirAula(data.id);
+}
+
+// Save do form de detalhes (dentro do drill-in)
+async function salvarAulaDetalhe() {
+  if (!sb || !aulaContext) { toast('Sem conexão ou contexto.', 'err'); return; }
+  const payload = {
+    numero: parseInt(document.getElementById('ad-aula-numero').value),
+    titulo: document.getElementById('ad-aula-titulo').value.trim(),
+    nivel: document.getElementById('ad-aula-nivel').value,
+    tema: document.getElementById('ad-aula-tema').value.trim() || null,
+    verbos: document.getElementById('ad-aula-verbos').value.split(',').map(v => v.trim()).filter(Boolean),
+    observacoes: document.getElementById('ad-aula-obs').value.trim() || null,
+    voz_tts: document.getElementById('ad-aula-voz').value || null,
+  };
+  if (!payload.numero || !payload.titulo) { toast('Preencha número e título.', 'err'); return; }
+  const { error } = await sb.from('aulas').update(payload).eq('id', aulaContext.id);
+  if (error) { toast('Erro: ' + error.message, 'err'); return; }
+  toast('Aula atualizada! ✓', 'ok');
+  // Atualiza header e contexto
+  Object.assign(aulaContext, payload);
+  document.getElementById('ad-title').textContent = `Aula ${payload.numero} — ${payload.titulo}`;
+  document.getElementById('ad-sub').textContent = `${payload.nivel} · ${payload.tema || ''}`;
+  await loadAulas();
 }
 
 async function deletarAula(id) {
@@ -1947,7 +2192,12 @@ async function deletarAula(id) {
   const { error } = await sb.from('aulas').delete().eq('id', id);
   if (error) { toast('Erro: ' + error.message, 'err'); return; }
   toast('Aula removida.', 'ok');
+  if (aulaContext?.id === id) voltarAulas();
   loadAulas();
+}
+
+function deletarAulaAtual() {
+  if (aulaContext) deletarAula(aulaContext.id);
 }
 
 function limparFormAula() {
@@ -2077,7 +2327,7 @@ async function salvarVocab() {
   if (!sb) { toast('Sem conexão.', 'err'); return; }
   const id = document.getElementById('vocab-id').value;
   const payload = {
-    aula_id: document.getElementById('vocab-aula-id').value || null,
+    aula_id: aulaContext?.id || document.getElementById('vocab-aula-id').value || null,
     espanhol: document.getElementById('vocab-es').value.trim(),
     portugues: document.getElementById('vocab-pt').value.trim(),
     categoria: document.getElementById('vocab-cat').value,
@@ -2170,7 +2420,7 @@ async function salvarFrase() {
   if (!sb) { toast('Sem conexão.', 'err'); return; }
   const id = document.getElementById('frase-id').value;
   const payload = {
-    aula_id: document.getElementById('frase-aula-id').value || null,
+    aula_id: aulaContext?.id || document.getElementById('frase-aula-id').value || null,
     espanhol: document.getElementById('frase-es').value.trim(),
     portugues: document.getElementById('frase-pt').value.trim(),
     categoria: document.getElementById('frase-cat').value,
@@ -2412,7 +2662,7 @@ async function salvarExercicio() {
     const pares = paresFromInputs();
     if (pares.length < 3) { toast('Adicione pelo menos 3 pares preenchidos.', 'err'); return; }
     payload = {
-      aula_id: document.getElementById('ex-aula-id').value || null,
+      aula_id: aulaContext?.id || document.getElementById('ex-aula-id').value || null,
       tipo,
       frase: tipo === 'pares_audio' ? 'Combine áudio com palavra' : 'Combine os pares',
       resposta: '',
@@ -2430,7 +2680,7 @@ async function salvarExercicio() {
     if (!frase.includes('___')) { toast('A frase deve conter ___ para marcar a lacuna.', 'err'); return; }
     const opcoes = opcoesRaw ? opcoesRaw.split(',').map(o => o.trim()).filter(Boolean) : [];
     payload = {
-      aula_id: document.getElementById('ex-aula-id').value || null,
+      aula_id: aulaContext?.id || document.getElementById('ex-aula-id').value || null,
       tipo, frase, resposta, opcoes,
       imagem_url: imagem || null,
       voz_tts: document.getElementById('ex-voz').value || null,
