@@ -991,6 +991,7 @@ pre {
               <option value="lacuna_banco">Complete com palavras</option>
               <option value="escrita_audio">Escreva o que ouviu</option>
               <option value="pares">Combine os pares</option>
+              <option value="pares_audio">Combine áudio com palavra</option>
             </select>
           </div>
           <div class="field" style="margin:0; display:flex; align-items:flex-end;">
@@ -1016,6 +1017,7 @@ pre {
               <option value="lacuna_banco">Complete com banco de palavras</option>
               <option value="escrita_audio">Ouça e escreva</option>
               <option value="pares">Combine os pares</option>
+              <option value="pares_audio">Combine áudio com palavra</option>
             </select>
           </div>
         </div>
@@ -1581,7 +1583,7 @@ async function pregerarAudiosAula(aulaId) {
   const [vocabRes, frasesRes, exRes] = await Promise.all([
     sb.from('vocabulario').select('espanhol,exemplo,voz_tts').eq('aula_id', aulaId),
     sb.from('frases').select('espanhol,voz_tts').eq('aula_id', aulaId),
-    sb.from('exercicios').select('frase,tipo,voz_tts').eq('aula_id', aulaId),
+    sb.from('exercicios').select('frase,tipo,opcoes,voz_tts').eq('aula_id', aulaId),
   ]);
 
   const vozPadrao = getVozPadrao();
@@ -1597,9 +1599,17 @@ async function pregerarAudiosAula(aulaId) {
     if (f.espanhol) itens.push({ texto: f.espanhol, voz: f.voz_tts || aulaVoz, label: `frase "${f.espanhol.slice(0,30)}..."` });
   });
   (exRes.data || []).forEach(e => {
-    // Para escrita_audio, gerar a frase completa; para outros tipos a frase tem ___ (não vale gerar áudio).
+    const exVoz = e.voz_tts || aulaVoz;
+    // escrita_audio: gerar a frase completa
     if (e.tipo === 'escrita_audio' && e.frase) {
-      itens.push({ texto: e.frase, voz: e.voz_tts || aulaVoz, label: `exercício "${e.frase.slice(0,30)}..."` });
+      itens.push({ texto: e.frase, voz: exVoz, label: `exercício "${e.frase.slice(0,30)}..."` });
+    }
+    // pares_audio: gerar áudio do lado esquerdo (espanhol) de cada par
+    if (e.tipo === 'pares_audio' && Array.isArray(e.opcoes)) {
+      e.opcoes.forEach(p => {
+        const es = (p || '').split('||')[0]?.trim();
+        if (es) itens.push({ texto: es, voz: exVoz, label: `pares áudio "${es}"` });
+      });
     }
   });
   (aula.verbos || []).forEach(v => {
@@ -2212,9 +2222,10 @@ async function loadExercicios() {
     document.getElementById('ex-list-wrap').innerHTML = '<div class="empty">Nenhum exercício encontrado.</div>';
     return;
   }
-  const tipoLabel = t => t==='lacuna_escolha'?'Complete o espaço':t==='lacuna_banco'?'Banco de palavras':t==='escrita_audio'?'Ouça e escreva':t==='pares'?'Combine os pares':t;
-  const fraseResumo = r => r.tipo === 'pares' ? `${(r.opcoes||[]).length} pares` : (r.frase || '—');
-  const respResumo = r => r.tipo === 'pares' ? '—' : (r.resposta || '—');
+  const tipoLabel = t => t==='lacuna_escolha'?'Complete o espaço':t==='lacuna_banco'?'Banco de palavras':t==='escrita_audio'?'Ouça e escreva':t==='pares'?'Combine os pares':t==='pares_audio'?'Combine áudio':t;
+  const isParesT = t => t === 'pares' || t === 'pares_audio';
+  const fraseResumo = r => isParesT(r.tipo) ? `${(r.opcoes||[]).length} pares` : (r.frase || '—');
+  const respResumo = r => isParesT(r.tipo) ? '—' : (r.resposta || '—');
   document.getElementById('ex-list-wrap').innerHTML = `
     <table class="vtable">
       <thead><tr><th>Aula</th><th>Tipo</th><th>Frase</th><th>Resposta</th><th></th></tr></thead>
@@ -2263,10 +2274,11 @@ function updateExFormTipo() {
   const padraoBlock = document.getElementById('ex-fields-padrao');
   const paresBlock = document.getElementById('ex-pares-field');
 
-  if (tipo === 'pares') {
+  if (tipo === 'pares' || tipo === 'pares_audio') {
     if (padraoBlock) padraoBlock.style.display = 'none';
     if (paresBlock) paresBlock.style.display = '';
     ensureMinParesRows(5);
+    setParesLabels(tipo);
     return;
   }
 
@@ -2293,13 +2305,17 @@ function updateExFormTipo() {
 function addParesRow(left = '', right = '') {
   const wrap = document.getElementById('ex-pares-rows');
   if (!wrap) return;
+  const tipo = document.getElementById('ex-tipo')?.value || 'pares';
+  const isAudio = tipo === 'pares_audio';
+  const leftPh  = isAudio ? 'espanhol (vira áudio)' : 'esquerda';
+  const rightPh = isAudio ? 'português' : 'direita';
   const row = document.createElement('div');
   row.className = 'pares-row';
   row.style.cssText = 'display:grid; grid-template-columns:1fr 1fr 36px; gap:6px; align-items:center;';
   const escAttr = s => String(s || '').replace(/"/g, '&quot;');
   row.innerHTML = `
-    <input class="inp pares-left"  type="text" placeholder="esquerda" value="${escAttr(left)}">
-    <input class="inp pares-right" type="text" placeholder="direita"  value="${escAttr(right)}">
+    <input class="inp pares-left"  type="text" placeholder="${leftPh}"  value="${escAttr(left)}">
+    <input class="inp pares-right" type="text" placeholder="${rightPh}" value="${escAttr(right)}">
     <button type="button" class="btn btn-red btn-sm" onclick="removeParesRow(this)" title="Remover par">✕</button>`;
   wrap.appendChild(row);
 }
@@ -2318,6 +2334,21 @@ function ensureMinParesRows(n = 5) {
   const wrap = document.getElementById('ex-pares-rows');
   if (!wrap) return;
   while (wrap.querySelectorAll('.pares-row').length < n) addParesRow();
+}
+
+// Atualiza placeholders das colunas conforme o tipo do exercício.
+function setParesLabels(tipo) {
+  const wrap = document.getElementById('ex-pares-rows');
+  if (!wrap) return;
+  const isAudio = tipo === 'pares_audio';
+  const leftPh  = isAudio ? 'espanhol (vira áudio)' : 'esquerda';
+  const rightPh = isAudio ? 'português' : 'direita';
+  wrap.querySelectorAll('.pares-row').forEach(row => {
+    const l = row.querySelector('.pares-left');
+    const r = row.querySelector('.pares-right');
+    if (l) l.placeholder = leftPh;
+    if (r) r.placeholder = rightPh;
+  });
 }
 
 // Lê todas as linhas e retorna ["esq||dir", ...] filtrando linhas com algum lado vazio.
@@ -2352,9 +2383,11 @@ async function editarExercicio(id) {
   document.getElementById('ex-tipo').value = data.tipo;
   document.getElementById('ex-frase').value = data.frase || '';
   document.getElementById('ex-resposta').value = data.resposta || '';
-  document.getElementById('ex-opcoes').value = (data.tipo === 'pares') ? '' : (data.opcoes || []).join(', ');
-  if (data.tipo === 'pares') {
+  const isPares = data.tipo === 'pares' || data.tipo === 'pares_audio';
+  document.getElementById('ex-opcoes').value = isPares ? '' : (data.opcoes || []).join(', ');
+  if (isPares) {
     paresToInputs(data.opcoes);
+    setParesLabels(data.tipo);
   } else {
     clearParesRows();
     ensureMinParesRows(5);
@@ -2375,13 +2408,13 @@ async function salvarExercicio() {
   const imagem = document.getElementById('ex-imagem').value.trim();
 
   let payload;
-  if (tipo === 'pares') {
+  if (tipo === 'pares' || tipo === 'pares_audio') {
     const pares = paresFromInputs();
     if (pares.length < 3) { toast('Adicione pelo menos 3 pares preenchidos.', 'err'); return; }
     payload = {
       aula_id: document.getElementById('ex-aula-id').value || null,
       tipo,
-      frase: 'Combine os pares',
+      frase: tipo === 'pares_audio' ? 'Combine áudio com palavra' : 'Combine os pares',
       resposta: '',
       opcoes: pares,
       imagem_url: imagem || null,
@@ -2426,18 +2459,22 @@ function testarExercicio() {
   const preview = document.getElementById('ex-preview');
   const content = document.getElementById('ex-preview-content');
 
-  // Caso "pares" tem layout próprio.
-  if (tipo === 'pares') {
+  // Caso "pares" e "pares_audio" têm layout próprio.
+  if (tipo === 'pares' || tipo === 'pares_audio') {
     const pares = paresFromInputs()
       .map(p => p.split('||').map(s => s.trim()));
     if (pares.length < 3) { toast('Adicione pelo menos 3 pares.', 'err'); return; }
+    const isAudio = tipo === 'pares_audio';
     const lefts  = pares.map(p => p[0]);
     const rights = pares.map(p => p[1]).slice().sort(() => Math.random() - 0.5);
-    let html = `<div style="font-size:13px; font-weight:600; color:var(--ink); margin-bottom:8px;">Combine os pares</div>`;
+    let html = `<div style="font-size:13px; font-weight:600; color:var(--ink); margin-bottom:8px;">${isAudio ? 'Combine áudio com palavra' : 'Combine os pares'}</div>`;
     html += `<div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; max-width:520px;">`;
     for (let i = 0; i < pares.length; i++) {
-      html += `<div style="padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);font-size:14px;">${lefts[i]||''}</div>`;
-      html += `<div style="padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);font-size:14px;">${rights[i]||''}</div>`;
+      const leftCell = isAudio
+        ? `<div style="padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);font-size:14px;display:flex;align-items:center;gap:8px;"><span style="font-size:16px;">🔊</span><span style="opacity:0.5;">Áudio ${i + 1}</span></div>`
+        : `<div style="padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);font-size:14px;">${lefts[i] || ''}</div>`;
+      html += leftCell;
+      html += `<div style="padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);font-size:14px;">${rights[i] || ''}</div>`;
     }
     html += `</div>`;
     content.innerHTML = html;

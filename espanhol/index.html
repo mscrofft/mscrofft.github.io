@@ -2241,6 +2241,7 @@ function renderExercicio() {
   else if (ex.tipo === 'lacuna_banco') body = renderLacunaBanco(ex);
   else if (ex.tipo === 'escrita_audio') body = renderEscritaAudio(ex);
   else if (ex.tipo === 'pares') body = renderPares(ex);
+  else if (ex.tipo === 'pares_audio') body = renderParesAudio(ex);
 
   area.innerHTML = `
     <div class="ex-prog"><div class="ex-prog-fill" style="width:${pct}%"></div></div>
@@ -2258,7 +2259,7 @@ function renderExercicio() {
 }
 
 function tipoLabel(t) {
-  return t==='lacuna_escolha'?'Complete o espaço':t==='lacuna_banco'?'Complete com as palavras':t==='escrita_audio'?'Escreva o que ouviu':t==='pares'?'Combine os pares':'Exercício';
+  return t==='lacuna_escolha'?'Complete o espaço':t==='lacuna_banco'?'Complete com as palavras':t==='escrita_audio'?'Escreva o que ouviu':t==='pares'?'Combine os pares':t==='pares_audio'?'Combine áudio com palavra':'Exercício';
 }
 
 function renderLacunaEscolha(ex) {
@@ -2443,6 +2444,117 @@ function selecionarParesCell(side, pos) {
   }
 }
 
+// ============================================================
+// COMBINE ÁUDIO COM PALAVRA (variante de pares onde a esquerda é áudio TTS)
+// ============================================================
+function renderParesAudio(ex) {
+  const opcoes = ex.opcoes || [];
+  const pares = opcoes
+    .map(p => p.split('||').map(s => s.trim()))
+    .filter(p => p.length === 2 && p[0] && p[1]);
+
+  if (!pares.length) {
+    return `<div class="ex-frase">Exercício sem pares cadastrados.</div>`;
+  }
+
+  const lefts  = pares.map((p, i) => ({ idx: i, audio: p[0] })).sort(() => Math.random() - 0.5);
+  const rights = pares.map((p, i) => ({ idx: i, txt: p[1] })).sort(() => Math.random() - 0.5);
+
+  _paresState = {
+    pares, lefts, rights,
+    leftSel: null, rightSel: null,
+    matched: new Set(),
+    total: pares.length,
+    voz: ex.voz_tts || null,
+    isAudio: true,
+  };
+
+  const colLeft = lefts.map((it, pos) => `
+    <button class="ex-opcao pares-cell pares-cell-audio" id="pares-L-${pos}"
+            data-idx="${it.idx}" data-side="L"
+            onclick="selecionarParesAudio('L', ${pos})"
+            style="text-align:left; min-height:48px; display:flex; align-items:center; gap:10px;">
+      <span style="font-size:18px;">🔊</span>
+      <span style="font-weight:600;">Áudio ${pos + 1}</span>
+    </button>`).join('');
+
+  const colRight = rights.map((it, pos) => `
+    <button class="ex-opcao pares-cell" id="pares-R-${pos}"
+            data-idx="${it.idx}" data-side="R"
+            onclick="selecionarParesAudio('R', ${pos})"
+            style="text-align:left; min-height:48px;">
+      <span style="display:inline-block; width:22px; opacity:0.5;">${pos + 1}.</span>
+      <span>${it.txt}</span>
+    </button>`).join('');
+
+  return `
+    <div style="font-size:14px; color:var(--ink2); margin-bottom:12px;">
+      Toque um áudio à esquerda (escute) e depois sua tradução à direita.
+    </div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+      <div style="display:flex; flex-direction:column; gap:8px;">${colLeft}</div>
+      <div style="display:flex; flex-direction:column; gap:8px;">${colRight}</div>
+    </div>
+    <div style="margin-top:14px; font-size:13px; color:var(--ink3);" id="pares-progress">
+      0 / ${_paresState.total} pares
+    </div>`;
+}
+
+function selecionarParesAudio(side, pos) {
+  const st = _paresState;
+  if (!st) return;
+  const id = `pares-${side}-${pos}`;
+  const btn = document.getElementById(id);
+  if (!btn || btn.disabled) return;
+
+  if (side === 'L') {
+    // Toca o áudio sempre (mesmo se já estiver selecionado — re-clicar = re-tocar).
+    const audio = st.lefts[pos]?.audio;
+    if (audio) speak(audio, 'es', 1, st.voz);
+
+    document.querySelectorAll('.pares-cell[data-side="L"]').forEach(b => b.classList.remove('selected'));
+    if (st.leftSel?.pos === pos) {
+      // Re-clicou no mesmo: mantém selecionado (acabou de selecionar + tocar de novo).
+      btn.classList.add('selected');
+      return;
+    }
+    btn.classList.add('selected');
+    st.leftSel = { pos, idx: parseInt(btn.dataset.idx) };
+  } else {
+    document.querySelectorAll('.pares-cell[data-side="R"]').forEach(b => b.classList.remove('selected'));
+    if (st.rightSel?.pos === pos) { st.rightSel = null; return; }
+    btn.classList.add('selected');
+    st.rightSel = { pos, idx: parseInt(btn.dataset.idx) };
+  }
+
+  if (st.leftSel && st.rightSel) {
+    const acertou = st.leftSel.idx === st.rightSel.idx;
+    const lEl = document.getElementById(`pares-L-${st.leftSel.pos}`);
+    const rEl = document.getElementById(`pares-R-${st.rightSel.pos}`);
+    if (acertou) {
+      [lEl, rEl].forEach(el => {
+        if (!el) return;
+        el.classList.remove('selected');
+        el.classList.add('correct');
+        el.disabled = true;
+      });
+      st.matched.add(st.leftSel.idx);
+      document.getElementById('pares-progress').textContent = `${st.matched.size} / ${st.total} pares`;
+    } else {
+      [lEl, rEl].forEach(el => el?.classList.add('wrong'));
+      setTimeout(() => {
+        [lEl, rEl].forEach(el => {
+          if (!el) return;
+          el.classList.remove('wrong');
+          el.classList.remove('selected');
+        });
+      }, 600);
+    }
+    st.leftSel = null;
+    st.rightSel = null;
+  }
+}
+
 function normalize(s) {
   return (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
 }
@@ -2480,7 +2592,7 @@ function checkExercicio() {
     if(inp){inp.disabled=true;inp.classList.add(correct?'correct':'wrong');}
     const l=document.getElementById('ex-lacuna-0');
     if(l){l.textContent=ex.resposta;l.classList.add(correct?'correct':'wrong');}
-  } else if (ex.tipo === 'pares') {
+  } else if (ex.tipo === 'pares' || ex.tipo === 'pares_audio') {
     const st = _paresState;
     if (!st || st.total === 0) { fb.textContent = 'Exercício sem pares.'; fb.className = 'ex-feedback fail'; return; }
     if (st.matched.size < st.total) {
@@ -2493,7 +2605,7 @@ function checkExercicio() {
 
   exAnswered = true;
   if (correct) exScore++;
-  if (ex.tipo === 'pares') {
+  if (ex.tipo === 'pares' || ex.tipo === 'pares_audio') {
     fb.textContent = correct ? `✓ Todos os ${_paresState.total} pares corretos!` : '✗ Algo deu errado.';
   } else {
     fb.textContent = correct ? '✓ Correto!' : `✗ Resposta: ${ex.resposta}`;
