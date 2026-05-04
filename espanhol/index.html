@@ -1268,14 +1268,17 @@ button { font-family: var(--font); }
    MOBILE
    ===================================================== */
 @media (max-width: 900px) {
-  .topbar { display: flex; }
+  .topbar { display: flex; padding-top: env(safe-area-inset-top); }
   .sidebar {
     transform: translateX(-100%);
     box-shadow: var(--shadow-lg);
+    padding-bottom: env(safe-area-inset-bottom);
   }
   .sidebar.open { transform: translateX(0); }
   .main { margin-left: 0; }
-  .main-inner { padding: 1.25rem 1rem 6rem; }
+  .main-inner {
+    padding: 1.25rem 1rem calc(6rem + env(safe-area-inset-bottom));
+  }
   .stats-row { grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
   .stat-card { padding: 1rem 0.875rem; }
   .stat-n { font-size: 22px; }
@@ -1286,13 +1289,36 @@ button { font-family: var(--font); }
   .aula-card-title { font-size: 14px; }
   .ex-container { padding: 1.25rem; }
   .progress-card { padding: 1.25rem 1.25rem; border-radius: var(--r-lg); }
-  .toast { left: 1rem; right: 1rem; max-width: none; bottom: 1rem; }
+  .toast {
+    left: 1rem; right: 1rem;
+    max-width: none;
+    bottom: calc(1rem + env(safe-area-inset-bottom));
+  }
+
+  /* Touch targets ≥44px nos botões principais */
+  .btn { min-height: 44px; padding: 12px 18px; }
+  .speak-btn { width: 44px; height: 44px; min-height: 44px; }
+  .ex-audio-btn { width: 64px; height: 64px; }
+
+  /* Pares — empilhar em telas estreitas */
+  .pares-cell { padding: 14px; min-height: 56px; }
+
+  /* Modal de badge — não colar nas bordas */
+  .badge-modal { width: calc(100vw - 2rem); max-width: 360px; }
+}
+@media (max-width: 480px) {
+  /* Pares: cells maiores e em coluna única não fariam sentido aqui (precisa 2 cols),
+     mas reduzimos padding e font pra caber */
+  .pares-cell { padding: 10px 12px; font-size: 14px; }
+  .ex-frase { font-size: 17px; }
+  .ex-audio-btn { width: 56px; height: 56px; }
 }
 @media (max-width: 420px) {
   .stats-row { grid-template-columns: repeat(3, 1fr); }
   .stat-icon { font-size: 18px; }
   .stat-n { font-size: 20px; }
   .stat-l { font-size: 10px; }
+  .aulas-grid { grid-template-columns: 1fr; }
 }
 
 </style>
@@ -1512,14 +1538,53 @@ function toggleSidebar() {
   document.getElementById('sidebar')?.classList.toggle('open');
   document.getElementById('drawer-overlay')?.classList.toggle('show');
 }
+function closeSidebar() {
+  document.getElementById('sidebar')?.classList.remove('open');
+  document.getElementById('drawer-overlay')?.classList.remove('show');
+}
 // Auto-fechar drawer ao clicar numa aula
 document.addEventListener('click', (e) => {
   const item = e.target.closest('.aula-nav-item');
   if (item && !item.classList.contains('locked') && window.innerWidth <= 900) {
-    document.getElementById('sidebar')?.classList.remove('open');
-    document.getElementById('drawer-overlay')?.classList.remove('show');
+    closeSidebar();
   }
 });
+
+// Swipe-to-close
+(function setupSwipe() {
+  const sidebar = document.getElementById('sidebar');
+  if (!sidebar) return;
+  let startX = 0, startY = 0, dx = 0, dragging = false;
+  const THRESHOLD = 60;
+  const ANGLE_TOL = 30;
+
+  sidebar.addEventListener('touchstart', (e) => {
+    if (!sidebar.classList.contains('open')) return;
+    if (window.innerWidth > 900) return;
+    const t = e.touches[0];
+    startX = t.clientX; startY = t.clientY; dx = 0; dragging = true;
+  }, { passive: true });
+
+  sidebar.addEventListener('touchmove', (e) => {
+    if (!dragging) return;
+    const t = e.touches[0];
+    dx = t.clientX - startX;
+    const dy = Math.abs(t.clientY - startY);
+    if (dy > ANGLE_TOL && Math.abs(dx) < dy) { dragging = false; return; }
+    if (dx < 0) {
+      sidebar.style.transition = 'none';
+      sidebar.style.transform = `translateX(${dx}px)`;
+    }
+  }, { passive: true });
+
+  sidebar.addEventListener('touchend', () => {
+    if (!dragging) return;
+    dragging = false;
+    sidebar.style.transition = '';
+    sidebar.style.transform = '';
+    if (dx < -THRESHOLD) closeSidebar();
+  }, { passive: true });
+})();
 </script>
 
 <script>
@@ -1899,10 +1964,22 @@ function _resolverVoz(vozItem) {
     || 'es-ES-Neural2-F';
 }
 
+// Sanitiza o texto antes do TTS:
+// - sequências de underscores (lacunas tipo "___") viram vírgula → causa pausa natural
+// - colapsa espaços/vírgulas duplicados
+function _sanitizeTtsText(text) {
+  return String(text || '')
+    .replace(/_{2,}/g, ', ')      // ___ → ", "
+    .replace(/\s+_+\s+/g, ', ')   // espaço _ espaço (só um underscore) → ", "
+    .replace(/\s*,\s*,+/g, ',')   // ", ," → ","
+    .replace(/\s{2,}/g, ' ')      // múltiplos espaços → 1
+    .trim();
+}
+
 function _speakBrowser(text, lang, rate) {
   if (!window.speechSynthesis) return;
   window.speechSynthesis.cancel();
-  const u = new SpeechSynthesisUtterance(text);
+  const u = new SpeechSynthesisUtterance(_sanitizeTtsText(text));
   u.lang = lang === 'es' ? 'es-ES' : 'pt-BR';
   u.rate = rate;
   window.speechSynthesis.speak(u);
@@ -1910,12 +1987,14 @@ function _speakBrowser(text, lang, rate) {
 
 async function speak(text, lang='es', rate=1, voz=null) {
   if (!text) return;
+  const cleanText = _sanitizeTtsText(text);
+  if (!cleanText) return;
   // Português ainda usa o sintetizador do navegador.
-  if (lang !== 'es' || !sb) return _speakBrowser(text, lang, rate);
+  if (lang !== 'es' || !sb) return _speakBrowser(cleanText, lang, rate);
   const vozFinal = _resolverVoz(voz);
   try {
     const { data, error } = await sb.functions.invoke('tts', {
-      body: { texto: text, voz: vozFinal, rate },
+      body: { texto: cleanText, voz: vozFinal, rate },
     });
     if (error || !data?.url) throw error || new Error('sem url');
     if (_ttsAudio) { try { _ttsAudio.pause(); } catch (e) {} }
@@ -1923,7 +2002,7 @@ async function speak(text, lang='es', rate=1, voz=null) {
     await _ttsAudio.play();
   } catch (e) {
     console.warn('TTS Edge Function falhou, fallback navegador:', e?.message || e);
-    _speakBrowser(text, lang, rate);
+    _speakBrowser(cleanText, lang, rate);
   }
 }
 

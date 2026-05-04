@@ -113,10 +113,11 @@ button, input, select, textarea { font-family: var(--font); }
 .adm-topbar {
   display: none;
   position: sticky; top: 0; z-index: 90;
-  height: 60px;
+  height: calc(60px + env(safe-area-inset-top));
+  padding-top: env(safe-area-inset-top);
   background: var(--bg);
   align-items: center;
-  padding: 0 1rem;
+  padding-left: 1rem; padding-right: 1rem;
   gap: 12px;
 }
 .adm-topbar-btn {
@@ -653,18 +654,171 @@ pre {
 }
 
 /* =====================================================
-   MOBILE
+   TABLET RAIL — sidebar compacta (768–1099px)
+   Mostra apenas ícones, com tooltip no hover; conteúdo respira mais.
    ===================================================== */
-@media (max-width: 900px) {
+@media (min-width: 768px) and (max-width: 1099px) {
+  .aside {
+    width: 72px; min-width: 72px;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .aside .logo {
+    padding: 1.25rem 0;
+    justify-content: center;
+  }
+  .aside .logo-text { display: none; }
+  .aside .aside-section { display: none; }
+  .aside-link {
+    margin: 4px 8px;
+    padding: 12px 0;
+    justify-content: center;
+    position: relative;
+  }
+  .aside-link span:not(.aside-icon) { display: none; }
+  .aside-link .aside-icon {
+    font-size: 20px;
+    width: auto;
+  }
+  /* Tooltip no hover (desktop only — touch ignora) */
+  .aside-link::after {
+    content: attr(data-label);
+    position: absolute;
+    left: calc(100% + 12px);
+    top: 50%; transform: translateY(-50%);
+    background: var(--ink);
+    color: var(--surface);
+    padding: 6px 12px;
+    border-radius: var(--r-sm);
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s;
+    z-index: 100;
+    box-shadow: var(--shadow);
+  }
+  @media (hover: hover) {
+    .aside-link:hover::after { opacity: 1; }
+  }
+  .aside .logout-text { display: none; }
+  .main { margin-left: 72px; padding: 1.5rem 1.75rem; }
+}
+
+/* =====================================================
+   MOBILE — Onda 1: tabelas → cards, touch targets, safe area
+   ===================================================== */
+@media (max-width: 767px) {
   .adm-topbar { display: flex; }
   .aside {
     transform: translateX(-100%);
     box-shadow: var(--shadow-lg);
+    padding-bottom: env(safe-area-inset-bottom);
   }
   .aside.open { transform: translateX(0); }
-  .main { margin-left: 0; padding: 1.25rem 1rem 4rem; }
+  .main {
+    margin-left: 0;
+    padding: 1.25rem 1rem calc(1rem + env(safe-area-inset-bottom));
+  }
   .grid2, .grid3 { grid-template-columns: 1fr; }
-  .toast { left: 1rem; right: 1rem; max-width: none; bottom: 1rem; }
+  .toast {
+    left: 1rem; right: 1rem;
+    max-width: none;
+    bottom: calc(1rem + env(safe-area-inset-bottom));
+  }
+
+  /* Touch targets — Apple HIG min 44px */
+  .btn { padding: 12px 18px; font-size: 14px; min-height: 44px; }
+  .btn-sm { padding: 10px 14px; font-size: 13px; min-height: 40px; }
+  .aside-link { padding: 12px 14px; min-height: 48px; }
+
+  /* Modal pré-gerar áudios → bottom sheet em mobile.
+     Slide-up do bottom, encosta na largura total, permite swipe-down pra fechar. */
+  #pregen-modal {
+    align-items: flex-end !important;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  #pregen-modal > div {
+    min-width: 0 !important;
+    width: 100%;
+    max-width: none !important;
+    border-radius: var(--r-xl) var(--r-xl) 0 0 !important;
+    padding: 1rem 1.25rem 1.5rem !important;
+    animation: sheet-slide-up 0.28s cubic-bezier(.4,0,.2,1) both;
+    position: relative;
+  }
+  /* Drag handle visual (linha cinza no topo) */
+  #pregen-modal > div::before {
+    content: '';
+    position: absolute;
+    top: 8px; left: 50%; transform: translateX(-50%);
+    width: 40px; height: 4px;
+    background: var(--ink-3);
+    border-radius: 2px;
+    opacity: 0.4;
+  }
+  #pregen-modal > div > * { margin-top: 0; }
+  #pregen-modal > div > div:first-child { margin-top: 16px; }
+}
+@keyframes sheet-slide-up {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+@media (max-width: 767px) {
+
+  /* Login overlay (professora) */
+  .login-card { min-width: 0; padding: 2rem 1.25rem; }
+
+  /* Tabela vira lista de cards em mobile */
+  .vtable, .vtable thead, .vtable tbody, .vtable tr, .vtable td, .vtable th { display: block; }
+  .vtable thead { display: none; }
+  .vtable tr {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    margin-bottom: 8px;
+    padding: 12px 14px;
+  }
+  .vtable tr:hover td { background: transparent; }
+  .vtable td {
+    border: none !important;
+    padding: 4px 0 !important;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    max-width: none !important;
+  }
+  .vtable td:first-child { padding-top: 0 !important; }
+  .vtable td:last-child {
+    padding-top: 8px !important;
+    margin-top: 4px;
+    border-top: 1px dashed var(--border) !important;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+  }
+  .vtable td img { width: 48px !important; height: 48px !important; }
+
+  /* Form "pares" — empilhar inputs em telas estreitas */
+  .pares-row { grid-template-columns: 1fr 36px !important; gap: 6px !important; }
+  .pares-row .pares-left  { grid-column: 1 / 2; }
+  .pares-row .pares-right { grid-column: 1 / 2; }
+  .pares-row > button { grid-column: 2; grid-row: 1 / span 2; align-self: stretch; }
+
+  /* Tabs do detalhe da aula — quebrar bonito em telas estreitas */
+  #ad-tabs { flex-wrap: wrap; }
+  .ad-tab { flex: 1 1 auto; min-height: 40px; }
+
+  /* Frase row (lista de frases) */
+  .frase-row { padding: 14px; }
+}
+
+@media (max-width: 480px) {
+  .vtable td img { width: 40px !important; height: 40px !important; }
+  .login-card { padding: 1.75rem 1rem; }
 }
 </style>
 </head>
@@ -711,12 +865,12 @@ pre {
       </div>
     </div>
     <div class="aside-section">Conteúdo</div>
-    <div class="aside-link active" onclick="goTo('aulas',this)"><span class="aside-icon">📚</span> Aulas</div>
+    <div class="aside-link active" data-label="Aulas" onclick="goTo('aulas',this)"><span class="aside-icon">📚</span> <span>Aulas</span></div>
     <div class="aside-section">Alunos</div>
-    <div class="aside-link" onclick="goTo('alunos',this)"><span class="aside-icon">👥</span> Alunos</div>
-    <div class="aside-link" onclick="goTo('progresso',this)"><span class="aside-icon">📊</span> Progresso</div>
+    <div class="aside-link" data-label="Alunos" onclick="goTo('alunos',this)"><span class="aside-icon">👥</span> <span>Alunos</span></div>
+    <div class="aside-link" data-label="Progresso" onclick="goTo('progresso',this)"><span class="aside-icon">📊</span> <span>Progresso</span></div>
     <div class="aside-section">Sistema</div>
-    <div class="aside-link" onclick="goTo('config',this)"><span class="aside-icon">⚙️</span> Configuração</div>
+    <div class="aside-link" data-label="Configuração" onclick="goTo('config',this)"><span class="aside-icon">⚙️</span> <span>Configuração</span></div>
     <div style="padding:1rem 1.5rem;margin-top:auto;border-top:1px solid var(--border);">
       <button onclick="logoutProf()" style="background:none;border:none;color:var(--ink2);font-size:13px;cursor:pointer;font-family:var(--font);font-weight:600;">← Sair</button>
     </div>
@@ -3136,13 +3290,52 @@ function toggleAdmSidebar() {
   document.getElementById('adm-sidebar')?.classList.toggle('open');
   document.getElementById('adm-drawer-overlay')?.classList.toggle('show');
 }
+function closeAdmSidebar() {
+  document.getElementById('adm-sidebar')?.classList.remove('open');
+  document.getElementById('adm-drawer-overlay')?.classList.remove('show');
+}
 // Auto-fechar drawer ao clicar num item de nav
 document.addEventListener('click', (e) => {
-  if (e.target.closest('.aside-link') && window.innerWidth <= 900) {
-    document.getElementById('adm-sidebar')?.classList.remove('open');
-    document.getElementById('adm-drawer-overlay')?.classList.remove('show');
+  if (e.target.closest('.aside-link') && window.innerWidth <= 767) {
+    closeAdmSidebar();
   }
 });
+
+// Swipe-to-close: arraste o drawer pra esquerda pra fechar
+(function setupAdmSwipe() {
+  const sidebar = document.getElementById('adm-sidebar');
+  if (!sidebar) return;
+  let startX = 0, startY = 0, dx = 0, dragging = false;
+  const THRESHOLD = 60;       // px de arrasto pra fechar
+  const ANGLE_TOL = 30;       // px tolerância vertical (evita conflito com scroll)
+
+  sidebar.addEventListener('touchstart', (e) => {
+    if (!sidebar.classList.contains('open')) return;
+    if (window.innerWidth > 767) return;
+    const t = e.touches[0];
+    startX = t.clientX; startY = t.clientY; dx = 0; dragging = true;
+  }, { passive: true });
+
+  sidebar.addEventListener('touchmove', (e) => {
+    if (!dragging) return;
+    const t = e.touches[0];
+    dx = t.clientX - startX;
+    const dy = Math.abs(t.clientY - startY);
+    if (dy > ANGLE_TOL && Math.abs(dx) < dy) { dragging = false; return; }
+    if (dx < 0) {
+      sidebar.style.transition = 'none';
+      sidebar.style.transform = `translateX(${dx}px)`;
+    }
+  }, { passive: true });
+
+  sidebar.addEventListener('touchend', () => {
+    if (!dragging) return;
+    dragging = false;
+    sidebar.style.transition = '';
+    sidebar.style.transform = '';
+    if (dx < -THRESHOLD) closeAdmSidebar();
+  }, { passive: true });
+})();
 
 // ============================================================
 // INIT
