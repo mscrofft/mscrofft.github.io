@@ -1497,6 +1497,16 @@ pre {
         <div id="vozes-fetch-status" style="font-size:12px; color:var(--ink3); margin-top:8px;"></div>
       </div>
 
+      <div class="card" style="margin-top:12px;">
+        <div class="card-header"><span class="card-title">Manutenção</span></div>
+        <div style="font-size:13px; color:var(--ink2); margin-bottom:10px; line-height:1.6;">
+          Pré-gera todos os áudios de todas as aulas (vocabulário, frases, exercícios <em>escrita_audio</em> e <em>combine áudio</em>, verbos). Itens já em cache são pulados — custo zero pra reexecutar.
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-accent" onclick="pregerarTudo()">🔊 Pré-gerar áudios de tudo</button>
+        </div>
+      </div>
+
       <div class="card" id="sql-card" style="display:none;">
         <div class="card-header">
           <span class="card-title">Criar tabelas no banco</span>
@@ -1810,11 +1820,13 @@ async function previewTtsFromSelect(selectId, textOverride) {
 
 // Pré-gera (e cacheia) todos os áudios de uma aula chamando a Edge Function tts.
 // Cada texto resolve voz na ordem: item.voz_tts → aula.voz_tts → padrão global.
-async function pregerarAudiosAula(aulaId) {
-  if (!sb) { toast('Configure o Supabase primeiro.', 'err'); return; }
+async function pregerarAudiosAula(aulaId, opts = {}) {
+  // opts.silent: pula confirmação e retorna stats em vez de mostrar toast final.
+  // Usado pelo batch pregerarTudo.
+  if (!sb) { if (!opts.silent) toast('Configure o Supabase primeiro.', 'err'); return null; }
   const aula = aulasList.find(a => a.id === aulaId);
-  if (!aula) { toast('Aula não encontrada.', 'err'); return; }
-  if (!confirm(`Pré-gerar áudios da Aula ${aula.numero} — "${aula.titulo}"?\n\nIsso varre vocabulário, frases, exercícios e verbos. Itens já em cache são pulados (custo zero). Pode levar alguns minutos.`)) return;
+  if (!aula) { if (!opts.silent) toast('Aula não encontrada.', 'err'); return null; }
+  if (!opts.silent && !confirm(`Pré-gerar áudios da Aula ${aula.numero} — "${aula.titulo}"?\n\nIsso varre vocabulário, frases, exercícios e verbos. Itens já em cache são pulados (custo zero). Pode levar alguns minutos.`)) return null;
 
   // Coletar [{texto, voz}] de todas as fontes
   const [vocabRes, frasesRes, exRes] = await Promise.all([
@@ -1853,9 +1865,12 @@ async function pregerarAudiosAula(aulaId) {
     if (v) itens.push({ texto: v, voz: aulaVoz, label: `verbo "${v}"` });
   });
 
-  if (!itens.length) { toast('Nada pra gerar nesta aula.', 'err'); return; }
+  if (!itens.length) {
+    if (!opts.silent) toast('Nada pra gerar nesta aula.', 'err');
+    return { hits: 0, misses: 0, fails: 0, total: 0 };
+  }
 
-  // Modal de progresso simples
+  // Modal de progresso (compartilhado entre execuções; reutiliza se já estiver aberto)
   let modal = document.getElementById('pregen-modal');
   if (!modal) {
     modal = document.createElement('div');
@@ -1875,6 +1890,7 @@ async function pregerarAudiosAula(aulaId) {
       </div>`;
     document.body.appendChild(modal);
   }
+  if (opts.title) document.getElementById('pregen-title').textContent = opts.title;
   const setBar = (pct) => document.getElementById('pregen-bar').style.width = pct + '%';
   const setDetail = (s) => document.getElementById('pregen-detail').textContent = s;
   const setStats = (s) => document.getElementById('pregen-stats').textContent = s;
@@ -1915,10 +1931,48 @@ async function pregerarAudiosAula(aulaId) {
 
   await Promise.all(Array.from({ length: CONCURRENCY }, worker));
 
-  document.getElementById('pregen-title').textContent = '✓ Pré-geração concluída';
-  setDetail(`Aula ${aula.numero} — "${aula.titulo}"`);
+  if (!opts.silent) {
+    document.getElementById('pregen-title').textContent = '✓ Pré-geração concluída';
+    setDetail(`Aula ${aula.numero} — "${aula.titulo}"`);
+    document.getElementById('pregen-close').style.display = '';
+    toast(`Áudios prontos: ${hits} em cache + ${misses} gerados${fails ? ` · ${fails} falhas` : ''}`, fails ? 'err' : 'ok');
+  }
+  return { hits, misses, fails, total };
+}
+
+// Pré-gera áudios de TODAS as aulas em sequência. Usa o mesmo modal compartilhado.
+async function pregerarTudo() {
+  if (!sb) return toast('Configure o Supabase primeiro.', 'err');
+  if (!aulasList?.length) return toast('Nenhuma aula carregada.', 'err');
+  if (!confirm(`Pré-gerar áudios de TODAS as ${aulasList.length} aulas?\n\nItens já em cache são pulados (custo zero). Pode levar alguns minutos dependendo do tamanho.`)) return;
+
+  const totalAulas = aulasList.length;
+  let totHits = 0, totMisses = 0, totFails = 0, totItens = 0;
+
+  for (let i = 0; i < aulasList.length; i++) {
+    const aula = aulasList[i];
+    const stats = await pregerarAudiosAula(aula.id, {
+      silent: true,
+      title: `Pré-gerando áudios... Aula ${i + 1}/${totalAulas} — ${aula.titulo}`,
+    });
+    if (stats) {
+      totHits += stats.hits;
+      totMisses += stats.misses;
+      totFails += stats.fails;
+      totItens += stats.total;
+    }
+  }
+
+  document.getElementById('pregen-title').textContent = '✓ Pré-geração de tudo concluída';
+  document.getElementById('pregen-detail').textContent = `${totalAulas} aulas processadas · ${totItens} itens`;
+  document.getElementById('pregen-stats').textContent =
+    `${totItens} / ${totItens}  ·  ${totHits} em cache  ·  ${totMisses} novos  ·  ${totFails} falhas`;
+  document.getElementById('pregen-bar').style.width = '100%';
   document.getElementById('pregen-close').style.display = '';
-  toast(`Áudios prontos: ${hits} em cache + ${misses} gerados${fails ? ` · ${fails} falhas` : ''}`, fails ? 'err' : 'ok');
+  toast(
+    `Tudo pronto! ${totMisses} áudios gerados, ${totHits} já em cache${totFails ? `, ${totFails} falhas` : ''}.`,
+    totFails ? 'err' : 'ok'
+  );
 }
 
 function popularSelectsVoz() {
