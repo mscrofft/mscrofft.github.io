@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <style>
 /* =====================================================
    DESIGN TOKENS — Profesora Ana
@@ -454,6 +455,87 @@ button { font-family: var(--font); }
 .badge-chip .badge-emoji { font-size: 16px; }
 .badge-chip.locked { opacity: 0.35; filter: grayscale(0.8); }
 
+/* ===== CONQUISTAS VIEW ===== */
+.conq-section { margin-bottom: 2rem; }
+.conq-section-hd {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 12px;
+}
+.conq-section-title {
+  font-size: 18px; font-weight: 800;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+}
+.conq-section-sub {
+  font-size: 13px;
+  color: var(--ink-3);
+  font-weight: 500;
+  margin-top: 2px;
+}
+.conq-section-count {
+  font-size: 13px; font-weight: 700;
+  color: var(--ink-2);
+  background: var(--bg-soft, var(--surface));
+  padding: 4px 12px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--border);
+}
+.conq-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+}
+.conq-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 16px;
+  display: flex; gap: 14px;
+  align-items: flex-start;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.conq-card.earned {
+  border-color: var(--block-yellow, #FFE066);
+  background: linear-gradient(135deg, var(--surface), #fffaf0);
+}
+.conq-card.earned:hover { transform: translateY(-2px); box-shadow: var(--shadow-sm); }
+.conq-card.locked {
+  opacity: 0.55;
+}
+.conq-emoji {
+  font-size: 36px;
+  flex-shrink: 0;
+  line-height: 1;
+  filter: none;
+}
+.conq-card.locked .conq-emoji { filter: grayscale(0.8); }
+.conq-info { flex: 1; min-width: 0; }
+.conq-nome {
+  font-size: 15px; font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 3px;
+}
+.conq-desc {
+  font-size: 13px;
+  color: var(--ink-2);
+  line-height: 1.45;
+  font-weight: 500;
+}
+.conq-meta {
+  font-size: 12px;
+  color: var(--ink-3);
+  margin-top: 6px;
+  font-weight: 600;
+}
+.conq-hint {
+  color: var(--accent, #FF8A3D);
+}
+
+@media (max-width: 480px) {
+  .conq-grid { grid-template-columns: 1fr; }
+  .conq-emoji { font-size: 32px; }
+}
+
 /* Aulas grid (BlockCards) */
 .aulas-grid {
   display: grid;
@@ -648,6 +730,38 @@ button { font-family: var(--font); }
 .tab-btn:hover:not(.active) { color: var(--ink); }
 .tab-pane { display: none; }
 .tab-pane.active { display: block; }
+
+/* Prose — renderização do conteudo_md (Markdown) */
+.prose { max-width: 720px; color: var(--ink); font-size: 16px; line-height: 1.7; }
+.prose h1 { font-size: 28px; font-weight: 800; letter-spacing: -0.02em; margin: 1.5rem 0 0.75rem; line-height: 1.2; }
+.prose h2 { font-size: 22px; font-weight: 800; letter-spacing: -0.01em; margin: 1.5rem 0 0.5rem; line-height: 1.25; }
+.prose h3 { font-size: 18px; font-weight: 700; margin: 1.25rem 0 0.5rem; }
+.prose p { margin: 0.75rem 0; }
+.prose strong { font-weight: 700; color: var(--ink); }
+.prose em { font-style: italic; }
+.prose ul, .prose ol { margin: 0.75rem 0; padding-left: 1.5rem; }
+.prose li { margin: 0.25rem 0; }
+.prose code {
+  background: var(--block-cream); padding: 2px 6px; border-radius: 4px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.92em; color: var(--ink);
+}
+.prose pre {
+  background: var(--block-cream); border-radius: var(--r);
+  padding: 1rem; overflow-x: auto; margin: 1rem 0;
+}
+.prose pre code { background: none; padding: 0; }
+.prose blockquote {
+  border-left: 3px solid var(--block-peach);
+  padding: 0.25rem 0 0.25rem 1rem; margin: 1rem 0;
+  color: var(--ink-2); font-style: italic;
+}
+.prose hr { border: none; border-top: 1px solid var(--border); margin: 1.5rem 0; }
+.prose a { color: var(--accent-d, var(--ink)); text-decoration: underline; }
+.prose table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 14px; }
+.prose th, .prose td { padding: 8px 12px; border: 1px solid var(--border); text-align: left; }
+.prose th { background: var(--bg-soft, var(--block-cream)); font-weight: 700; }
+.prose img { max-width: 100%; height: auto; border-radius: var(--r); }
 
 /* Flashcard */
 .fc-wrap {
@@ -1421,6 +1535,18 @@ button { font-family: var(--font); }
       <div class="aulas-grid" id="aulas-grid"></div>
     </div>
 
+    <!-- CONQUISTAS VIEW -->
+    <div id="view-conquistas" style="display:none;">
+      <div class="aula-view-header">
+        <button class="back-btn" onclick="showDashboard()">← Voltar</button>
+        <div class="aula-view-title-row">
+          <div class="aula-view-title">🏆 Conquistas</div>
+        </div>
+        <div class="aula-view-tema" id="conq-resumo">—</div>
+      </div>
+      <div id="conq-content"></div>
+    </div>
+
     <!-- AULA VIEW -->
     <div id="view-aula" class="aula-view" style="display:none;">
       <div class="aula-view-header">
@@ -1437,11 +1563,17 @@ button { font-family: var(--font); }
       <div class="prog-label" id="av-quiz-prog-label"></div>
 
       <div class="tab-bar">
+        <button class="tab-btn" id="tab-btn-conteudo" onclick="switchTab('conteudo',this)" style="display:none;">📖 Conteúdo</button>
         <button class="tab-btn active" onclick="switchTab('flashcards',this)">🃏 Flashcards</button>
         <button class="tab-btn" onclick="switchTab('quiz',this)">❓ Quiz</button>
         <button class="tab-btn" onclick="switchTab('exercicios',this)">✏️ Exercícios</button>
         <button class="tab-btn" onclick="switchTab('frases',this)">💬 Frases</button>
-        <button class="tab-btn" onclick="switchTab('verbos',this)">📖 Verbos</button>
+        <button class="tab-btn" onclick="switchTab('verbos',this)">📚 Verbos</button>
+      </div>
+
+      <!-- CONTEÚDO EXPOSITIVO -->
+      <div class="tab-pane" id="tab-conteudo">
+        <div id="conteudo-render" class="prose"></div>
       </div>
 
       <!-- FLASHCARDS -->
@@ -1591,24 +1723,38 @@ document.addEventListener('click', (e) => {
 // ============================================================
 // BADGE DEFINITIONS
 // ============================================================
+// Categorias: 'marcos' (aulas individuais e níveis), 'volume' (totais), 'performance', 'consistencia'
 const BADGE_DEFS = {
-  iniciante:   { emoji:'🚀', nome:'Iniciante',     desc:'Concluiu a primeira aula!' },
-  aula_1:      { emoji:'1️⃣',  nome:'Aula 1',        desc:'Concluiu a Aula 1' },
-  aula_2:      { emoji:'2️⃣',  nome:'Aula 2',        desc:'Concluiu a Aula 2' },
-  aula_3:      { emoji:'3️⃣',  nome:'Aula 3',        desc:'Concluiu a Aula 3' },
-  aula_4:      { emoji:'4️⃣',  nome:'Aula 4',        desc:'Concluiu a Aula 4' },
-  aula_5:      { emoji:'5️⃣',  nome:'Aula 5',        desc:'Concluiu a Aula 5' },
-  aula_6:      { emoji:'6️⃣',  nome:'Aula 6',        desc:'Concluiu a Aula 6' },
-  aula_7:      { emoji:'7️⃣',  nome:'Aula 7',        desc:'Concluiu a Aula 7' },
-  aula_8:      { emoji:'8️⃣',  nome:'Aula 8',        desc:'Concluiu a Aula 8' },
-  aula_9:      { emoji:'9️⃣',  nome:'Aula 9',        desc:'Concluiu a Aula 9' },
-  aula_10:     { emoji:'🔟', nome:'Aula 10',       desc:'Concluiu a Aula 10' },
-  perfeito:    { emoji:'⭐', nome:'Nota perfeita', desc:'100% no quiz!' },
-  dedicado:    { emoji:'🏆', nome:'Dedicado',      desc:'Concluiu 5 aulas!' },
-  mestre:      { emoji:'👑', nome:'Mestre',        desc:'Concluiu todas as aulas!' },
-  sequencia:   { emoji:'🔥', nome:'Em chamas',     desc:'3 aulas seguidas!' },
-  veloz:       { emoji:'⚡', nome:'Veloz',         desc:'Duas aulas no mesmo dia!' },
+  iniciante:      { emoji:'🚀', nome:'Iniciante',       desc:'Concluiu a primeira aula!',   cat:'marcos' },
+  aula_1:         { emoji:'1️⃣',  nome:'Aula 1',          desc:'Concluiu a Aula 1',           cat:'marcos' },
+  aula_2:         { emoji:'2️⃣',  nome:'Aula 2',          desc:'Concluiu a Aula 2',           cat:'marcos' },
+  aula_3:         { emoji:'3️⃣',  nome:'Aula 3',          desc:'Concluiu a Aula 3',           cat:'marcos' },
+  aula_4:         { emoji:'4️⃣',  nome:'Aula 4',          desc:'Concluiu a Aula 4',           cat:'marcos' },
+  aula_5:         { emoji:'5️⃣',  nome:'Aula 5',          desc:'Concluiu a Aula 5',           cat:'marcos' },
+  aula_6:         { emoji:'6️⃣',  nome:'Aula 6',          desc:'Concluiu a Aula 6',           cat:'marcos' },
+  aula_7:         { emoji:'7️⃣',  nome:'Aula 7',          desc:'Concluiu a Aula 7',           cat:'marcos' },
+  aula_8:         { emoji:'8️⃣',  nome:'Aula 8',          desc:'Concluiu a Aula 8',           cat:'marcos' },
+  aula_9:         { emoji:'9️⃣',  nome:'Aula 9',          desc:'Concluiu a Aula 9',           cat:'marcos' },
+  aula_10:        { emoji:'🔟', nome:'Aula 10',         desc:'Concluiu a Aula 10',          cat:'marcos' },
+  aula_15:        { emoji:'🎯', nome:'Aula 15',         desc:'Concluiu a Aula 15',          cat:'marcos' },
+  aula_20:        { emoji:'🎓', nome:'Aula 20',         desc:'Concluiu a Aula 20',          cat:'marcos' },
+  a1_completo:    { emoji:'🥉', nome:'A1 completo',     desc:'Concluiu todas as aulas A1',  cat:'marcos' },
+  mestre:         { emoji:'👑', nome:'Mestre',          desc:'Concluiu todas as aulas!',    cat:'marcos' },
+  dedicado:       { emoji:'🏆', nome:'Dedicado',        desc:'Concluiu 5 aulas!',           cat:'volume' },
+  superdedicado:  { emoji:'💪', nome:'Superdedicado',   desc:'Concluiu 10 aulas!',          cat:'volume' },
+  perfeito:       { emoji:'⭐', nome:'Nota perfeita',   desc:'100% no quiz!',               cat:'performance' },
+  excelente:      { emoji:'💎', nome:'Excelente',       desc:'Média ≥90% nas 5 últimas aulas', cat:'performance' },
+  sequencia:      { emoji:'🔥', nome:'Em chamas',       desc:'3 aulas seguidas!',           cat:'consistencia' },
+  sequencia_5:    { emoji:'🌟', nome:'Imparável',       desc:'5 aulas seguidas!',           cat:'consistencia' },
+  veloz:          { emoji:'⚡', nome:'Veloz',           desc:'Duas aulas no mesmo dia!',    cat:'consistencia' },
 };
+
+const BADGE_CATEGORIAS = [
+  { id:'marcos',       label:'Marcos',       desc:'Aulas concluídas e níveis' },
+  { id:'volume',       label:'Volume',       desc:'Quantidade de aulas' },
+  { id:'performance',  label:'Performance',  desc:'Qualidade no quiz' },
+  { id:'consistencia', label:'Consistência', desc:'Constância nos estudos' },
+];
 
 const VERB_MEANINGS = {
   ser:'ser', estar:'estar', tener:'ter', ir:'ir', hablar:'falar',
@@ -1628,7 +1774,7 @@ const SB_URL_DEFAULT = 'https://vyzdfsysrmvxwnkitqef.supabase.co';
 const SB_KEY_DEFAULT = 'sb_publishable_Gel8VBYyR5BrDXBjYwVqlw_Ce9Ag718';
 const SB_URL = localStorage.getItem('sb_url') || SB_URL_DEFAULT;
 const SB_KEY = localStorage.getItem('sb_key') || SB_KEY_DEFAULT;
-let sb, aluno, aulasList = [], progressoMap = {}, badgesSet = new Set();
+let sb, aluno, aulasList = [], progressoMap = {}, badgesSet = new Set(), badgesMap = {};
 let currentAula = null, vocabAll = [], vocabFiltered = [], frasesData = [];
 let fcIdx = 0, fcFlipped = false, fcCatFilter = '';
 let quizPool = [], quizIdx = 0, quizScore = 0, quizAnswered = false;
@@ -1701,7 +1847,9 @@ async function loadAll() {
     aulasList = aulasRes.data || [];
     progressoMap = {};
     (progRes.data || []).forEach(p => { progressoMap[String(p.aula_id)] = p; });
-    badgesSet = new Set((bdgsRes.data || []).map(b => b.tipo));
+    const bdgs = bdgsRes.data || [];
+    badgesSet = new Set(bdgs.map(b => b.tipo));
+    badgesMap = Object.fromEntries(bdgs.map(b => [b.tipo, b.ganho_em]));
 
     updateSidebarProgress();
     renderAulasNav();
@@ -1761,9 +1909,80 @@ function renderAulasNav() {
 // ============================================================
 // DASHBOARD
 // ============================================================
+function showConquistas() {
+  document.getElementById('view-dashboard').style.display = 'none';
+  const va = document.getElementById('view-aula');
+  if (va) va.style.display = 'none';
+  document.getElementById('view-conquistas').style.display = 'block';
+  renderConquistas();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function renderConquistas() {
+  const total = Object.keys(BADGE_DEFS).length;
+  const conquistadas = Object.keys(BADGE_DEFS).filter(t => badgesSet.has(t)).length;
+  document.getElementById('conq-resumo').textContent =
+    `${conquistadas} de ${total} conquistadas`;
+
+  const fmtData = (iso) => {
+    if (!iso) return '';
+    try {
+      const d = new Date(iso);
+      const dia = String(d.getDate()).padStart(2,'0');
+      const mes = String(d.getMonth() + 1).padStart(2,'0');
+      const ano = d.getFullYear();
+      return `${dia}/${mes}/${ano}`;
+    } catch { return ''; }
+  };
+
+  const renderCard = (tipo, def) => {
+    const earned = badgesSet.has(tipo);
+    const data = earned ? badgesMap[tipo] : null;
+    const hint = earned ? null : progressoBadge(tipo);
+    return `
+      <div class="conq-card ${earned ? 'earned' : 'locked'}">
+        <div class="conq-emoji">${def.emoji}</div>
+        <div class="conq-info">
+          <div class="conq-nome">${def.nome}</div>
+          <div class="conq-desc">${def.desc}</div>
+          ${earned && data ? `<div class="conq-meta">🗓️ Conquistada em ${fmtData(data)}</div>` : ''}
+          ${!earned && hint ? `<div class="conq-meta conq-hint">↳ ${hint}</div>` : ''}
+        </div>
+      </div>`;
+  };
+
+  const content = BADGE_CATEGORIAS.map(cat => {
+    const items = Object.entries(BADGE_DEFS).filter(([, def]) => def.cat === cat.id);
+    if (!items.length) return '';
+    const conqNaCat = items.filter(([t]) => badgesSet.has(t)).length;
+    // Conquistadas primeiro dentro da categoria
+    const sorted = [
+      ...items.filter(([t]) => badgesSet.has(t)),
+      ...items.filter(([t]) => !badgesSet.has(t)),
+    ];
+    return `
+      <section class="conq-section">
+        <div class="conq-section-hd">
+          <div>
+            <div class="conq-section-title">${cat.label}</div>
+            <div class="conq-section-sub">${cat.desc}</div>
+          </div>
+          <div class="conq-section-count">${conqNaCat}/${items.length}</div>
+        </div>
+        <div class="conq-grid">
+          ${sorted.map(([tipo, def]) => renderCard(tipo, def)).join('')}
+        </div>
+      </section>`;
+  }).join('');
+
+  document.getElementById('conq-content').innerHTML = content;
+}
+
 function showDashboard() {
   document.getElementById('view-dashboard').style.display = 'block';
   document.getElementById('view-aula').style.display = 'none';
+  const vc = document.getElementById('view-conquistas');
+  if (vc) vc.style.display = 'none';
   renderDashboard();
 }
 
@@ -1809,28 +2028,59 @@ function renderDashboard() {
   renderAulasGrid();
 }
 
+// Retorna texto "quase lá" pra uma badge ainda não conquistada.
+// null se já foi conquistada ou se não há progresso significativo a mostrar.
+function progressoBadge(tipo) {
+  if (badgesSet.has(tipo)) return null;
+  const total = aulasList.length;
+  const done = aulasList.filter(a => progressoMap[String(a.id)]?.concluida).length;
+
+  if (tipo === 'iniciante') return done >= 1 ? null : 'Conclua sua primeira aula';
+  if (tipo === 'dedicado')      return done >= 5  ? null : `Faltam ${5  - done} (${done}/5)`;
+  if (tipo === 'superdedicado') return done >= 10 ? null : `Faltam ${10 - done} (${done}/10)`;
+  if (tipo === 'mestre')        return done >= total ? null : `Faltam ${total - done} (${done}/${total})`;
+  if (tipo === 'a1_completo') {
+    const a1 = aulasList.filter(a => a.nivel === 'A1');
+    const a1Done = a1.filter(a => progressoMap[String(a.id)]?.concluida).length;
+    return a1Done >= a1.length ? null : `Faltam ${a1.length - a1Done} aulas A1 (${a1Done}/${a1.length})`;
+  }
+  const mAula = tipo.match(/^aula_(\d+)$/);
+  if (mAula) {
+    const n = parseInt(mAula[1]);
+    const aulaAlvo = aulasList.find(a => a.numero === n);
+    if (!aulaAlvo) return 'Aula ainda não disponível';
+    if (progressoMap[String(aulaAlvo.id)]?.concluida) return null;
+    return `Conclua a Aula ${n}`;
+  }
+  if (tipo === 'sequencia')   return 'Conclua 3 aulas seguidas';
+  if (tipo === 'sequencia_5') return 'Conclua 5 aulas seguidas';
+  if (tipo === 'veloz')       return 'Conclua 2 aulas no mesmo dia';
+  if (tipo === 'perfeito')    return 'Tire 100% em um quiz';
+  if (tipo === 'excelente')   return 'Tenha média ≥90% nas 5 últimas aulas';
+  return null;
+}
+
 function renderBadges() {
   const el = document.getElementById('badges-grid');
-  const allBadges = Object.entries(BADGE_DEFS).slice(0, 8);
-  el.innerHTML = allBadges.map(([tipo, def]) => {
+  // Mostra prioridade: conquistadas primeiro, depois locked, limitado a 8
+  const entries = Object.entries(BADGE_DEFS);
+  const earnedFirst = [
+    ...entries.filter(([t]) => badgesSet.has(t)),
+    ...entries.filter(([t]) => !badgesSet.has(t)),
+  ].slice(0, 8);
+  el.innerHTML = earnedFirst.map(([tipo, def]) => {
     const earned = badgesSet.has(tipo);
-    return `<div class="badge-chip ${earned ? '' : 'locked'}" title="${def.desc}">
+    const hint = earned ? def.desc : (progressoBadge(tipo) || def.desc);
+    return `<div class="badge-chip ${earned ? '' : 'locked'}" title="${hint}">
       <span class="badge-emoji">${def.emoji}</span>
       <span>${def.nome}</span>
     </div>`;
   }).join('');
 }
 
+// Botão "Ver todos" agora abre a view dedicada de Conquistas.
 function showAllBadges() {
-  // Switch to showing all badges
-  const el = document.getElementById('badges-grid');
-  el.innerHTML = Object.entries(BADGE_DEFS).map(([tipo, def]) => {
-    const earned = badgesSet.has(tipo);
-    return `<div class="badge-chip ${earned ? '' : 'locked'}" title="${def.desc}">
-      <span class="badge-emoji">${def.emoji}</span>
-      <span>${def.nome}</span>
-    </div>`;
-  }).join('');
+  showConquistas();
 }
 
 function renderAulasGrid() {
@@ -1871,6 +2121,8 @@ async function loadAula(id) {
 
   // Show aula view, hide dashboard — use 'block' not '' to override CSS class
   document.getElementById('view-dashboard').style.display = 'none';
+  const vConq = document.getElementById('view-conquistas');
+  if (vConq) vConq.style.display = 'none';
   const viewAula = document.getElementById('view-aula');
   viewAula.style.display = 'block';
 
@@ -1880,6 +2132,23 @@ async function loadAula(id) {
   nv.textContent = aula.nivel;
   nv.className = 'nivel-pill pill-' + aula.nivel;
   document.getElementById('av-tema').textContent = aula.tema || '';
+
+  // Aba "Conteúdo": só aparece se houver conteudo_md, e vira aba padrão se existir
+  const btnConteudo = document.getElementById('tab-btn-conteudo');
+  const paneConteudo = document.getElementById('tab-conteudo');
+  const renderEl = document.getElementById('conteudo-render');
+  if (aula.conteudo_md && aula.conteudo_md.trim() && renderEl) {
+    if (btnConteudo) btnConteudo.style.display = '';
+    try {
+      renderEl.innerHTML = (window.marked ? marked.parse(aula.conteudo_md) : aula.conteudo_md);
+    } catch (e) {
+      renderEl.textContent = aula.conteudo_md;
+    }
+  } else {
+    if (btnConteudo) btnConteudo.style.display = 'none';
+    if (paneConteudo) paneConteudo.classList.remove('active');
+    if (renderEl) renderEl.innerHTML = '';
+  }
 
   // Sidebar active state
   document.querySelectorAll('.aula-nav-item').forEach(el => el.classList.remove('active'));
@@ -2321,6 +2590,8 @@ function renderExercicio() {
   else if (ex.tipo === 'escrita_audio') body = renderEscritaAudio(ex);
   else if (ex.tipo === 'pares') body = renderPares(ex);
   else if (ex.tipo === 'pares_audio') body = renderParesAudio(ex);
+  else if (ex.tipo === 'conjugar_verbo') body = renderConjugarVerbo(ex);
+  else if (ex.tipo === 'corrigir_frase') body = renderCorrigirFrase(ex);
 
   area.innerHTML = `
     <div class="ex-prog"><div class="ex-prog-fill" style="width:${pct}%"></div></div>
@@ -2338,7 +2609,14 @@ function renderExercicio() {
 }
 
 function tipoLabel(t) {
-  return t==='lacuna_escolha'?'Complete o espaço':t==='lacuna_banco'?'Complete com as palavras':t==='escrita_audio'?'Escreva o que ouviu':t==='pares'?'Combine os pares':t==='pares_audio'?'Combine áudio com palavra':'Exercício';
+  return t==='lacuna_escolha'?'Complete o espaço'
+    :t==='lacuna_banco'?'Complete com as palavras'
+    :t==='escrita_audio'?'Escreva o que ouviu'
+    :t==='pares'?'Combine os pares'
+    :t==='pares_audio'?'Combine áudio com palavra'
+    :t==='conjugar_verbo'?'Conjugar verbo'
+    :t==='corrigir_frase'?'Corrigir frase'
+    :'Exercício';
 }
 
 function renderLacunaEscolha(ex) {
@@ -2634,6 +2912,45 @@ function selecionarParesAudio(side, pos) {
   }
 }
 
+// ============================================================
+// CONJUGAR VERBO \u2014 frase com ___ + verbo entre par\u00eanteses, aluno digita conjuga\u00e7\u00e3o
+// ============================================================
+function renderConjugarVerbo(ex) {
+  const partes = (ex.frase || '').split('___');
+  const numLacunas = Math.max(0, partes.length - 1);
+  if (numLacunas === 0) {
+    return `<div class="ex-frase">Frase sem lacunas. (Use ___ no admin.)</div>`;
+  }
+  // Frase com inputs no lugar das lacunas
+  let html = `<div class="ex-frase">`;
+  partes.forEach((p, i) => {
+    html += `<span>${p}</span>`;
+    if (i < numLacunas) {
+      html += `<input class="ex-input" id="conj-input-${i}" type="text"
+        placeholder="..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+        style="display:inline-block;width:auto;min-width:120px;max-width:200px;padding:4px 10px;font-size:17px;margin:0 4px;text-align:center;"
+        onkeydown="if(event.key==='Enter')checkExercicio()">`;
+    }
+  });
+  html += `</div>`;
+  return html;
+}
+
+// ============================================================
+// CORRIGIR FRASE \u2014 mostra frase errada, aluno digita a corrigida
+// ============================================================
+function renderCorrigirFrase(ex) {
+  return `
+    <div style="font-size:11px; color:var(--ink-3); text-transform:uppercase; letter-spacing:0.08em; font-weight:700; margin-bottom:6px;">Frase com erro</div>
+    <div class="ex-frase-errada" style="padding:12px 16px; border:1.5px solid #ffc4c4; border-radius:var(--r); background:#ffe5e5; color:#c53030; font-size:18px; font-weight:600; margin-bottom:16px;">${ex.frase || ''}</div>
+    <div style="font-size:13px; color:var(--ink-2); margin-bottom:6px;">Reescreva a vers\u00e3o correta:</div>
+    <input class="ex-input" id="corrigir-input" type="text"
+      placeholder="Escreva a frase corrigida..."
+      autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+      style="font-size:17px;"
+      onkeydown="if(event.key==='Enter')checkExercicio()">`;
+}
+
 function normalize(s) {
   return (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
 }
@@ -2680,6 +2997,36 @@ function checkExercicio() {
       return;
     }
     correct = true;
+  } else if (ex.tipo === 'conjugar_verbo') {
+    const partes = (ex.frase || '').split('___');
+    const numLacunas = Math.max(0, partes.length - 1);
+    const respostas = (ex.resposta || '').split(',').map(r => r.trim());
+    let allFilled = true, allCorrect = true;
+    for (let i = 0; i < numLacunas; i++) {
+      const inp = document.getElementById('conj-input-' + i);
+      const val = (inp?.value || '').trim();
+      if (!val) { allFilled = false; break; }
+      const ok = normalize(val) === normalize(respostas[i] || '');
+      if (inp) { inp.disabled = true; inp.classList.add(ok ? 'correct' : 'wrong'); }
+      if (!ok) allCorrect = false;
+    }
+    if (!allFilled) {
+      // Reabilita inputs e reseta classes
+      for (let i = 0; i < numLacunas; i++) {
+        const inp = document.getElementById('conj-input-' + i);
+        if (inp) { inp.disabled = false; inp.classList.remove('correct', 'wrong'); }
+      }
+      fb.textContent = 'Preencha todas as lacunas.';
+      fb.className = 'ex-feedback fail';
+      return;
+    }
+    correct = allCorrect;
+  } else if (ex.tipo === 'corrigir_frase') {
+    const inp = document.getElementById('corrigir-input');
+    const val = (inp?.value || '').trim();
+    if (!val) { fb.textContent = 'Escreva a versão correta.'; fb.className = 'ex-feedback fail'; return; }
+    correct = normalize(val) === normalize(ex.resposta);
+    if (inp) { inp.disabled = true; inp.classList.add(correct ? 'correct' : 'wrong'); }
   }
 
   exAnswered = true;
@@ -2706,32 +3053,65 @@ async function checkBadges() {
   const aNum = currentAula.numero;
   const concluidas = aulasList.filter(a => progressoMap[String(a.id)]?.concluida);
   const total = concluidas.length;
-
   const candidates = [];
-  // Per-aula badge
-  candidates.push('aula_' + aNum);
+
+  // Aulas individuais (existem definições só de aula_1 a aula_10, aula_15, aula_20)
+  if (BADGE_DEFS['aula_' + aNum]) candidates.push('aula_' + aNum);
+
   // Iniciante
   if (aNum === 1) candidates.push('iniciante');
-  // Perfeito
-  if (quizBestScore === 100) candidates.push('perfeito');
-  // Dedicado
-  if (total >= 5) candidates.push('dedicado');
-  // Mestre
-  if (total === aulasList.length) candidates.push('mestre');
-  // Sequência de 3
-  if (aNum >= 3) {
-    const prev2 = aulasList.filter(a => a.numero >= aNum-2 && a.numero < aNum);
-    if (prev2.every(a => progressoMap[String(a.id)]?.concluida)) candidates.push('sequencia');
+
+  // A1 completo (todas as aulas A1 concluídas)
+  const a1List = aulasList.filter(a => a.nivel === 'A1');
+  if (a1List.length && a1List.every(a => progressoMap[String(a.id)]?.concluida)) {
+    candidates.push('a1_completo');
   }
-  // Veloz — concluiu 2 aulas hoje
-  const today = new Date().toISOString().slice(0,10);
-  const todayDone = concluidas.filter(a => progressoMap[String(a.id)]?.concluida_em?.slice(0,10) === today);
+
+  // Mestre (todas as aulas)
+  if (total === aulasList.length) candidates.push('mestre');
+
+  // Volume
+  if (total >= 5)  candidates.push('dedicado');
+  if (total >= 10) candidates.push('superdedicado');
+
+  // Performance
+  if (quizBestScore === 100) candidates.push('perfeito');
+
+  // Excelente: média ≥90% nas 5 últimas aulas concluídas
+  const scores = concluidas
+    .map(a => progressoMap[String(a.id)])
+    .sort((a, b) => (b.concluida_em || '').localeCompare(a.concluida_em || ''))
+    .slice(0, 5)
+    .map(p => p.melhor_pontuacao || 0);
+  if (scores.length >= 5 && scores.reduce((s, n) => s + n, 0) / scores.length >= 90) {
+    candidates.push('excelente');
+  }
+
+  // Sequência de 3 e 5 aulas consecutivas até a atual
+  const checkSequencia = (n) => {
+    if (aNum < n) return false;
+    const range = aulasList.filter(a => a.numero > aNum - n && a.numero <= aNum);
+    return range.length === n && range.every(a => progressoMap[String(a.id)]?.concluida);
+  };
+  if (checkSequencia(3)) candidates.push('sequencia');
+  if (checkSequencia(5)) candidates.push('sequencia_5');
+
+  // Veloz — 2 aulas concluídas hoje
+  const today = new Date().toISOString().slice(0, 10);
+  const todayDone = concluidas.filter(a => progressoMap[String(a.id)]?.concluida_em?.slice(0, 10) === today);
   if (todayDone.length >= 2) candidates.push('veloz');
 
   for (const tipo of candidates) {
     if (!badgesSet.has(tipo) && BADGE_DEFS[tipo]) {
-      const { error } = await sb.from('badges').insert({ aluno_id: aluno.id, tipo });
-      if (!error) { badgesSet.add(tipo); earned.push(tipo); }
+      const { data, error } = await sb.from('badges')
+        .insert({ aluno_id: aluno.id, tipo })
+        .select()
+        .single();
+      if (!error) {
+        badgesSet.add(tipo);
+        if (data?.ganho_em) badgesMap[tipo] = data.ganho_em;
+        earned.push(tipo);
+      }
     }
   }
   return earned;
