@@ -2175,9 +2175,14 @@ async function loadAula(id) {
     return;
   }
 
-  // Reset exercise state
+  // Reset exercise state — mas restaura "exDone" se já marcado em sessão anterior
   exIdx = 0; exScore = 0; exTotal = exerciciosData.length;
-  exAnswered = false; exDone = false; quizPassed = false;
+  exAnswered = false; quizPassed = false;
+  try {
+    exDone = localStorage.getItem(`ev_exDone_${currentAula.id}`) === '1';
+  } catch { exDone = false; }
+  // Se a aula já foi concluída, exercícios obviamente estavam ok
+  if (progressoMap[String(currentAula.id)]?.concluida) exDone = true;
 
   fcCatFilter = '';
   buildFCCats();
@@ -2555,7 +2560,9 @@ function checkConcludeEligibility() {
 // EXERCISES ENGINE
 // ============================================================
 function initExercicios() {
-  exIdx = 0; exScore = 0; exAnswered = false; exDone = false;
+  // Não zera exDone aqui — se o aluno já tinha concluído uma rodada, refazer
+  // mantém o "elegível pra concluir aula". exDone só vira true ao completar a 1ª rodada.
+  exIdx = 0; exScore = 0; exAnswered = false;
   _exSelected = null; _exBancoSelections = []; _bancoChipMap = {};
   renderExercicio();
 }
@@ -2572,6 +2579,9 @@ function renderExercicio() {
   }
   if (exIdx >= exerciciosData.length) {
     exDone = true;
+    if (currentAula) {
+      try { localStorage.setItem(`ev_exDone_${currentAula.id}`, '1'); } catch {}
+    }
     const pct = Math.round(exScore / exerciciosData.length * 100);
     area.innerHTML = `<div style="text-align:center; padding:2rem 0;">
       <div style="font-size:56px; font-weight:800; color:var(--ink); letter-spacing:-2px;">${exScore}/${exerciciosData.length}</div>
@@ -3040,6 +3050,16 @@ function checkExercicio() {
   document.getElementById('ex-check-btn').style.display='none';
   const nb=document.getElementById('ex-next-btn');
   if(nb){nb.style.display='';nb.textContent=exIdx+1>=exerciciosData.length?'Ver resultado →':'Próximo →';}
+
+  // Se este foi o último exercício, marca como concluído já agora
+  // (sem precisar clicar "Ver resultado →") e persiste no localStorage
+  // pra sobreviver a recargas da página.
+  if (exIdx + 1 >= exerciciosData.length && currentAula) {
+    exDone = true;
+    try { localStorage.setItem(`ev_exDone_${currentAula.id}`, '1'); } catch {}
+    updateQuizProgressBar();
+    checkConcludeEligibility();
+  }
 }
 
 function nextExercicio() {
