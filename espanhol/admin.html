@@ -1013,6 +1013,15 @@ pre {
               <textarea class="inp" id="ad-aula-obs"></textarea>
             </div>
             <div class="field">
+              <label class="field-label">Conteúdo expositivo (Markdown — aba "Conteúdo" do aluno)</label>
+              <textarea class="inp" id="ad-aula-conteudo" rows="10"
+                placeholder="# Título&#10;&#10;Texto explicativo. Suporta **negrito**, *itálico*, listas, etc.&#10;&#10;## Subtítulo&#10;- Item 1&#10;- Item 2"
+                style="font-family:var(--mono); font-size:13px; line-height:1.5;"></textarea>
+              <div style="font-size:11px; color:var(--ink3); margin-top:4px;">
+                Use Markdown: # título, **negrito**, *itálico*, listas. Deixe vazio se não houver conteúdo expositivo (aba some pro aluno).
+              </div>
+            </div>
+            <div class="field">
               <label class="field-label">Voz TTS desta aula (opcional — vazio = usa a padrão)</label>
               <div style="display:flex; gap:8px;">
                 <select class="inp" id="ad-aula-voz" style="flex:1;"></select>
@@ -1229,6 +1238,8 @@ pre {
               <option value="escrita_audio">Escreva o que ouviu</option>
               <option value="pares">Combine os pares</option>
               <option value="pares_audio">Combine áudio com palavra</option>
+              <option value="conjugar_verbo">Conjugar verbo</option>
+              <option value="corrigir_frase">Corrigir frase</option>
             </select>
           </div>
           <div class="field" style="margin:0; display:flex; align-items:flex-end;">
@@ -1255,6 +1266,8 @@ pre {
               <option value="escrita_audio">Ouça e escreva</option>
               <option value="pares">Combine os pares</option>
               <option value="pares_audio">Combine áudio com palavra</option>
+              <option value="conjugar_verbo">Conjugar verbo</option>
+              <option value="corrigir_frase">Corrigir frase</option>
             </select>
           </div>
         </div>
@@ -1275,6 +1288,15 @@ pre {
             placeholder="es">
           <div style="font-size:11px; color:var(--ink3); margin-top:4px;" id="ex-resp-hint">
             Para múltiplas lacunas, separe por vírgula: libros,estante
+          </div>
+        </div>
+
+        <div class="field" id="ex-resposta-alt-field">
+          <label class="field-label">Respostas alternativas aceitas (opcional)</label>
+          <input class="inp" type="text" id="ex-resposta-alt"
+            placeholder="ex: diez, cinco — outras opções válidas">
+          <div style="font-size:11px; color:var(--ink3); margin-top:4px;">
+            Para múltiplas lacunas use o mesmo formato da resposta principal, separando alternativas com pipe <code>|</code>. Ex: <code>tres|cinco, un|el</code>
           </div>
         </div>
 
@@ -1860,6 +1882,14 @@ async function pregerarAudiosAula(aulaId, opts = {}) {
         if (es) itens.push({ texto: es, voz: exVoz, label: `pares áudio "${es}"` });
       });
     }
+    // conjugar_verbo: gera áudio da frase (o ___ é convertido em pausa pelo sanitize)
+    if (e.tipo === 'conjugar_verbo' && e.frase) {
+      itens.push({ texto: e.frase, voz: exVoz, label: `conjugar "${e.frase.slice(0,30)}..."` });
+    }
+    // corrigir_frase: gera áudio da versão CORRETA (reforço pós-correção)
+    if (e.tipo === 'corrigir_frase' && e.resposta) {
+      itens.push({ texto: e.resposta, voz: exVoz, label: `corrigir "${e.resposta.slice(0,30)}..."` });
+    }
   });
   (aula.verbos || []).forEach(v => {
     if (v) itens.push({ texto: v, voz: aulaVoz, label: `verbo "${v}"` });
@@ -2248,6 +2278,7 @@ function abrirAula(id) {
   document.getElementById('ad-aula-tema').value = a.tema || '';
   document.getElementById('ad-aula-verbos').value = (a.verbos || []).join(', ');
   document.getElementById('ad-aula-obs').value = a.observacoes || '';
+  document.getElementById('ad-aula-conteudo').value = a.conteudo_md || '';
   document.getElementById('ad-aula-voz').value = a.voz_tts || '';
 
   // Esconder filtros de aula (estamos sempre nesta aula) e o select de aula nos forms
@@ -2382,6 +2413,7 @@ async function salvarAulaDetalhe() {
     tema: document.getElementById('ad-aula-tema').value.trim() || null,
     verbos: document.getElementById('ad-aula-verbos').value.split(',').map(v => v.trim()).filter(Boolean),
     observacoes: document.getElementById('ad-aula-obs').value.trim() || null,
+    conteudo_md: document.getElementById('ad-aula-conteudo').value.trim() || null,
     voz_tts: document.getElementById('ad-aula-voz').value || null,
   };
   if (!payload.numero || !payload.titulo) { toast('Preencha número e título.', 'err'); return; }
@@ -2680,7 +2712,15 @@ async function loadExercicios() {
     document.getElementById('ex-list-wrap').innerHTML = '<div class="empty">Nenhum exercício encontrado.</div>';
     return;
   }
-  const tipoLabel = t => t==='lacuna_escolha'?'Complete o espaço':t==='lacuna_banco'?'Banco de palavras':t==='escrita_audio'?'Ouça e escreva':t==='pares'?'Combine os pares':t==='pares_audio'?'Combine áudio':t;
+  const tipoLabel = t =>
+    t==='lacuna_escolha'?'Complete o espaço':
+    t==='lacuna_banco'?'Banco de palavras':
+    t==='escrita_audio'?'Ouça e escreva':
+    t==='pares'?'Combine os pares':
+    t==='pares_audio'?'Combine áudio':
+    t==='conjugar_verbo'?'Conjugar verbo':
+    t==='corrigir_frase'?'Corrigir frase':
+    t;
   const isParesT = t => t === 'pares' || t === 'pares_audio';
   const fraseResumo = r => isParesT(r.tipo) ? `${(r.opcoes||[]).length} pares` : (r.frase || '—');
   const respResumo = r => isParesT(r.tipo) ? '—' : (r.resposta || '—');
@@ -2710,7 +2750,7 @@ function toggleExForm() {
 }
 
 function limparExForm() {
-  ['ex-id','ex-frase','ex-resposta','ex-opcoes','ex-imagem'].forEach(id => {
+  ['ex-id','ex-frase','ex-resposta','ex-resposta-alt','ex-opcoes','ex-imagem'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
@@ -2755,6 +2795,14 @@ function updateExFormTipo() {
     opField.style.display = 'none';
     fraseHint.textContent = 'A frase completa que será lida em voz alta. Ex: Los niños juegan en el parque.';
     respHint.textContent = 'A palavra que o aluno deve escrever. Ex: parque';
+  } else if (tipo === 'conjugar_verbo') {
+    opField.style.display = 'none';
+    fraseHint.textContent = 'Frase com ___ na(s) lacuna(s) + verbo entre parênteses. Ex: Hoy (levantarse, yo) ___ tarde.';
+    respHint.textContent = 'Conjugação correta. Múltiplas lacunas: separe por vírgula. Ex: me levanto';
+  } else if (tipo === 'corrigir_frase') {
+    opField.style.display = 'none';
+    fraseHint.textContent = 'A frase ERRADA, como será mostrada ao aluno. Ex: Ello es simpático';
+    respHint.textContent = 'A versão CORRETA da frase. Ex: Él es simpático.';
   }
 }
 
@@ -2831,6 +2879,34 @@ function paresToInputs(opcoes) {
   ensureMinParesRows(5);
 }
 
+// Separa resposta armazenada (formato "principal|alt1|alt2, gap2_principal|alt") em:
+// - principal: "principal, gap2_principal" (mostrado em ex-resposta)
+// - alternativas: "alt1|alt2, alt" (mostrado em ex-resposta-alt)
+function splitRespostaAlternativas(resposta) {
+  const gaps = String(resposta || '').split(',').map(g => g.trim());
+  const principal = gaps.map(g => g.split('|')[0].trim()).join(', ');
+  const altGaps = gaps.map(g => {
+    const partes = g.split('|').map(s => s.trim());
+    return partes.slice(1).join('|');
+  });
+  const hasAlt = altGaps.some(a => a !== '');
+  const alternativas = hasAlt ? altGaps.join(', ') : '';
+  return { principal, alternativas };
+}
+// Merge inverso: combina ex-resposta (principal) + ex-resposta-alt em formato armazenado.
+// Para múltiplas lacunas, alinha por vírgula. Se alt está vazia, retorna só principal.
+function mergeRespostaAlternativas(principal, alternativas) {
+  const pGaps = String(principal || '').split(',').map(g => g.trim());
+  const aGaps = String(alternativas || '').split(',').map(g => g.trim());
+  return pGaps.map((p, i) => {
+    const a = aGaps[i] || '';
+    if (!a) return p;
+    // Pode vir como "alt1|alt2" (formato pipe) ou "alt1, alt2" — normalizar pra |
+    const alts = a.split('|').map(x => x.trim()).filter(Boolean);
+    return [p, ...alts].join('|');
+  }).join(',');
+}
+
 async function editarExercicio(id) {
   if (!sb) return;
   popularSelectsVoz();
@@ -2840,7 +2916,11 @@ async function editarExercicio(id) {
   document.getElementById('ex-aula-id').value = data.aula_id;
   document.getElementById('ex-tipo').value = data.tipo;
   document.getElementById('ex-frase').value = data.frase || '';
-  document.getElementById('ex-resposta').value = data.resposta || '';
+  // Desserializa resposta principal vs alternativas
+  const { principal, alternativas } = splitRespostaAlternativas(data.resposta || '');
+  document.getElementById('ex-resposta').value = principal;
+  const altEl = document.getElementById('ex-resposta-alt');
+  if (altEl) altEl.value = alternativas;
   const isPares = data.tipo === 'pares' || data.tipo === 'pares_audio';
   document.getElementById('ex-opcoes').value = isPares ? '' : (data.opcoes || []).join(', ');
   if (isPares) {
@@ -2880,12 +2960,21 @@ async function salvarExercicio() {
     };
   } else {
     const frase = document.getElementById('ex-frase').value.trim();
-    const resposta = document.getElementById('ex-resposta').value.trim();
+    const respostaPrincipal = document.getElementById('ex-resposta').value.trim();
+    const respostaAlt = document.getElementById('ex-resposta-alt')?.value.trim() || '';
     const opcoesRaw = document.getElementById('ex-opcoes').value.trim();
     if (!frase) { toast('Escreva a frase.', 'err'); return; }
-    if (!resposta) { toast('Escreva a resposta correta.', 'err'); return; }
-    if (tipo !== 'escrita_audio' && !opcoesRaw) { toast('Adicione as opções de resposta.', 'err'); return; }
-    if (!frase.includes('___')) { toast('A frase deve conter ___ para marcar a lacuna.', 'err'); return; }
+    if (!respostaPrincipal) { toast('Escreva a resposta correta.', 'err'); return; }
+    // Merge: principal + alternativas → "principal|alt1|alt2"
+    const resposta = mergeRespostaAlternativas(respostaPrincipal, respostaAlt);
+    // Tipos sem opções: escrita_audio, conjugar_verbo, corrigir_frase
+    const TIPOS_SEM_OPCOES = ['escrita_audio', 'conjugar_verbo', 'corrigir_frase'];
+    if (!TIPOS_SEM_OPCOES.includes(tipo) && !opcoesRaw) { toast('Adicione as opções de resposta.', 'err'); return; }
+    // Tipos que exigem ___ na frase: lacuna_escolha, lacuna_banco, conjugar_verbo
+    const TIPOS_COM_LACUNA = ['lacuna_escolha', 'lacuna_banco', 'conjugar_verbo'];
+    if (TIPOS_COM_LACUNA.includes(tipo) && !frase.includes('___')) {
+      toast('A frase deve conter ___ para marcar a lacuna.', 'err'); return;
+    }
     const opcoes = opcoesRaw ? opcoesRaw.split(',').map(o => o.trim()).filter(Boolean) : [];
     payload = {
       aula_id: aulaContext?.id || document.getElementById('ex-aula-id').value || null,
@@ -2945,9 +3034,25 @@ function testarExercicio() {
   const opcoes = document.getElementById('ex-opcoes').value.split(',').map(o=>o.trim()).filter(Boolean);
   if (!frase) { toast('Preencha a frase primeiro.', 'err'); return; }
 
-  let html = `<div style="font-size:13px; font-weight:600; color:var(--ink); margin-bottom:8px;">${
-    tipo==='lacuna_escolha'?'Complete o espaço':tipo==='lacuna_banco'?'Complete com as palavras':'Ouça e escreva'
-  }</div>`;
+  const labelTipo =
+    tipo==='lacuna_escolha'?'Complete o espaço':
+    tipo==='lacuna_banco'?'Complete com as palavras':
+    tipo==='escrita_audio'?'Ouça e escreva':
+    tipo==='conjugar_verbo'?'Conjugar verbo':
+    tipo==='corrigir_frase'?'Corrigir frase':
+    'Exercício';
+  let html = `<div style="font-size:13px; font-weight:600; color:var(--ink); margin-bottom:8px;">${labelTipo}</div>`;
+
+  // corrigir_frase: mostra a frase errada e input pra digitar a correta
+  if (tipo === 'corrigir_frase') {
+    html += `<div style="font-size:11px;color:var(--ink3);text-transform:uppercase;letter-spacing:0.08em;font-weight:700;margin-bottom:4px;">Frase com erro:</div>`;
+    html += `<div style="padding:10px 14px;border:1.5px solid var(--red-bord);border-radius:8px;background:var(--red-dim);font-size:15px;color:var(--red);margin-bottom:8px;text-decoration:line-through;text-decoration-color:rgba(255,87,87,0.4);">${frase}</div>`;
+    html += `<div style="padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);font-size:14px;color:var(--ink3);">Escreva a versão correta...</div>`;
+    html += `<div style="margin-top:8px; font-size:12px; color:var(--green); font-weight:500;">✓ Resposta: ${resposta}</div>`;
+    content.innerHTML = html;
+    preview.style.display = '';
+    return;
+  }
 
   const partes = frase.split('___');
   let fraseHtml = '';
@@ -2961,12 +3066,14 @@ function testarExercicio() {
     html += `<div style="display:flex; flex-wrap:wrap; gap:6px;">` +
       opcoes.map(o => `<span style="padding:6px 14px; border-radius:8px; border:1.5px solid var(--border); background:var(--surface); font-size:14px;">${o}</span>`).join('') +
       `</div>`;
-  } else {
+  } else if (tipo === 'escrita_audio') {
     html += `<div style="display:flex; gap:8px; margin-bottom:8px;">
       <span style="width:44px;height:44px;border-radius:8px;border:1.5px solid var(--border);display:inline-flex;align-items:center;justify-content:center;font-size:18px;">🔊</span>
       <span style="width:44px;height:44px;border-radius:8px;border:1.5px solid var(--border);display:inline-flex;align-items:center;justify-content:center;font-size:18px;">🐢</span>
     </div>
     <div style="padding:10px 14px; border:1.5px solid var(--border); border-radius:var(--r); background:var(--surface2); font-size:14px; color:var(--ink3);">Escreva a palavra em espanhol...</div>`;
+  } else if (tipo === 'conjugar_verbo') {
+    html += `<div style="padding:10px 14px; border:1.5px solid var(--border); border-radius:var(--r); background:var(--surface); font-size:14px; color:var(--ink3);">Digite a(s) conjugação(ões) correta(s)...</div>`;
   }
   html += `<div style="margin-top:8px; font-size:12px; color:var(--green); font-weight:500;">✓ Resposta: ${resposta}</div>`;
 

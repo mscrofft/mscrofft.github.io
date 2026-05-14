@@ -453,7 +453,7 @@ button { font-family: var(--font); }
 }
 .badge-chip:hover { transform: translateY(-1px); }
 .badge-chip .badge-emoji { font-size: 16px; }
-.badge-chip.locked { opacity: 0.35; filter: grayscale(0.8); }
+.badge-chip.locked { opacity: 0.22; filter: grayscale(1); }
 
 /* ===== CONQUISTAS VIEW ===== */
 .conq-section { margin-bottom: 2rem; }
@@ -500,7 +500,7 @@ button { font-family: var(--font); }
 }
 .conq-card.earned:hover { transform: translateY(-2px); box-shadow: var(--shadow-sm); }
 .conq-card.locked {
-  opacity: 0.55;
+  opacity: 0.38;
 }
 .conq-emoji {
   font-size: 36px;
@@ -991,6 +991,44 @@ button { font-family: var(--font); }
 }
 .btn-conclude:hover:not(:disabled) { background: #2a2420; }
 .btn-conclude:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Barra global de conclusão — visível em qualquer aba quando elegível */
+.conclude-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 14px;
+  background: linear-gradient(135deg, var(--block-lime, #C5F056) 0%, var(--block-mint, #B8F0DC) 100%);
+  border-radius: var(--r-lg);
+  padding: 14px 18px;
+  margin: 12px 0 16px;
+  box-shadow: var(--shadow-sm);
+  animation: conclude-bar-pop 0.35s cubic-bezier(.34,1.56,.64,1) both;
+}
+@keyframes conclude-bar-pop {
+  from { opacity: 0; transform: translateY(-8px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.conclude-bar-text { flex: 1; min-width: 0; }
+.conclude-bar-title {
+  font-size: 15px; font-weight: 800;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+}
+.conclude-bar-sub {
+  font-size: 13px;
+  color: var(--ink-2);
+  font-weight: 600;
+  margin-top: 2px;
+}
+.conclude-bar .btn-conclude {
+  padding: 12px 18px;
+  font-size: 14px;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+@media (max-width: 560px) {
+  .conclude-bar { flex-direction: column; align-items: stretch; gap: 10px; }
+  .conclude-bar .btn-conclude { width: 100%; }
+}
 
 /* Progress bar (aula header) */
 .prog {
@@ -1561,6 +1599,15 @@ button { font-family: var(--font); }
       <!-- Quiz progress bar -->
       <div class="prog"><div class="prog-fill" id="av-quiz-prog" style="width:0%"></div></div>
       <div class="prog-label" id="av-quiz-prog-label"></div>
+
+      <!-- BARRA GLOBAL DE CONCLUSÃO — visível em qualquer aba quando elegível -->
+      <div id="conclude-bar" class="conclude-bar" style="display:none;">
+        <div class="conclude-bar-text">
+          <div class="conclude-bar-title">🎉 Pronto para concluir!</div>
+          <div class="conclude-bar-sub" id="conclude-bar-sub"></div>
+        </div>
+        <button class="btn-conclude" onclick="concluirAula()">✓ Concluir aula e avançar</button>
+      </div>
 
       <div class="tab-bar">
         <button class="tab-btn" id="tab-btn-conteudo" onclick="switchTab('conteudo',this)" style="display:none;">📖 Conteúdo</button>
@@ -2191,6 +2238,9 @@ async function loadAula(id) {
   renderVerbos();
   initQuiz();
   initExercicios();
+  // Avalia elegibilidade ao abrir a aula — se o aluno já tinha quiz passado +
+  // exercícios feitos em sessão anterior, a barra global aparece de cara.
+  checkConcludeEligibility();
 
   // switchTab: use querySelector scoped to the aula view to avoid grabbing wrong button
   const firstTabBtn = viewAula.querySelector('.tab-btn');
@@ -2532,26 +2582,43 @@ async function concluirAula() {
 // ============================================================
 function checkConcludeEligibility() {
   const prog = progressoMap[String(currentAula?.id)];
-  if (prog?.concluida) return;
   const hasEx = exerciciosData.length > 0;
-  const quizOk = quizPassed;
+  const quizOk = quizPassed || (prog?.melhor_pontuacao || 0) >= MIN_SCORE;
   const exOk = !hasEx || exDone;
   const wrap = document.getElementById('conclude-wrap');
   const warning = document.getElementById('conclude-ex-warning');
   const btn = document.getElementById('btn-concluir');
   const pct = prog?.melhor_pontuacao || 0;
+  const bar = document.getElementById('conclude-bar');
+  const barSub = document.getElementById('conclude-bar-sub');
+
+  // Aula já concluída: esconde tudo
+  if (prog?.concluida) {
+    if (bar) bar.style.display = 'none';
+    return;
+  }
 
   if (quizOk && exOk) {
+    // ELEGÍVEL — mostra barra global em qualquer aba + conclude-wrap dentro do Quiz
+    if (bar && barSub) {
+      barSub.textContent = `Quiz: ${pct}%${hasEx ? ' · Exercícios completos ✓' : ''}`;
+      bar.style.display = '';
+    }
     document.getElementById('conclude-sub').textContent =
       `Quiz: ${pct}%${hasEx ? ' · Exercícios completos ✓' : ''} · Clique para avançar!`;
     if (warning) warning.style.display = 'none';
     if (btn) btn.disabled = false;
     wrap.classList.add('show');
   } else if (quizOk && !exOk) {
+    // Quiz ok mas exercícios pendentes — barra global some, conclude-wrap mostra warning
+    if (bar) bar.style.display = 'none';
     document.getElementById('conclude-sub').textContent = `Quiz: ${pct}% ✓ — agora complete os exercícios!`;
     if (warning) warning.style.display = '';
     if (btn) btn.disabled = true;
     wrap.classList.add('show');
+  } else {
+    // Quiz não atingiu MIN_SCORE ainda — barra global some
+    if (bar) bar.style.display = 'none';
   }
   updateQuizProgressBar();
 }
@@ -2965,6 +3032,22 @@ function normalize(s) {
   return (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
 }
 
+// Suporte a m\u00faltiplas respostas v\u00e1lidas separadas por "|" dentro de cada gap.
+// "tres|diez|cinco" \u2192 ["tres","diez","cinco"]
+// Para lacuna_banco: cada gap \u00e9 separado por v\u00edrgula, e dentro pode ter |.
+//   "tres|diez,un|el" \u2192 [["tres","diez"], ["un","el"]]
+function parseRespostas(resposta) {
+  return String(resposta || '').split(',').map(gap =>
+    gap.split('|').map(r => normalize(r.trim())).filter(Boolean)
+  );
+}
+// Primeira alternativa de cada gap (resposta "principal" pra mostrar em feedback).
+function primeiraRespostaPorGap(resposta) {
+  return String(resposta || '').split(',')
+    .map(gap => gap.split('|')[0].trim())
+    .join(', ');
+}
+
 function checkExercicio() {
   if (exAnswered) return;
   const ex = exerciciosData[exIdx];
@@ -2973,31 +3056,38 @@ function checkExercicio() {
 
   if (ex.tipo === 'lacuna_escolha') {
     if (!_exSelected) { fb.textContent='Selecione uma opção.'; fb.className='ex-feedback fail'; return; }
-    correct = normalize(_exSelected) === normalize(ex.resposta);
+    // Aceita múltiplas respostas separadas por "|" (ex: "tres|diez|cinco")
+    const validas = parseRespostas(ex.resposta)[0] || [];
+    correct = validas.includes(normalize(_exSelected));
     document.querySelectorAll('.ex-opcao').forEach(b=>{
       b.disabled=true;
-      if(normalize(b.textContent.trim())===normalize(ex.resposta)) b.classList.add('correct');
+      if(validas.includes(normalize(b.textContent.trim()))) b.classList.add('correct');
     });
     if(!correct) document.querySelector('.ex-opcao.selected')?.classList.add('wrong');
     const l=document.getElementById('ex-lacuna-0');
     if(l){l.classList.remove('filled');l.classList.add(correct?'correct':'wrong');}
 
   } else if (ex.tipo === 'lacuna_banco') {
-    const resps = (ex.resposta||'').split(',').map(r=>normalize(r.trim()));
-    correct = _exBancoSelections.every((s,i)=>s!==null && normalize(s)===resps[i]);
-    document.querySelectorAll('.ex-lacuna').forEach((l,i)=>{
+    // Cada gap pode ter alternativas: "tres|diez,un|el" → [[tres,diez],[un,el]]
+    const respsPorGap = parseRespostas(ex.resposta);
+    correct = _exBancoSelections.every((s, i) =>
+      s !== null && respsPorGap[i] && respsPorGap[i].includes(normalize(s))
+    );
+    document.querySelectorAll('.ex-lacuna').forEach((l, i) => {
       l.classList.remove('filled');
-      l.classList.add(normalize(_exBancoSelections[i]||'')===resps[i]?'correct':'wrong');
+      const ok = respsPorGap[i] && respsPorGap[i].includes(normalize(_exBancoSelections[i]||''));
+      l.classList.add(ok ? 'correct' : 'wrong');
     });
 
   } else if (ex.tipo === 'escrita_audio') {
     const val=(document.getElementById('ex-input')?.value||'').trim();
     if(!val){fb.textContent='Escreva a resposta.';fb.className='ex-feedback fail';return;}
-    correct = normalize(val) === normalize(ex.resposta);
+    const validas = parseRespostas(ex.resposta)[0] || [];
+    correct = validas.includes(normalize(val));
     const inp=document.getElementById('ex-input');
     if(inp){inp.disabled=true;inp.classList.add(correct?'correct':'wrong');}
     const l=document.getElementById('ex-lacuna-0');
-    if(l){l.textContent=ex.resposta;l.classList.add(correct?'correct':'wrong');}
+    if(l){l.textContent=primeiraRespostaPorGap(ex.resposta);l.classList.add(correct?'correct':'wrong');}
   } else if (ex.tipo === 'pares' || ex.tipo === 'pares_audio') {
     const st = _paresState;
     if (!st || st.total === 0) { fb.textContent = 'Exercício sem pares.'; fb.className = 'ex-feedback fail'; return; }
@@ -3010,13 +3100,14 @@ function checkExercicio() {
   } else if (ex.tipo === 'conjugar_verbo') {
     const partes = (ex.frase || '').split('___');
     const numLacunas = Math.max(0, partes.length - 1);
-    const respostas = (ex.resposta || '').split(',').map(r => r.trim());
+    const respsPorGap = parseRespostas(ex.resposta);
     let allFilled = true, allCorrect = true;
     for (let i = 0; i < numLacunas; i++) {
       const inp = document.getElementById('conj-input-' + i);
       const val = (inp?.value || '').trim();
       if (!val) { allFilled = false; break; }
-      const ok = normalize(val) === normalize(respostas[i] || '');
+      const validas = respsPorGap[i] || [];
+      const ok = validas.includes(normalize(val));
       if (inp) { inp.disabled = true; inp.classList.add(ok ? 'correct' : 'wrong'); }
       if (!ok) allCorrect = false;
     }
@@ -3035,7 +3126,8 @@ function checkExercicio() {
     const inp = document.getElementById('corrigir-input');
     const val = (inp?.value || '').trim();
     if (!val) { fb.textContent = 'Escreva a versão correta.'; fb.className = 'ex-feedback fail'; return; }
-    correct = normalize(val) === normalize(ex.resposta);
+    const validas = parseRespostas(ex.resposta)[0] || [];
+    correct = validas.includes(normalize(val));
     if (inp) { inp.disabled = true; inp.classList.add(correct ? 'correct' : 'wrong'); }
   }
 
@@ -3044,7 +3136,8 @@ function checkExercicio() {
   if (ex.tipo === 'pares' || ex.tipo === 'pares_audio') {
     fb.textContent = correct ? `✓ Todos os ${_paresState.total} pares corretos!` : '✗ Algo deu errado.';
   } else {
-    fb.textContent = correct ? '✓ Correto!' : `✗ Resposta: ${ex.resposta}`;
+    // Em caso de erro mostra apenas a 1ª resposta principal (sem "|alternativas")
+    fb.textContent = correct ? '✓ Correto!' : `✗ Resposta: ${primeiraRespostaPorGap(ex.resposta)}`;
   }
   fb.className = 'ex-feedback '+(correct?'ok':'fail');
   document.getElementById('ex-check-btn').style.display='none';
