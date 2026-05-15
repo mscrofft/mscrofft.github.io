@@ -257,6 +257,45 @@ button { font-family: var(--font); }
 /* =====================================================
    MOBILE TOPBAR + DRAWER OVERLAY
    ===================================================== */
+
+/* MODO PREVIEW (banner sticky no topo) */
+.preview-banner {
+  position: sticky; top: 0; z-index: 200;
+  background: var(--block-yellow, #FFE066);
+  color: var(--ink);
+  padding: 10px 16px;
+  padding-top: calc(10px + env(safe-area-inset-top));
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px;
+  font-size: 14px; font-weight: 600;
+  border-bottom: 1px solid rgba(0,0,0,0.08);
+}
+.preview-banner-actions { display: flex; gap: 8px; flex-shrink: 0; }
+.btn-pv-reset, .btn-pv-voltar {
+  border: none;
+  border-radius: var(--r-pill);
+  padding: 6px 14px;
+  font-size: 13px; font-weight: 600;
+  cursor: pointer;
+  font-family: var(--font);
+  white-space: nowrap;
+}
+.btn-pv-reset {
+  background: rgba(0,0,0,0.12);
+  color: var(--ink);
+}
+.btn-pv-reset:hover { background: rgba(0,0,0,0.18); }
+.btn-pv-voltar {
+  background: var(--ink);
+  color: var(--surface);
+}
+.btn-pv-voltar:hover { background: #2a2420; }
+@media (max-width: 560px) {
+  .preview-banner { flex-direction: column; align-items: stretch; gap: 8px; }
+  .preview-banner-actions { justify-content: stretch; }
+  .btn-pv-reset, .btn-pv-voltar { flex: 1; padding: 10px 14px; min-height: 40px; }
+}
+
 .topbar {
   display: none;
   position: sticky; top: 0;
@@ -1476,6 +1515,17 @@ button { font-family: var(--font); }
 </style>
 </head>
 <body>
+
+<!-- MODO PREVIEW (mostrado quando professora entra via admin) -->
+<div id="preview-banner" class="preview-banner" style="display:none;">
+  <div class="preview-banner-label">
+    👁️ <strong>Modo preview</strong> · você está vendo como aluno
+  </div>
+  <div class="preview-banner-actions">
+    <button class="btn-pv-reset" onclick="resetarPreview()">↺ Resetar progresso</button>
+    <button class="btn-pv-voltar" onclick="voltarAoAdmin()">← Voltar ao admin</button>
+  </div>
+</div>
 
 <!-- TOPBAR (mobile) -->
 <header class="topbar">
@@ -3312,7 +3362,37 @@ function toast(msg, type='ok') {
 function logout() {
   localStorage.removeItem('ev_codigo');
   localStorage.removeItem('ev_aluno');
+  localStorage.removeItem('ev_modo_preview');
   window.location.href = 'login.html';
+}
+
+// ============================================================
+// MODO PREVIEW — professora entrou via admin pra testar conteúdo
+// ============================================================
+function voltarAoAdmin() {
+  localStorage.removeItem('ev_codigo');
+  localStorage.removeItem('ev_aluno');
+  localStorage.removeItem('ev_modo_preview');
+  window.location.href = 'admin.html';
+}
+
+async function resetarPreview() {
+  if (!confirm('Apagar todo o progresso e badges do aluno preview? (não afeta alunos reais)')) return;
+  if (!sb || !aluno?.id) { toast('Sem conexão.', 'err'); return; }
+  await sb.from('progresso').delete().eq('aluno_id', aluno.id);
+  await sb.from('badges').delete().eq('aluno_id', aluno.id);
+  // Limpa o cache local de "exDone" pra forçar refazer exercícios
+  Object.keys(localStorage)
+    .filter(k => k.startsWith('ev_exDone_'))
+    .forEach(k => localStorage.removeItem(k));
+  toast('Progresso resetado. Recarregando...', 'ok');
+  setTimeout(() => window.location.reload(), 700);
+}
+
+// Mostra o banner se o aluno entrou via "Ver como aluno" do admin
+if (localStorage.getItem('ev_modo_preview') === '1') {
+  const banner = document.getElementById('preview-banner');
+  if (banner) banner.style.display = '';
 }
 
 init();

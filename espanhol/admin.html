@@ -871,7 +871,12 @@ pre {
     <div class="aside-link" data-label="Progresso" onclick="goTo('progresso',this)"><span class="aside-icon">📊</span> <span>Progresso</span></div>
     <div class="aside-section">Sistema</div>
     <div class="aside-link" data-label="Configuração" onclick="goTo('config',this)"><span class="aside-icon">⚙️</span> <span>Configuração</span></div>
-    <div style="padding:1rem 1.5rem;margin-top:auto;border-top:1px solid var(--border);">
+    <div style="margin-top:auto; padding:0.75rem 0 0.5rem; border-top:1px solid var(--border);">
+      <div class="aside-link" data-label="Ver como aluno" onclick="verComoAluno()" style="cursor:pointer;">
+        <span class="aside-icon">👁️</span> <span>Ver como aluno</span>
+      </div>
+    </div>
+    <div style="padding:0.75rem 1.5rem 1rem; border-top:1px solid var(--border);">
       <button onclick="logoutProf()" style="background:none;border:none;color:var(--ink2);font-size:13px;cursor:pointer;font-family:var(--font);font-weight:600;">← Sair</button>
     </div>
   </aside>
@@ -1658,6 +1663,31 @@ CREATE POLICY "escrita autenticada frases" ON frases FOR ALL USING (true);</pre>
 // ============================================================
 let sb = null;
 let aulasList = [];
+
+// Aluno de preview pra "Ver como aluno" — único, escondido das listagens
+const PREVIEW_EMAIL  = 'preview@profesora-ana.local';
+const PREVIEW_CODIGO = 'preview-prof';
+const PREVIEW_NOME   = 'Profesora Ana (preview)';
+
+async function verComoAluno() {
+  if (!sb) { toast('Configure o Supabase primeiro.', 'err'); return; }
+  // Idempotente: cria se não existir, reusa se já existir.
+  let { data: aluno } = await sb.from('alunos')
+    .select('*')
+    .eq('email', PREVIEW_EMAIL)
+    .maybeSingle();
+  if (!aluno) {
+    const { data: novo, error } = await sb.from('alunos')
+      .insert({ nome: PREVIEW_NOME, email: PREVIEW_EMAIL, codigo: PREVIEW_CODIGO, ativo: true })
+      .select().single();
+    if (error) { toast('Erro: ' + error.message, 'err'); return; }
+    aluno = novo;
+  }
+  localStorage.setItem('ev_codigo', aluno.codigo);
+  localStorage.setItem('ev_aluno', JSON.stringify(aluno));
+  localStorage.setItem('ev_modo_preview', '1');
+  window.location.href = 'index.html';
+}
 
 // Defaults públicos do projeto — embutidos para que login.html/index.html
 // funcionem em qualquer dispositivo sem precisar configurar localStorage.
@@ -3074,7 +3104,10 @@ let alunosList = [];
 async function loadAlunos() {
   if (!sb) { document.getElementById('alunos-list').innerHTML = '<div class="empty">Configure o Supabase primeiro.</div>'; return; }
   document.getElementById('alunos-list').innerHTML = '<div class="loading"><div class="spinner"></div>Carregando...</div>';
-  const { data, error } = await sb.from('alunos').select('*').order('criado_em', { ascending: false });
+  const { data, error } = await sb.from('alunos')
+    .select('*')
+    .neq('email', PREVIEW_EMAIL)
+    .order('criado_em', { ascending: false });
   if (error) { toast('Erro: ' + error.message, 'err'); return; }
   alunosList = data || [];
   renderAlunosList();
@@ -3215,7 +3248,7 @@ async function enviarEmailAcesso() {
 // ============================================================
 async function populateAlunoFilter() {
   if (!alunosList.length) {
-    const { data } = await sb.from('alunos').select('id,nome').order('nome');
+    const { data } = await sb.from('alunos').select('id,nome').neq('email', PREVIEW_EMAIL).order('nome');
     alunosList = data || [];
   }
   const el = document.getElementById('prog-aluno-filter');
@@ -3232,7 +3265,7 @@ async function loadProgresso() {
 
   const [{ data: aulas }, { data: alunos }, { data: prog }, { data: bdgs }] = await Promise.all([
     sb.from('aulas').select('id,numero,titulo').order('numero'),
-    sb.from('alunos').select('id,nome,email,codigo').order('nome'),
+    sb.from('alunos').select('id,nome,email,codigo').neq('email', PREVIEW_EMAIL).order('nome'),
     sb.from('progresso').select('*'),
     sb.from('badges').select('aluno_id, tipo'),
   ]);
