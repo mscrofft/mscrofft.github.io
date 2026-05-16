@@ -2487,7 +2487,9 @@ function populateAulaSelects() {
 async function loadVocab() {
   if (!sb) { document.getElementById('vocab-table-wrap').innerHTML = '<div class="empty">Configure o Supabase primeiro.</div>'; return; }
   document.getElementById('vocab-table-wrap').innerHTML = '<div class="loading"><div class="spinner"></div>Carregando...</div>';
-  let q = sb.from('vocabulario').select('*, aulas(numero, titulo)').order('criado_em', { ascending: false });
+  let q = sb.from('vocabulario').select('*, aulas(numero, titulo)')
+    .order('numero', { referencedTable: 'aulas', ascending: true })
+    .order('criado_em', { ascending: true });
   const aulaF = document.getElementById('vocab-aula-filter')?.value;
   const catF = document.getElementById('vocab-cat-filter')?.value;
   if (aulaF) q = q.eq('aula_id', aulaF);
@@ -2621,7 +2623,9 @@ async function deletarVocab(id) {
 async function loadFrases() {
   if (!sb) { document.getElementById('frases-list-wrap').innerHTML = '<div class="empty">Configure o Supabase primeiro.</div>'; return; }
   document.getElementById('frases-list-wrap').innerHTML = '<div class="loading"><div class="spinner"></div>Carregando...</div>';
-  let q = sb.from('frases').select('*, aulas(numero, titulo)').order('criado_em', { ascending: false });
+  let q = sb.from('frases').select('*, aulas(numero, titulo)')
+    .order('numero', { referencedTable: 'aulas', ascending: true })
+    .order('criado_em', { ascending: true });
   const aulaF = document.getElementById('frases-aula-filter')?.value;
   const catF = document.getElementById('frases-cat-filter')?.value;
   if (aulaF) q = q.eq('aula_id', aulaF);
@@ -2722,7 +2726,9 @@ function populateExAulaSelects() {
 async function loadExercicios() {
   if (!sb) { document.getElementById('ex-list-wrap').innerHTML = '<div class="empty">Configure o Supabase primeiro.</div>'; return; }
   document.getElementById('ex-list-wrap').innerHTML = '<div class="loading"><div class="spinner"></div>Carregando...</div>';
-  let q = sb.from('exercicios').select('*, aulas(numero, titulo)').order('criado_em', { ascending: false });
+  let q = sb.from('exercicios').select('*, aulas(numero, titulo)')
+    .order('numero', { referencedTable: 'aulas', ascending: true })
+    .order('criado_em', { ascending: true });
   const aulaF = document.getElementById('ex-aula-filter')?.value;
   const tipoF = document.getElementById('ex-tipo-filter')?.value;
   if (aulaF) q = q.eq('aula_id', aulaF);
