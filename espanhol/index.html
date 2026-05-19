@@ -1701,14 +1701,14 @@ button { font-family: var(--font); }
       <!-- QUIZ -->
       <div class="tab-pane" id="tab-quiz">
         <div class="quiz-stats-row">
-          <div class="quiz-stat"><div class="quiz-stat-n" id="qs-acc">0</div><div class="quiz-stat-l">Acertos</div></div>
+          <div class="quiz-stat"><div class="quiz-stat-n" id="qs-acc">0</div><div class="quiz-stat-l">Aciertos</div></div>
           <div class="quiz-stat"><div class="quiz-stat-n" id="qs-tot">0</div><div class="quiz-stat-l">Respondidas</div></div>
-          <div class="quiz-stat"><div class="quiz-stat-n" id="qs-pct">—</div><div class="quiz-stat-l">Aproveitamento</div></div>
+          <div class="quiz-stat"><div class="quiz-stat-n" id="qs-pct">—</div><div class="quiz-stat-l">Aprovechamiento</div></div>
         </div>
         <div id="quiz-area"></div>
         <div class="btn-row">
-          <button class="btn btn-coral" id="quiz-next-btn" onclick="nextQ()" style="display:none">Próxima →</button>
-          <button class="btn" onclick="initQuiz()">Reiniciar quiz</button>
+          <button class="btn btn-coral" id="quiz-next-btn" onclick="nextQ()" style="display:none">Siguiente →</button>
+          <button class="btn" onclick="initQuiz()">Reiniciar cuestionario</button>
         </div>
         <!-- Conclude section -->
         <div class="conclude-wrap" id="conclude-wrap">
@@ -1980,9 +1980,19 @@ function updateSidebarProgress() {
 }
 
 function isUnlocked(aula) {
-  if (aula.numero === 1) return true;
-  const prev = aulasList.find(a => a.numero === aula.numero - 1);
-  return prev && progressoMap[String(prev.id)]?.concluida;
+  // A primeira aula da lista (menor número, geralmente 0 ou 1) começa desbloqueada.
+  // Coerce pra Number defensivamente (caso o banco devolva string).
+  const num = Number(aula.numero);
+  if (!aulasList.length) return num === 0 || num === 1;
+  const nums = aulasList.map(a => Number(a.numero));
+  const menorNumero = Math.min(...nums);
+  if (num === menorNumero) return true;
+  // Aula desbloqueia quando a anterior (em ordem) foi concluída.
+  const anteriores = aulasList
+    .filter(a => Number(a.numero) < num)
+    .sort((a, b) => Number(b.numero) - Number(a.numero));
+  const prev = anteriores[0];
+  return prev && !!progressoMap[String(prev.id)]?.concluida;
 }
 
 function renderAulasNav() {
@@ -2474,7 +2484,7 @@ function renderQuizQ() {
     quizBestScore = pct;
     area.innerHTML = `<div style="padding:2rem 0; text-align:center;">
       <div class="result-big">${quizScore}/${quizPool.length}</div>
-      <div class="result-msg">${pct>=80?'🌟 Excelente!':pct>=60?'👍 Bom trabalho!':'💪 Continue praticando!'}</div>
+      <div class="result-msg">${pct>=80?'🌟 ¡Excelente!':pct>=60?'👍 ¡Buen trabajo!':'💪 ¡Sigue practicando!'}</div>
       <div style="font-size:15px; color:var(--ink3); margin-top:8px; font-weight:500;">${pct}% de aproveitamento</div>
     </div>`;
     document.getElementById('quiz-next-btn').style.display = 'none';
@@ -2517,15 +2527,15 @@ function checkQ(btn, optIndex) {
 
   if (chosen === correct) {
     quizScore++;
-    document.getElementById('quiz-fb').innerHTML = `<div class="quiz-fb ok">Correto! ✓</div>`;
+    document.getElementById('quiz-fb').innerHTML = `<div class="quiz-fb ok">¡Correcto! ✓</div>`;
   } else {
     btn.classList.add('wrong');
-    document.getElementById('quiz-fb').innerHTML = `<div class="quiz-fb fail">Errado — resposta: <strong>${correct}</strong></div>`;
+    document.getElementById('quiz-fb').innerHTML = `<div class="quiz-fb fail">Incorrecto — respuesta: <strong>${correct}</strong></div>`;
   }
   quizIdx++;
   updateQuizStats();
   document.getElementById('quiz-next-btn').style.display = '';
-  document.getElementById('quiz-next-btn').textContent = quizIdx >= quizPool.length ? 'Ver resultado →' : 'Próxima →';
+  document.getElementById('quiz-next-btn').textContent = quizIdx >= quizPool.length ? 'Ver resultado →' : 'Siguiente →';
 }
 
 function nextQ() {
@@ -2689,8 +2699,8 @@ function renderExercicio() {
   if (!exerciciosData.length) {
     area.innerHTML = `<div style="padding:3rem 0; text-align:center;">
       <div style="font-size:40px; margin-bottom:12px;">✏️</div>
-      <div style="font-size:16px; font-weight:600; color:var(--ink2);">Nenhum exercício nesta aula ainda.</div>
-      <div style="font-size:13px; color:var(--ink3); margin-top:6px;">A professora pode adicionar pelo painel admin.</div>
+      <div style="font-size:16px; font-weight:600; color:var(--ink2);">Aún no hay ejercicios en esta lección.</div>
+      <div style="font-size:13px; color:var(--ink3); margin-top:6px;">La profesora puede agregar desde el panel admin.</div>
     </div>`;
     return;
   }
@@ -2702,9 +2712,9 @@ function renderExercicio() {
     const pct = Math.round(exScore / exerciciosData.length * 100);
     area.innerHTML = `<div style="text-align:center; padding:2rem 0;">
       <div style="font-size:56px; font-weight:800; color:var(--ink); letter-spacing:-2px;">${exScore}/${exerciciosData.length}</div>
-      <div style="font-size:18px; color:var(--ink2); margin-top:6px; font-weight:500;">${pct>=80?'🌟 Excelente!':pct>=60?'👍 Bom trabalho!':'💪 Continue praticando!'}</div>
-      <div style="font-size:14px; color:var(--ink3); margin-top:4px;">${pct}% nos exercícios</div>
-      <button class="btn btn-coral" style="margin-top:1.5rem;" onclick="initExercicios()">Refazer exercícios</button>
+      <div style="font-size:18px; color:var(--ink2); margin-top:6px; font-weight:500;">${pct>=80?'🌟 ¡Excelente!':pct>=60?'👍 ¡Buen trabajo!':'💪 ¡Sigue practicando!'}</div>
+      <div style="font-size:14px; color:var(--ink3); margin-top:4px;">${pct}% en los ejercicios</div>
+      <button class="btn btn-coral" style="margin-top:1.5rem;" onclick="initExercicios()">Rehacer ejercicios</button>
     </div>`;
     checkConcludeEligibility();
     return;
@@ -2728,7 +2738,7 @@ function renderExercicio() {
     </div>
     <div class="ex-container">${body}<div class="ex-feedback" id="ex-feedback"></div></div>
     <div class="btn-row" style="margin-top:12px;">
-      <button class="btn btn-coral" id="ex-next-btn" onclick="nextExercicio()" style="display:none;">Próximo →</button>
+      <button class="btn btn-coral" id="ex-next-btn" onclick="nextExercicio()" style="display:none;">Siguiente →</button>
       <button class="btn" id="ex-check-btn" onclick="checkExercicio()">Verificar ✓</button>
     </div>`;
   exAnswered = false;
@@ -2736,14 +2746,14 @@ function renderExercicio() {
 }
 
 function tipoLabel(t) {
-  return t==='lacuna_escolha'?'Complete o espaço'
-    :t==='lacuna_banco'?'Complete com as palavras'
-    :t==='escrita_audio'?'Escreva o que ouviu'
-    :t==='pares'?'Combine os pares'
-    :t==='pares_audio'?'Combine áudio com palavra'
-    :t==='conjugar_verbo'?'Conjugar verbo'
-    :t==='corrigir_frase'?'Corrigir frase'
-    :'Exercício';
+  return t==='lacuna_escolha'?'Completa el espacio'
+    :t==='lacuna_banco'?'Completa con las palabras'
+    :t==='escrita_audio'?'Escribe lo que oyes'
+    :t==='pares'?'Combina los pares'
+    :t==='pares_audio'?'Combina audio con palabra'
+    :t==='conjugar_verbo'?'Conjuga el verbo'
+    :t==='corrigir_frase'?'Corrige la frase'
+    :'Ejercicio';
 }
 
 function renderLacunaEscolha(ex) {
@@ -2822,7 +2832,7 @@ function renderEscritaAudio(ex) {
     <button class="ex-audio-btn" onclick="speakExStored(0.6)">🐢</button>
   </div>
   <div class="ex-frase" style="font-size:16px;">${fraseVis}</div>
-  <input class="ex-input" id="ex-input" type="text" placeholder="Escreva a palavra em espanhol..."
+  <input class="ex-input" id="ex-input" type="text" placeholder="Escribe la palabra en español..."
     autocomplete="off" autocorrect="off" spellcheck="false"
     onkeydown="if(event.key==='Enter')checkExercicio()">`;
 }
@@ -2842,7 +2852,7 @@ function renderPares(ex) {
     .filter(p => p.length === 2 && p[0] && p[1]);
 
   if (!pares.length) {
-    return `<div class="ex-frase">Exercício sem pares cadastrados.</div>`;
+    return `<div class="ex-frase">Ejercicio sin pares registrados.</div>`;
   }
 
   // Embaralhar lados independentemente.
@@ -2867,7 +2877,7 @@ function renderPares(ex) {
 
   return `
     <div style="font-size:14px; color:var(--ink2); margin-bottom:12px;">
-      Toque uma palavra à esquerda e depois sua tradução à direita.
+      Toca una palabra a la izquierda y luego su traducción a la derecha.
     </div>
     <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
       <div style="display:flex; flex-direction:column; gap:8px;">${col(_paresState.lefts, 'L')}</div>
@@ -2938,7 +2948,7 @@ function renderParesAudio(ex) {
     .filter(p => p.length === 2 && p[0] && p[1]);
 
   if (!pares.length) {
-    return `<div class="ex-frase">Exercício sem pares cadastrados.</div>`;
+    return `<div class="ex-frase">Ejercicio sin pares registrados.</div>`;
   }
 
   const lefts  = pares.map((p, i) => ({ idx: i, audio: p[0] })).sort(() => Math.random() - 0.5);
@@ -2973,7 +2983,7 @@ function renderParesAudio(ex) {
 
   return `
     <div style="font-size:14px; color:var(--ink2); margin-bottom:12px;">
-      Toque um áudio à esquerda (escute) e depois sua tradução à direita.
+      Toca un audio a la izquierda (escucha) y luego su traducción a la derecha.
     </div>
     <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
       <div style="display:flex; flex-direction:column; gap:8px;">${colLeft}</div>
@@ -3046,7 +3056,7 @@ function renderConjugarVerbo(ex) {
   const partes = (ex.frase || '').split('___');
   const numLacunas = Math.max(0, partes.length - 1);
   if (numLacunas === 0) {
-    return `<div class="ex-frase">Frase sem lacunas. (Use ___ no admin.)</div>`;
+    return `<div class="ex-frase">Frase sin huecos. (Usa ___ en el admin.)</div>`;
   }
   // Frase com inputs no lugar das lacunas
   let html = `<div class="ex-frase">`;
@@ -3068,11 +3078,11 @@ function renderConjugarVerbo(ex) {
 // ============================================================
 function renderCorrigirFrase(ex) {
   return `
-    <div style="font-size:11px; color:var(--ink-3); text-transform:uppercase; letter-spacing:0.08em; font-weight:700; margin-bottom:6px;">Frase com erro</div>
+    <div style="font-size:11px; color:var(--ink-3); text-transform:uppercase; letter-spacing:0.08em; font-weight:700; margin-bottom:6px;">Frase con error</div>
     <div class="ex-frase-errada" style="padding:12px 16px; border:1.5px solid #ffc4c4; border-radius:var(--r); background:#ffe5e5; color:#c53030; font-size:18px; font-weight:600; margin-bottom:16px;">${ex.frase || ''}</div>
-    <div style="font-size:13px; color:var(--ink-2); margin-bottom:6px;">Reescreva a vers\u00e3o correta:</div>
+    <div style="font-size:13px; color:var(--ink-2); margin-bottom:6px;">Reescribe la versi\u00f3n correcta:</div>
     <input class="ex-input" id="corrigir-input" type="text"
-      placeholder="Escreva a frase corrigida..."
+      placeholder="Escribe la frase corregida..."
       autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
       style="font-size:17px;"
       onkeydown="if(event.key==='Enter')checkExercicio()">`;
@@ -3105,7 +3115,7 @@ function checkExercicio() {
   const fb = document.getElementById('ex-feedback');
 
   if (ex.tipo === 'lacuna_escolha') {
-    if (!_exSelected) { fb.textContent='Selecione uma opção.'; fb.className='ex-feedback fail'; return; }
+    if (!_exSelected) { fb.textContent='Selecciona una opción.'; fb.className='ex-feedback fail'; return; }
     // Aceita múltiplas respostas separadas por "|" (ex: "tres|diez|cinco")
     const validas = parseRespostas(ex.resposta)[0] || [];
     correct = validas.includes(normalize(_exSelected));
@@ -3131,7 +3141,7 @@ function checkExercicio() {
 
   } else if (ex.tipo === 'escrita_audio') {
     const val=(document.getElementById('ex-input')?.value||'').trim();
-    if(!val){fb.textContent='Escreva a resposta.';fb.className='ex-feedback fail';return;}
+    if(!val){fb.textContent='Escribe la respuesta.';fb.className='ex-feedback fail';return;}
     const validas = parseRespostas(ex.resposta)[0] || [];
     correct = validas.includes(normalize(val));
     const inp=document.getElementById('ex-input');
@@ -3140,9 +3150,9 @@ function checkExercicio() {
     if(l){l.textContent=primeiraRespostaPorGap(ex.resposta);l.classList.add(correct?'correct':'wrong');}
   } else if (ex.tipo === 'pares' || ex.tipo === 'pares_audio') {
     const st = _paresState;
-    if (!st || st.total === 0) { fb.textContent = 'Exercício sem pares.'; fb.className = 'ex-feedback fail'; return; }
+    if (!st || st.total === 0) { fb.textContent = 'Ejercicio sin pares.'; fb.className = 'ex-feedback fail'; return; }
     if (st.matched.size < st.total) {
-      fb.textContent = `Combine os ${st.total} pares antes de verificar (${st.matched.size}/${st.total}).`;
+      fb.textContent = `Combina los ${st.total} pares antes de verificar (${st.matched.size}/${st.total}).`;
       fb.className = 'ex-feedback fail';
       return;
     }
@@ -3167,7 +3177,7 @@ function checkExercicio() {
         const inp = document.getElementById('conj-input-' + i);
         if (inp) { inp.disabled = false; inp.classList.remove('correct', 'wrong'); }
       }
-      fb.textContent = 'Preencha todas as lacunas.';
+      fb.textContent = 'Rellena todos los huecos.';
       fb.className = 'ex-feedback fail';
       return;
     }
@@ -3175,7 +3185,7 @@ function checkExercicio() {
   } else if (ex.tipo === 'corrigir_frase') {
     const inp = document.getElementById('corrigir-input');
     const val = (inp?.value || '').trim();
-    if (!val) { fb.textContent = 'Escreva a versão correta.'; fb.className = 'ex-feedback fail'; return; }
+    if (!val) { fb.textContent = 'Escribe la versión correcta.'; fb.className = 'ex-feedback fail'; return; }
     const validas = parseRespostas(ex.resposta)[0] || [];
     correct = validas.includes(normalize(val));
     if (inp) { inp.disabled = true; inp.classList.add(correct ? 'correct' : 'wrong'); }
@@ -3184,15 +3194,15 @@ function checkExercicio() {
   exAnswered = true;
   if (correct) exScore++;
   if (ex.tipo === 'pares' || ex.tipo === 'pares_audio') {
-    fb.textContent = correct ? `✓ Todos os ${_paresState.total} pares corretos!` : '✗ Algo deu errado.';
+    fb.textContent = correct ? `✓ ¡Todos los ${_paresState.total} pares correctos!` : '✗ Algo salió mal.';
   } else {
     // Em caso de erro mostra apenas a 1ª resposta principal (sem "|alternativas")
-    fb.textContent = correct ? '✓ Correto!' : `✗ Resposta: ${primeiraRespostaPorGap(ex.resposta)}`;
+    fb.textContent = correct ? '✓ ¡Correcto!' : `✗ Respuesta: ${primeiraRespostaPorGap(ex.resposta)}`;
   }
   fb.className = 'ex-feedback '+(correct?'ok':'fail');
   document.getElementById('ex-check-btn').style.display='none';
   const nb=document.getElementById('ex-next-btn');
-  if(nb){nb.style.display='';nb.textContent=exIdx+1>=exerciciosData.length?'Ver resultado →':'Próximo →';}
+  if(nb){nb.style.display='';nb.textContent=exIdx+1>=exerciciosData.length?'Ver resultado →':'Siguiente →';}
 
   // Se este foi o último exercício, marca como concluído já agora
   // (sem precisar clicar "Ver resultado →") e persiste no localStorage
@@ -3222,7 +3232,9 @@ async function checkBadges() {
   if (BADGE_DEFS['aula_' + aNum]) candidates.push('aula_' + aNum);
 
   // Iniciante
-  if (aNum === 1) candidates.push('iniciante');
+  // "Iniciante" = concluiu a primeira aula da lista (menor número, ex: 0 ou 1)
+  const menorNumero = aulasList.length ? Math.min(...aulasList.map(a => a.numero)) : 1;
+  if (aNum === menorNumero) candidates.push('iniciante');
 
   // A1 completo (todas as aulas A1 concluídas)
   const a1List = aulasList.filter(a => a.nivel === 'A1');
