@@ -8,6 +8,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- Toast UI Editor (WYSIWYG markdown editor pra conteúdo das aulas) -->
+<link rel="stylesheet" href="https://uicdn.toast.com/editor/3.2.2/toastui-editor.min.css">
+<script src="https://uicdn.toast.com/editor/3.2.2/toastui-editor-all.min.js"></script>
 <style>
 /* =====================================================
    DESIGN TOKENS — Profesora Ana (light theme)
@@ -820,6 +823,19 @@ pre {
   .vtable td img { width: 40px !important; height: 40px !important; }
   .login-card { padding: 1.75rem 1rem; }
 }
+
+/* Toast UI Editor — harmonizar com o admin */
+.toastui-editor-defaultUI {
+  border-color: var(--border) !important;
+  border-radius: var(--r) !important;
+  font-family: var(--font) !important;
+}
+.toastui-editor-toolbar {
+  border-radius: var(--r) var(--r) 0 0 !important;
+}
+.toastui-editor-main {
+  font-family: var(--font) !important;
+}
 </style>
 </head>
 <body>
@@ -1018,12 +1034,10 @@ pre {
               <textarea class="inp" id="ad-aula-obs"></textarea>
             </div>
             <div class="field">
-              <label class="field-label">Conteúdo expositivo (Markdown — aba "Conteúdo" do aluno)</label>
-              <textarea class="inp" id="ad-aula-conteudo" rows="10"
-                placeholder="# Título&#10;&#10;Texto explicativo. Suporta **negrito**, *itálico*, listas, etc.&#10;&#10;## Subtítulo&#10;- Item 1&#10;- Item 2"
-                style="font-family:var(--mono); font-size:13px; line-height:1.5;"></textarea>
-              <div style="font-size:11px; color:var(--ink3); margin-top:4px;">
-                Use Markdown: # título, **negrito**, *itálico*, listas. Deixe vazio se não houver conteúdo expositivo (aba some pro aluno).
+              <label class="field-label">Conteúdo expositivo (aba "Conteúdo" do aluno)</label>
+              <div id="ad-aula-conteudo-editor"></div>
+              <div style="font-size:11px; color:var(--ink3); margin-top:6px;">
+                Use a barra de ferramentas pra formatar (negrito, listas, tabelas, etc.). Deixe vazio se não houver conteúdo (aba some pro aluno).
               </div>
             </div>
             <div class="field">
@@ -1664,6 +1678,31 @@ CREATE POLICY "escrita autenticada frases" ON frases FOR ALL USING (true);</pre>
 let sb = null;
 let aulasList = [];
 
+// Editor WYSIWYG (Toast UI) pro campo Conteúdo da aula. Singleton.
+let _conteudoEditor = null;
+function initConteudoEditor() {
+  if (_conteudoEditor) return _conteudoEditor;
+  const el = document.getElementById('ad-aula-conteudo-editor');
+  if (!el || typeof toastui === 'undefined' || !toastui.Editor) return null;
+  _conteudoEditor = new toastui.Editor({
+    el,
+    height: '420px',
+    initialEditType: 'wysiwyg',   // começa em WYSIWYG, sem markdown visível
+    previewStyle: 'tab',
+    usageStatistics: false,
+    autofocus: false,
+    placeholder: 'Comece a escrever o conteúdo da aula...',
+    toolbarItems: [
+      ['heading', 'bold', 'italic', 'strike'],
+      ['hr', 'quote'],
+      ['ul', 'ol', 'task', 'indent', 'outdent'],
+      ['table', 'link'],
+      ['code', 'codeblock'],
+    ],
+  });
+  return _conteudoEditor;
+}
+
 // Aluno de preview pra "Ver como aluno" — único, escondido das listagens
 const PREVIEW_EMAIL  = 'preview@profesora-ana.local';
 const PREVIEW_CODIGO = 'preview-prof';
@@ -2300,7 +2339,9 @@ function abrirAula(id) {
   document.getElementById('ad-aula-tema').value = a.tema || '';
   document.getElementById('ad-aula-verbos').value = (a.verbos || []).join(', ');
   document.getElementById('ad-aula-obs').value = a.observacoes || '';
-  document.getElementById('ad-aula-conteudo').value = a.conteudo_md || '';
+  // Inicializa o editor WYSIWYG (se ainda não inicializado) e popula com o conteúdo
+  initConteudoEditor();
+  if (_conteudoEditor) _conteudoEditor.setMarkdown(a.conteudo_md || '');
   document.getElementById('ad-aula-voz').value = a.voz_tts || '';
 
   // Esconder filtros de aula (estamos sempre nesta aula) e o select de aula nos forms
@@ -2437,7 +2478,7 @@ async function salvarAulaDetalhe() {
     tema: document.getElementById('ad-aula-tema').value.trim() || null,
     verbos: document.getElementById('ad-aula-verbos').value.split(',').map(v => v.trim()).filter(Boolean),
     observacoes: document.getElementById('ad-aula-obs').value.trim() || null,
-    conteudo_md: document.getElementById('ad-aula-conteudo').value.trim() || null,
+    conteudo_md: (_conteudoEditor ? _conteudoEditor.getMarkdown().trim() : '') || null,
     voz_tts: document.getElementById('ad-aula-voz').value || null,
   };
   if (Number.isNaN(payload.numero) || payload.numero < 0 || !payload.titulo) {
