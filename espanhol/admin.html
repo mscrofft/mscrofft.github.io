@@ -916,7 +916,7 @@ pre {
             <input type="hidden" id="aula-id">
             <div class="field">
               <label class="field-label">Número da aula</label>
-              <input class="inp" type="number" id="aula-numero" placeholder="1" min="1">
+              <input class="inp" type="number" id="aula-numero" placeholder="1" min="0">
             </div>
             <div class="field">
               <label class="field-label">Título</label>
@@ -990,7 +990,7 @@ pre {
             <input type="hidden" id="ad-aula-id">
             <div class="field">
               <label class="field-label">Número</label>
-              <input class="inp" type="number" id="ad-aula-numero" min="1">
+              <input class="inp" type="number" id="ad-aula-numero" min="0">
             </div>
             <div class="field">
               <label class="field-label">Título</label>
@@ -2413,7 +2413,9 @@ async function salvarAula() {
     observacoes: document.getElementById('aula-obs').value.trim() || null,
     voz_tts: document.getElementById('aula-voz').value || null,
   };
-  if (!payload.numero || !payload.titulo) { toast('Preencha número e título.', 'err'); return; }
+  if (Number.isNaN(payload.numero) || payload.numero < 0 || !payload.titulo) {
+    toast('Preencha número (≥0) e título.', 'err'); return;
+  }
   const { data, error } = id
     ? await sb.from('aulas').update(payload).eq('id', id).select().single()
     : await sb.from('aulas').insert(payload).select().single();
@@ -2438,7 +2440,9 @@ async function salvarAulaDetalhe() {
     conteudo_md: document.getElementById('ad-aula-conteudo').value.trim() || null,
     voz_tts: document.getElementById('ad-aula-voz').value || null,
   };
-  if (!payload.numero || !payload.titulo) { toast('Preencha número e título.', 'err'); return; }
+  if (Number.isNaN(payload.numero) || payload.numero < 0 || !payload.titulo) {
+    toast('Preencha número (≥0) e título.', 'err'); return;
+  }
   const { error } = await sb.from('aulas').update(payload).eq('id', aulaContext.id);
   if (error) { toast('Erro: ' + error.message, 'err'); return; }
   toast('Aula atualizada! ✓', 'ok');
