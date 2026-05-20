@@ -843,18 +843,18 @@ pre {
 <div class="login-overlay" id="login-overlay">
   <div class="login-card">
     <div class="login-logo">Profesora Ana</div>
-    <div class="login-sub">Acesso da professora</div>
+    <div class="login-sub">Acceso de la profesora</div>
     <div class="field">
-      <label class="field-label">Senha</label>
+      <label class="field-label">Contraseña</label>
       <input class="inp" type="password" id="prof-senha" placeholder="••••••••"
         onkeydown="if(event.key==='Enter')loginProf()">
     </div>
     <div class="btn-row">
       <button class="btn btn-accent" onclick="loginProf()" style="width:100%; justify-content:center;">Entrar</button>
     </div>
-    <div id="login-err" style="font-size:13px;color:var(--red);margin-top:12px;display:none;font-weight:600;">Senha incorreta.</div>
+    <div id="login-err" style="font-size:13px;color:var(--red);margin-top:12px;display:none;font-weight:600;">Contraseña incorrecta.</div>
   </div>
-  <div style="font-size:12px;color:var(--ink3);font-weight:600;">Profesora Ana · Painel Administrativo</div>
+  <div style="font-size:12px;color:var(--ink3);font-weight:600;">Profesora Ana · Panel Administrativo</div>
 </div>
 
 <div class="shell" id="app-shell" style="display:none;">
@@ -881,19 +881,19 @@ pre {
       </div>
     </div>
     <div class="aside-section">Conteúdo</div>
-    <div class="aside-link active" data-label="Aulas" onclick="goTo('aulas',this)"><span class="aside-icon">📚</span> <span>Aulas</span></div>
-    <div class="aside-section">Alunos</div>
-    <div class="aside-link" data-label="Alunos" onclick="goTo('alunos',this)"><span class="aside-icon">👥</span> <span>Alunos</span></div>
-    <div class="aside-link" data-label="Progresso" onclick="goTo('progresso',this)"><span class="aside-icon">📊</span> <span>Progresso</span></div>
+    <div class="aside-link active" data-label="Aulas" onclick="goTo('aulas',this)"><span class="aside-icon">📚</span> <span>Lecciones</span></div>
+    <div class="aside-section">Alumnos</div>
+    <div class="aside-link" data-label="Alunos" onclick="goTo('alunos',this)"><span class="aside-icon">👥</span> <span>Alumnos</span></div>
+    <div class="aside-link" data-label="Progresso" onclick="goTo('progresso',this)"><span class="aside-icon">📊</span> <span>Progreso</span></div>
     <div class="aside-section">Sistema</div>
-    <div class="aside-link" data-label="Configuração" onclick="goTo('config',this)"><span class="aside-icon">⚙️</span> <span>Configuração</span></div>
+    <div class="aside-link" data-label="Configuración" onclick="goTo('config',this)"><span class="aside-icon">⚙️</span> <span>Configuración</span></div>
     <div style="margin-top:auto; padding:0.75rem 0 0.5rem; border-top:1px solid var(--border);">
       <div class="aside-link" data-label="Ver como aluno" onclick="verComoAluno()" style="cursor:pointer;">
-        <span class="aside-icon">👁️</span> <span>Ver como aluno</span>
+        <span class="aside-icon">👁️</span> <span>Ver como alumno</span>
       </div>
     </div>
     <div style="padding:0.75rem 1.5rem 1rem; border-top:1px solid var(--border);">
-      <button onclick="logoutProf()" style="background:none;border:none;color:var(--ink2);font-size:13px;cursor:pointer;font-family:var(--font);font-weight:600;">← Sair</button>
+      <button onclick="logoutProf()" style="background:none;border:none;color:var(--ink2);font-size:13px;cursor:pointer;font-family:var(--font);font-weight:600;">← Salir</button>
     </div>
   </aside>
 
@@ -903,7 +903,7 @@ pre {
     <div class="setup-banner" id="setup-banner">
       <div class="setup-dot"></div>
       <div class="setup-text">
-        <strong>Configuração pendente.</strong> Insira as credenciais do Supabase na aba <strong>Configuração</strong> para conectar ao banco de dados. Não tem conta? Veja o arquivo <strong>LEIA-ME.txt</strong>.
+        <strong>Configuración pendiente.</strong> Introduce las credenciales de Supabase en la pestaña <strong>Configuración</strong> para conectar a la base de datos. ¿No tienes cuenta? Mira el archivo <strong>LEEME.txt</strong>.
       </div>
     </div>
 
@@ -913,54 +913,54 @@ pre {
       <!-- ESTADO A: LISTA DE AULAS -->
       <div id="aulas-list-view">
         <div class="page-hd">
-          <div class="page-title">Aulas</div>
-          <div class="page-sub">Clique em uma aula para gerenciar seu conteúdo</div>
+          <div class="page-title">Lecciones</div>
+          <div class="page-sub">Haz clic en una lección para gestionar su contenido</div>
         </div>
 
         <div class="card-header" style="margin-bottom:10px;">
-          <span class="card-title">Suas aulas</span>
-          <button class="btn btn-accent btn-sm" onclick="showNovaAula()">+ Nova aula</button>
+          <span class="card-title">Tus lecciones</span>
+          <button class="btn btn-accent btn-sm" onclick="showNovaAula()">+ Nueva lección</button>
         </div>
-        <div id="aulas-list"><div class="loading"><div class="spinner"></div>Carregando...</div></div>
+        <div id="aulas-list"><div class="loading"><div class="spinner"></div>Cargando...</div></div>
 
-        <!-- Form de Nova Aula (modal-ish, mostrado quando clica "+ Nova aula") -->
+        <!-- Form de Nova Aula (modal-ish, mostrado quando clica "+ Nueva lección") -->
         <div id="aula-form-wrap" style="display:none; margin-top:1.5rem;">
           <div class="card">
             <div class="card-header">
-              <span class="card-title" id="aula-form-title">Nova aula</span>
+              <span class="card-title" id="aula-form-title">Nueva lección</span>
             </div>
             <input type="hidden" id="aula-id">
             <div class="field">
-              <label class="field-label">Número da aula</label>
+              <label class="field-label">Número de la lección</label>
               <input class="inp" type="number" id="aula-numero" placeholder="1" min="0">
             </div>
             <div class="field">
               <label class="field-label">Título</label>
-              <input class="inp" type="text" id="aula-titulo" placeholder="ex: Apresentações e cumprimentos">
+              <input class="inp" type="text" id="aula-titulo" placeholder="ej: Presentaciones y saludos">
             </div>
             <div class="field">
-              <label class="field-label">Nível</label>
+              <label class="field-label">Nivel</label>
               <select class="inp" id="aula-nivel">
-                <option value="A1">A1 — Iniciante</option>
+                <option value="A1">A1 — Principiante</option>
                 <option value="A2">A2 — Básico</option>
-                <option value="B1">B1 — Intermediário</option>
-                <option value="B2">B2 — Intermediário avançado</option>
+                <option value="B1">B1 — Intermedio</option>
+                <option value="B2">B2 — Intermedio avanzado</option>
               </select>
             </div>
             <div class="field">
-              <label class="field-label">Tema / descrição curta</label>
-              <input class="inp" type="text" id="aula-tema" placeholder="ex: Saber dizer nome, cumprimentar, despedir">
+              <label class="field-label">Tema / descripción corta</label>
+              <input class="inp" type="text" id="aula-tema" placeholder="ej: Saber dizer nome, cumprimentar, despedir">
             </div>
             <div class="field">
-              <label class="field-label">Verbos desta aula (separados por vírgula)</label>
+              <label class="field-label">Verbos de esta lección (separados por coma)</label>
               <input class="inp" type="text" id="aula-verbos" placeholder="ser, estar, llamarse">
             </div>
             <div class="field">
-              <label class="field-label">Colar textos de Apoio</label>
-              <textarea class="inp" id="aula-obs" rows="12" style="min-height:260px; resize:vertical; font-family:var(--font); line-height:1.5;" placeholder="Cole aqui textos de apoio que serão lidos pelo aluno..."></textarea>
+              <label class="field-label">Pegar textos de apoyo</label>
+              <textarea class="inp" id="aula-obs" rows="12" style="min-height:260px; resize:vertical; font-family:var(--font); line-height:1.5;" placeholder="Pega aquí textos de apoyo que serán leídos por el alumno..."></textarea>
             </div>
             <div class="field">
-              <label class="field-label">Voz TTS desta aula (opcional — vazio = usa a padrão)</label>
+              <label class="field-label">Voz TTS de esta lección (opcional — vacío = usa la por defecto)</label>
               <div style="display:flex; gap:8px;">
                 <select class="inp" id="aula-voz" style="flex:1;"></select>
                 <button type="button" class="btn" onclick="previewTtsFromSelect('aula-voz')">▶</button>
@@ -968,7 +968,7 @@ pre {
               <div id="aula-voz-hint" style="font-size:11px; margin-top:4px; color:var(--ink3);"></div>
             </div>
             <div class="btn-row">
-              <button class="btn btn-accent" onclick="salvarAula()">Salvar aula</button>
+              <button class="btn btn-accent" onclick="salvarAula()">Guardar lección</button>
               <button class="btn" onclick="cancelarFormAula()">Cancelar</button>
             </div>
           </div>
@@ -978,22 +978,22 @@ pre {
       <!-- ESTADO B: DETALHE DE UMA AULA (com tabs internas) -->
       <div id="aula-detail-view" style="display:none;">
         <div style="display:flex; align-items:center; gap:12px; margin-bottom:1rem;">
-          <button class="btn" onclick="voltarAulas()" style="padding:8px 14px;">← Voltar</button>
+          <button class="btn" onclick="voltarAulas()" style="padding:8px 14px;">← Volver</button>
         </div>
         <div class="page-hd" style="display:flex; align-items:flex-start; justify-content:space-between; gap:1rem; flex-wrap:wrap;">
           <div>
-            <div class="page-title" id="ad-title">Aula</div>
+            <div class="page-title" id="ad-title">Lección</div>
             <div class="page-sub" id="ad-sub"></div>
           </div>
-          <button class="btn btn-sm" id="ad-pregen-btn" title="Pré-gerar áudios desta aula" style="display:none;">🔊 Pré-gerar áudios</button>
+          <button class="btn btn-sm" id="ad-pregen-btn" title="Pre-generar audios de esta lección" style="display:none;">🔊 Pre-generar audios</button>
         </div>
 
         <!-- Tab bar -->
         <div id="ad-tabs" style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:1.25rem; padding:4px; background:var(--bg-soft); border-radius:var(--r-pill); width:fit-content; max-width:100%;">
-          <button class="ad-tab active" data-aba="detalhes" onclick="abaAula('detalhes')" style="padding:8px 18px; border-radius:var(--r-pill); border:none; background:transparent; cursor:pointer; font-family:var(--font); font-size:13px; font-weight:600; color:var(--ink2);">📋 Detalhes</button>
-          <button class="ad-tab" data-aba="vocabulario" onclick="abaAula('vocabulario')" style="padding:8px 18px; border-radius:var(--r-pill); border:none; background:transparent; cursor:pointer; font-family:var(--font); font-size:13px; font-weight:600; color:var(--ink2);">🗂️ Vocabulário</button>
+          <button class="ad-tab active" data-aba="detalhes" onclick="abaAula('detalhes')" style="padding:8px 18px; border-radius:var(--r-pill); border:none; background:transparent; cursor:pointer; font-family:var(--font); font-size:13px; font-weight:600; color:var(--ink2);">📋 Detalles</button>
+          <button class="ad-tab" data-aba="vocabulario" onclick="abaAula('vocabulario')" style="padding:8px 18px; border-radius:var(--r-pill); border:none; background:transparent; cursor:pointer; font-family:var(--font); font-size:13px; font-weight:600; color:var(--ink2);">🗂️ Vocabulario</button>
           <button class="ad-tab" data-aba="frases" onclick="abaAula('frases')" style="padding:8px 18px; border-radius:var(--r-pill); border:none; background:transparent; cursor:pointer; font-family:var(--font); font-size:13px; font-weight:600; color:var(--ink2);">💬 Frases</button>
-          <button class="ad-tab" data-aba="exercicios" onclick="abaAula('exercicios')" style="padding:8px 18px; border-radius:var(--r-pill); border:none; background:transparent; cursor:pointer; font-family:var(--font); font-size:13px; font-weight:600; color:var(--ink2);">✏️ Exercícios</button>
+          <button class="ad-tab" data-aba="exercicios" onclick="abaAula('exercicios')" style="padding:8px 18px; border-radius:var(--r-pill); border:none; background:transparent; cursor:pointer; font-family:var(--font); font-size:13px; font-weight:600; color:var(--ink2);">✏️ Ejercicios</button>
         </div>
 
         <!-- Painéis de cada aba (preenchidos por JS, slots aqui) -->
@@ -1001,7 +1001,7 @@ pre {
           <!-- Form de detalhes da aula (clone do form de aulas) -->
           <div class="card">
             <div class="card-header">
-              <span class="card-title">Detalhes da aula</span>
+              <span class="card-title">Detalles de la lección</span>
             </div>
             <input type="hidden" id="ad-aula-id">
             <div class="field">
@@ -1013,35 +1013,35 @@ pre {
               <input class="inp" type="text" id="ad-aula-titulo">
             </div>
             <div class="field">
-              <label class="field-label">Nível</label>
+              <label class="field-label">Nivel</label>
               <select class="inp" id="ad-aula-nivel">
-                <option value="A1">A1 — Iniciante</option>
+                <option value="A1">A1 — Principiante</option>
                 <option value="A2">A2 — Básico</option>
-                <option value="B1">B1 — Intermediário</option>
-                <option value="B2">B2 — Intermediário avançado</option>
+                <option value="B1">B1 — Intermedio</option>
+                <option value="B2">B2 — Intermedio avanzado</option>
               </select>
             </div>
             <div class="field">
-              <label class="field-label">Tema / descrição curta</label>
+              <label class="field-label">Tema / descripción corta</label>
               <input class="inp" type="text" id="ad-aula-tema">
             </div>
             <div class="field">
-              <label class="field-label">Verbos desta aula (separados por vírgula)</label>
+              <label class="field-label">Verbos de esta lección (separados por coma)</label>
               <input class="inp" type="text" id="ad-aula-verbos" placeholder="ser, estar, llamarse">
             </div>
             <div class="field">
-              <label class="field-label">Colar textos de Apoio</label>
-              <textarea class="inp" id="ad-aula-obs" rows="12" style="min-height:260px; resize:vertical; font-family:var(--font); line-height:1.5;" placeholder="Cole aqui textos de apoio que serão lidos pelo aluno..."></textarea>
+              <label class="field-label">Pegar textos de apoyo</label>
+              <textarea class="inp" id="ad-aula-obs" rows="12" style="min-height:260px; resize:vertical; font-family:var(--font); line-height:1.5;" placeholder="Pega aquí textos de apoyo que serán leídos por el alumno..."></textarea>
             </div>
             <div class="field">
               <label class="field-label">Contenido</label>
               <div id="ad-aula-conteudo-editor"></div>
               <div style="font-size:11px; color:var(--ink3); margin-top:6px;">
-                Use a barra de ferramentas pra formatar (negrito, listas, tabelas, etc.). Deixe vazio se não houver conteúdo (aba some pro aluno).
+                Usa la barra de herramientas para formatear (negrita, listas, tablas, etc.). Déjalo vacío si no hay contenido (la pestaña desaparece para el alumno).
               </div>
             </div>
             <div class="field">
-              <label class="field-label">Voz TTS desta aula (opcional — vazio = usa a padrão)</label>
+              <label class="field-label">Voz TTS de esta lección (opcional — vacío = usa la por defecto)</label>
               <div style="display:flex; gap:8px;">
                 <select class="inp" id="ad-aula-voz" style="flex:1;"></select>
                 <button type="button" class="btn" onclick="previewTtsFromSelect('ad-aula-voz')">▶</button>
@@ -1049,8 +1049,8 @@ pre {
               <div id="ad-aula-voz-hint" style="font-size:11px; margin-top:4px; color:var(--ink3);"></div>
             </div>
             <div class="btn-row">
-              <button class="btn btn-accent" onclick="salvarAulaDetalhe()">Salvar alterações</button>
-              <button class="btn btn-red" onclick="deletarAulaAtual()" style="margin-left:auto;">Deletar aula</button>
+              <button class="btn btn-accent" onclick="salvarAulaDetalhe()">Guardar cambios</button>
+              <button class="btn btn-red" onclick="deletarAulaAtual()" style="margin-left:auto;">Eliminar lección</button>
             </div>
           </div>
         </div>
@@ -1065,20 +1065,20 @@ pre {
     <!-- ===== VOCABULÁRIO ===== -->
     <div class="page" id="page-vocabulario">
       <div class="page-hd">
-        <div class="page-title">Vocabulário</div>
-        <div class="page-sub">Adicione palavras a cada aula</div>
+        <div class="page-title">Vocabulario</div>
+        <div class="page-sub">Añade palabras a cada lección</div>
       </div>
 
       <div class="card" style="margin-bottom:1rem;">
         <div class="grid3">
           <div class="field" style="margin:0;">
-            <label class="field-label">Filtrar por aula</label>
+            <label class="field-label">Filtrar por lección</label>
             <select class="inp" id="vocab-aula-filter" onchange="loadVocab()">
-              <option value="">Todas as aulas</option>
+              <option value="">Todas las lecciones</option>
             </select>
           </div>
           <div class="field" style="margin:0;">
-            <label class="field-label">Categoria</label>
+            <label class="field-label">Categoría</label>
             <select class="inp" id="vocab-cat-filter" onchange="loadVocab()">
               <option value="">Todas</option>
               <option>animais</option><option>cores</option><option>comida</option>
@@ -1088,7 +1088,7 @@ pre {
             </select>
           </div>
           <div class="field" style="margin:0; display:flex; align-items:flex-end;">
-            <button class="btn btn-accent" style="width:100%;" onclick="toggleVocabForm()">+ Adicionar palavra</button>
+            <button class="btn btn-accent" style="width:100%;" onclick="toggleVocabForm()">+ Añadir palabra</button>
           </div>
         </div>
       </div>
@@ -1099,7 +1099,7 @@ pre {
         <input type="hidden" id="vocab-id">
         <div class="grid3">
           <div class="field" style="margin:0;">
-            <label class="field-label">Aula</label>
+            <label class="field-label">Lección</label>
             <select class="inp" id="vocab-aula-id"></select>
           </div>
           <div class="field" style="margin:0;">
@@ -1107,13 +1107,13 @@ pre {
             <input class="inp" type="text" id="vocab-es" placeholder="perro" autocomplete="off">
           </div>
           <div class="field" style="margin:0;">
-            <label class="field-label">Em português</label>
+            <label class="field-label">En portugués</label>
             <input class="inp" type="text" id="vocab-pt" placeholder="cachorro" autocomplete="off">
           </div>
         </div>
         <div class="grid3" style="margin-top:8px;">
           <div class="field" style="margin:0;">
-            <label class="field-label">Categoria</label>
+            <label class="field-label">Categoría</label>
             <select class="inp" id="vocab-cat">
               <option>geral</option><option>animais</option><option>cores</option>
               <option>comida</option><option>família</option><option>corpo</option>
@@ -1126,12 +1126,12 @@ pre {
             <input class="inp" type="text" id="vocab-ex" placeholder="El perro es bonito." autocomplete="off">
           </div>
           <div class="field" style="margin:0; display:flex; align-items:flex-end; gap:6px;">
-            <button class="btn btn-green" onclick="salvarVocab()" style="flex:1;">Salvar</button>
+            <button class="btn btn-green" onclick="salvarVocab()" style="flex:1;">Guardar</button>
             <button class="btn" onclick="toggleVocabForm()">Cancelar</button>
           </div>
         </div>
         <div class="field" style="margin-top:10px;">
-          <label class="field-label">Voz TTS desta palavra (opcional — vazio = herda da aula / padrão)</label>
+          <label class="field-label">Voz TTS de esta palabra (opcional — vacío = hereda de la lección / por defecto)</label>
           <div style="display:flex; gap:8px;">
             <select class="inp" id="vocab-voz" style="flex:1;"></select>
             <button type="button" class="btn" onclick="previewTtsFromSelect('vocab-voz')">▶</button>
@@ -1155,7 +1155,7 @@ pre {
 
       <!-- Tabela vocab -->
       <div class="card">
-        <div id="vocab-table-wrap"><div class="loading"><div class="spinner"></div>Carregando...</div></div>
+        <div id="vocab-table-wrap"><div class="loading"><div class="spinner"></div>Cargando...</div></div>
       </div>
     </div>
 
@@ -1163,59 +1163,59 @@ pre {
     <div class="page" id="page-frases">
       <div class="page-hd">
         <div class="page-title">Frases</div>
-        <div class="page-sub">Frases e expressões por aula</div>
+        <div class="page-sub">Frases y expresiones por lección</div>
       </div>
 
       <div class="card" style="margin-bottom:1rem;">
         <div class="grid3">
           <div class="field" style="margin:0;">
-            <label class="field-label">Filtrar por aula</label>
+            <label class="field-label">Filtrar por lección</label>
             <select class="inp" id="frases-aula-filter" onchange="loadFrases()">
               <option value="">Todas</option>
             </select>
           </div>
           <div class="field" style="margin:0;">
-            <label class="field-label">Categoria</label>
+            <label class="field-label">Categoría</label>
             <select class="inp" id="frases-cat-filter" onchange="loadFrases()">
               <option value="">Todas</option>
-              <option>cumprimentos</option><option>escola</option><option>compras</option>
-              <option>tempo</option><option>emoções</option><option>viagem</option><option>geral</option>
+              <option>saludos</option><option>escuela</option><option>compras</option>
+              <option>tiempo</option><option>emociones</option><option>viaje</option><option>general</option>
             </select>
           </div>
           <div class="field" style="margin:0; display:flex; align-items:flex-end;">
-            <button class="btn btn-accent" style="width:100%;" onclick="toggleFraseForm()">+ Adicionar frase</button>
+            <button class="btn btn-accent" style="width:100%;" onclick="toggleFraseForm()">+ Añadir frase</button>
           </div>
         </div>
       </div>
 
       <div class="card" id="frase-form" style="display:none; border-color:rgba(232,98,42,0.3);">
-        <div class="card-header"><span class="card-title" id="frase-form-title">Nova frase</span></div>
+        <div class="card-header"><span class="card-title" id="frase-form-title">Nueva frase</span></div>
         <input type="hidden" id="frase-id">
         <div class="grid2">
           <div class="field" style="margin:0;">
-            <label class="field-label">Aula</label>
+            <label class="field-label">Lección</label>
             <select class="inp" id="frase-aula-id"></select>
           </div>
           <div class="field" style="margin:0;">
-            <label class="field-label">Categoria</label>
+            <label class="field-label">Categoría</label>
             <select class="inp" id="frase-cat">
               <option>geral</option><option>cumprimentos</option><option>escola</option>
-              <option>compras</option><option>tempo</option><option>emoções</option><option>viagem</option>
+              <option>compras</option><option>tiempo</option><option>emociones</option><option>viaje</option>
             </select>
           </div>
         </div>
         <div class="grid2" style="margin-top:8px;">
           <div class="field" style="margin:0;">
-            <label class="field-label">Frase em espanhol</label>
+            <label class="field-label">Frase en español</label>
             <input class="inp" type="text" id="frase-es" placeholder="¿Cómo te llamas?">
           </div>
           <div class="field" style="margin:0;">
-            <label class="field-label">Tradução em português</label>
+            <label class="field-label">Traducción al portugués</label>
             <input class="inp" type="text" id="frase-pt" placeholder="Qual é o seu nome?">
           </div>
         </div>
         <div class="field" style="margin-top:10px;">
-          <label class="field-label">Voz TTS desta frase (opcional — vazio = herda da aula / padrão)</label>
+          <label class="field-label">Voz TTS de esta frase (opcional — vacío = hereda de la lección / por defecto)</label>
           <div style="display:flex; gap:8px;">
             <select class="inp" id="frase-voz" style="flex:1;"></select>
             <button type="button" class="btn" onclick="previewTtsFromSelect('frase-voz')">▶</button>
@@ -1223,139 +1223,139 @@ pre {
           <div id="frase-voz-hint" style="font-size:11px; margin-top:4px; color:var(--ink3);"></div>
         </div>
         <div class="btn-row" style="margin-top:10px;">
-          <button class="btn btn-green" onclick="salvarFrase()">Salvar frase</button>
+          <button class="btn btn-green" onclick="salvarFrase()">Guardar frase</button>
           <button class="btn" onclick="toggleFraseForm()">Cancelar</button>
         </div>
       </div>
 
       <div class="card">
-        <div id="frases-list-wrap"><div class="loading"><div class="spinner"></div>Carregando...</div></div>
+        <div id="frases-list-wrap"><div class="loading"><div class="spinner"></div>Cargando...</div></div>
       </div>
     </div>
 
     <!-- ===== EXERCÍCIOS ===== -->
     <div class="page" id="page-exercicios">
       <div class="page-hd">
-        <div class="page-title">Exercícios</div>
-        <div class="page-sub">Crie exercícios interativos por aula</div>
+        <div class="page-title">Ejercicios</div>
+        <div class="page-sub">Crea ejercicios interactivos por lección</div>
       </div>
 
       <div class="card" style="margin-bottom:1rem;">
         <div class="grid3">
           <div class="field" style="margin:0;">
-            <label class="field-label">Filtrar por aula</label>
+            <label class="field-label">Filtrar por lección</label>
             <select class="inp" id="ex-aula-filter" onchange="loadExercicios()">
-              <option value="">Todas as aulas</option>
+              <option value="">Todas las lecciones</option>
             </select>
           </div>
           <div class="field" style="margin:0;">
             <label class="field-label">Tipo</label>
             <select class="inp" id="ex-tipo-filter" onchange="loadExercicios()">
               <option value="">Todos</option>
-              <option value="lacuna_escolha">Complete o espaço</option>
+              <option value="lacuna_escolha">Completa el espacio</option>
               <option value="lacuna_banco">Complete com palavras</option>
               <option value="escrita_audio">Escreva o que ouviu</option>
-              <option value="pares">Combine os pares</option>
-              <option value="pares_audio">Combine áudio com palavra</option>
-              <option value="conjugar_verbo">Conjugar verbo</option>
-              <option value="corrigir_frase">Corrigir frase</option>
-              <option value="multipla_escolha">Múltipla escolha</option>
-              <option value="classificar">Classificar em categorias</option>
+              <option value="pares">Combina los pares</option>
+              <option value="pares_audio">Combina audio con palabra</option>
+              <option value="conjugar_verbo">Conjuga el verbo</option>
+              <option value="corrigir_frase">Corrige la frase</option>
+              <option value="multipla_escolha">Opción múltiple</option>
+              <option value="classificar">Clasifica en categorías</option>
             </select>
           </div>
           <div class="field" style="margin:0; display:flex; align-items:flex-end;">
-            <button class="btn btn-accent" style="width:100%;" onclick="toggleExForm()">+ Novo exercício</button>
+            <button class="btn btn-accent" style="width:100%;" onclick="toggleExForm()">+ Nuevo ejercicio</button>
           </div>
         </div>
       </div>
 
       <!-- Form novo exercício -->
       <div class="card" id="ex-form" style="display:none; border-color:rgba(232,98,42,0.3);">
-        <div class="card-header"><span class="card-title" id="ex-form-title">Novo exercício</span></div>
+        <div class="card-header"><span class="card-title" id="ex-form-title">Nuevo ejercicio</span></div>
         <input type="hidden" id="ex-id">
 
         <div class="grid2">
           <div class="field" style="margin:0;">
-            <label class="field-label">Aula</label>
+            <label class="field-label">Lección</label>
             <select class="inp" id="ex-aula-id"></select>
           </div>
           <div class="field" style="margin:0;">
-            <label class="field-label">Tipo de exercício</label>
+            <label class="field-label">Tipo de ejercicio</label>
             <select class="inp" id="ex-tipo" onchange="updateExFormTipo()">
-              <option value="lacuna_escolha">Complete o espaço (múltipla escolha)</option>
-              <option value="lacuna_banco">Complete com banco de palavras</option>
-              <option value="escrita_audio">Ouça e escreva</option>
-              <option value="pares">Combine os pares</option>
-              <option value="pares_audio">Combine áudio com palavra</option>
-              <option value="conjugar_verbo">Conjugar verbo</option>
-              <option value="corrigir_frase">Corrigir frase</option>
-              <option value="multipla_escolha">Múltipla escolha (pergunta + opções)</option>
-              <option value="classificar">Classificar em categorias</option>
+              <option value="lacuna_escolha">Completa el espacio (opción múltiple)</option>
+              <option value="lacuna_banco">Completa con banco de palabras</option>
+              <option value="escrita_audio">Escucha y escribe</option>
+              <option value="pares">Combina los pares</option>
+              <option value="pares_audio">Combina audio con palabra</option>
+              <option value="conjugar_verbo">Conjuga el verbo</option>
+              <option value="corrigir_frase">Corrige la frase</option>
+              <option value="multipla_escolha">Opción múltiple (pregunta + opciones)</option>
+              <option value="classificar">Clasifica en categorías</option>
             </select>
           </div>
         </div>
 
         <div id="ex-fields-padrao">
         <div class="field" style="margin-top:10px;">
-          <label class="field-label">Frase (use ___ para marcar a lacuna)</label>
+          <label class="field-label">Frase (usa ___ para marcar el hueco)</label>
           <input class="inp" type="text" id="ex-frase"
             placeholder="El perro ___ muy grande.">
           <div style="font-size:11px; color:var(--ink3); margin-top:4px;" id="ex-frase-hint">
-            Use ___ onde deve aparecer a lacuna. Para múltiplas lacunas, use ___ em cada posição.
+            Usa ___ donde debe aparecer el hueco. Para múltiples huecos, usa ___ en cada posición.
           </div>
         </div>
 
         <div class="field">
-          <label class="field-label">Resposta correta</label>
+          <label class="field-label">Respuesta correcta</label>
           <input class="inp" type="text" id="ex-resposta"
             placeholder="es">
           <div style="font-size:11px; color:var(--ink3); margin-top:4px;" id="ex-resp-hint">
-            Para múltiplas lacunas, separe por vírgula: libros,estante
+            Para múltiples huecos, separa por coma: libros,estante
           </div>
         </div>
 
 
         <div class="field" id="ex-opcoes-field">
-          <label class="field-label">Opções de resposta (separadas por vírgula)</label>
+          <label class="field-label">Opciones de respuesta (separadas por coma)</label>
           <input class="inp" type="text" id="ex-opcoes"
             placeholder="es, soy, están, somos">
           <div style="font-size:11px; color:var(--ink3); margin-top:4px;">
-            Inclua a resposta correta + 3 distratores. Para banco de palavras, inclua todas as palavras disponíveis.
+            Incluye la respuesta correcta + 3 distractores. Para banco de palabras, incluye todas las palabras disponibles.
           </div>
         </div>
         </div>
 
         <div id="ex-pares-field" style="display:none;">
           <div class="field" style="margin-top:10px;">
-            <label class="field-label">Pares (esquerda → direita)</label>
+            <label class="field-label">Pares (izquierda → derecha)</label>
             <div id="ex-pares-rows" style="display:flex; flex-direction:column; gap:6px;"></div>
             <button type="button" class="btn btn-sm" onclick="addParesRow()" style="margin-top:8px;">
               + Adicionar par
             </button>
             <div style="font-size:11px; color:var(--ink3); margin-top:6px;" id="ex-pares-hint">
-              Mínimo 3 pares preenchidos. Linhas em branco são ignoradas. Os lados são embaralhados pro aluno. 💡 <em>Também funciona pra relacionar pergunta com resposta: cadastre a pergunta na esquerda e a resposta na direita.</em>
+              Mínimo 3 pares rellenados. Las líneas vacías se ignoran. Los lados se muestran mezclados al alumno. 💡 <em>También sirve para relacionar pregunta con respuesta: registra la pregunta a la izquierda y la respuesta a la derecha.</em>
             </div>
           </div>
         </div>
 
         <div id="ex-classif-cats-field" style="display:none;">
           <div class="field" style="margin-top:10px;">
-            <label class="field-label">Categorias (separadas por vírgula)</label>
+            <label class="field-label">Categorías (separadas por coma)</label>
             <input class="inp" type="text" id="ex-classif-cats" placeholder="ser, estar">
             <div style="font-size:11px; color:var(--ink3); margin-top:4px;">
-              2 a 4 categorias. Cada item será classificado em uma delas. Use exatamente os mesmos nomes na coluna "categoría correcta" de cada item.
+              2 a 4 categorías. Cada elemento será clasificado en una de ellas. Usa exactamente los mismos nombres en la columna "categoría correcta" de cada elemento.
             </div>
           </div>
         </div>
 
         <div class="field">
-          <label class="field-label">URL da imagem (opcional)</label>
+          <label class="field-label">URL de la imagen (opcional)</label>
           <input class="inp" type="text" id="ex-imagem"
-            placeholder="https://exemplo.com/imagem.jpg">
+            placeholder="https://ejemplo.com/imagen.jpg">
         </div>
 
         <div class="field">
-          <label class="field-label">Voz TTS deste exercício (opcional — vazio = herda da aula / padrão)</label>
+          <label class="field-label">Voz TTS de este ejercicio (opcional — vacío = hereda de la lección / por defecto)</label>
           <div style="display:flex; gap:8px;">
             <select class="inp" id="ex-voz" style="flex:1;"></select>
             <button type="button" class="btn" onclick="previewTtsFromSelect('ex-voz')">▶</button>
@@ -1364,9 +1364,9 @@ pre {
         </div>
 
         <div class="btn-row">
-          <button class="btn btn-green" onclick="salvarExercicio()">Salvar exercício</button>
+          <button class="btn btn-green" onclick="salvarExercicio()">Guardar ejercicio</button>
           <button class="btn" onclick="toggleExForm()">Cancelar</button>
-          <button class="btn btn-accent" onclick="testarExercicio()" style="margin-left:auto;">▶ Testar</button>
+          <button class="btn btn-accent" onclick="testarExercicio()" style="margin-left:auto;">▶ Probar</button>
         </div>
 
         <!-- Preview -->
@@ -1377,30 +1377,30 @@ pre {
       </div>
 
       <div class="card">
-        <div id="ex-list-wrap"><div class="loading"><div class="spinner"></div>Carregando...</div></div>
+        <div id="ex-list-wrap"><div class="loading"><div class="spinner"></div>Cargando...</div></div>
       </div>
     </div>
 
     <!-- ===== ALUNOS ===== -->
     <div class="page" id="page-alunos">
       <div class="page-hd">
-        <div class="page-title">Alunos</div>
-        <div class="page-sub">Cadastre alunos e envie o acesso por email</div>
+        <div class="page-title">Alumnos</div>
+        <div class="page-sub">Registra alumnos y envía el acceso por email</div>
       </div>
       <div class="grid2" style="align-items:start;">
         <div>
           <div class="card-header" style="margin-bottom:10px;">
-            <span class="card-title">Alunos cadastrados</span>
-            <button class="btn btn-accent btn-sm" onclick="showNovoAluno()">+ Novo aluno</button>
+            <span class="card-title">Alumnos registrados</span>
+            <button class="btn btn-accent btn-sm" onclick="showNovoAluno()">+ Nuevo alumno</button>
           </div>
-          <div id="alunos-list"><div class="loading"><div class="spinner"></div>Carregando...</div></div>
+          <div id="alunos-list"><div class="loading"><div class="spinner"></div>Cargando...</div></div>
         </div>
         <div id="aluno-form-wrap">
           <div class="card">
-            <div class="card-header"><span class="card-title" id="aluno-form-title">Novo aluno</span></div>
+            <div class="card-header"><span class="card-title" id="aluno-form-title">Nuevo alumno</span></div>
             <input type="hidden" id="aluno-id">
             <div class="field">
-              <label class="field-label">Nome completo</label>
+              <label class="field-label">Nombre completo</label>
               <input class="inp" type="text" id="aluno-nome" placeholder="Ana Silva">
             </div>
             <div class="field">
@@ -1410,21 +1410,21 @@ pre {
             <div class="field">
               <label class="field-label">Código de acesso</label>
               <div style="display:flex; gap:6px;">
-                <input class="inp" type="text" id="aluno-codigo" placeholder="ex: ana2024" autocomplete="off" style="flex:1;">
+                <input class="inp" type="text" id="aluno-codigo" placeholder="ej: ana2024" autocomplete="off" style="flex:1;">
                 <button class="btn" onclick="gerarCodigo()" style="white-space:nowrap;">Gerar</button>
               </div>
-              <div style="font-size:11px; color:var(--ink3); margin-top:4px;">O aluno usa este código para fazer login</div>
+              <div style="font-size:11px; color:var(--ink3); margin-top:4px;">El alumno usa este código para iniciar sesión</div>
             </div>
             <div class="field">
               <label class="field-label">Status</label>
               <select class="inp" id="aluno-ativo">
-                <option value="true">Ativo</option>
+                <option value="true">Activo</option>
                 <option value="false">Inativo</option>
               </select>
             </div>
             <div class="btn-row">
-              <button class="btn btn-accent" onclick="salvarAluno()">Salvar aluno</button>
-              <button class="btn btn-green" id="btn-enviar-email" onclick="enviarEmailAcesso()" style="display:none;">📧 Enviar acesso por email</button>
+              <button class="btn btn-accent" onclick="salvarAluno()">Guardar alumno</button>
+              <button class="btn btn-green" id="btn-enviar-email" onclick="enviarEmailAcesso()" style="display:none;">📧 Enviar acceso por email</button>
               <button class="btn" onclick="limparFormAluno()">Cancelar</button>
             </div>
             <div id="email-status" style="margin-top:10px; font-size:13px;"></div>
@@ -1436,41 +1436,41 @@ pre {
     <!-- ===== PROGRESSO ===== -->
     <div class="page" id="page-progresso">
       <div class="page-hd">
-        <div class="page-title">Progresso dos alunos</div>
-        <div class="page-sub">Acompanhe o desempenho de cada aluno</div>
+        <div class="page-title">Progreso de los alumnos</div>
+        <div class="page-sub">Sigue el desempeño de cada alumno</div>
       </div>
       <div class="card" style="margin-bottom:1rem;">
         <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:flex-end;">
           <div class="field" style="margin:0; flex:1; min-width:180px;">
-            <label class="field-label">Filtrar por aluno</label>
+            <label class="field-label">Filtrar por alumno</label>
             <select class="inp" id="prog-aluno-filter" onchange="loadProgresso()">
-              <option value="">Todos os alunos</option>
+              <option value="">Todos los alumnos</option>
             </select>
           </div>
           <div class="field" style="margin:0; display:flex; align-items:flex-end;">
-            <button class="btn btn-accent" onclick="loadProgresso()">Atualizar</button>
+            <button class="btn btn-accent" onclick="loadProgresso()">Actualizar</button>
           </div>
         </div>
       </div>
-      <div id="progresso-wrap"><div class="loading"><div class="spinner"></div>Carregando...</div></div>
+      <div id="progresso-wrap"><div class="loading"><div class="spinner"></div>Cargando...</div></div>
     </div>
 
     <!-- ===== CONFIG ===== -->
     <div class="page" id="page-config">
       <div class="page-hd">
-        <div class="page-title">Configuração</div>
+        <div class="page-title">Configuración</div>
         <div class="page-sub">Credenciais do Supabase</div>
       </div>
 
       <div class="card" style="border-color:rgba(212,168,67,0.3); margin-bottom:1rem;">
         <div style="font-size:13px; color:var(--ink2); line-height:1.8;">
-          <strong style="color:var(--gold);">📋 Passo a passo para configurar:</strong><br>
-          1. Acesse <strong>supabase.com</strong> → crie uma conta gratuita<br>
-          2. Crie um novo projeto (guarde a senha do banco!)<br>
-          3. Vá em <strong>Settings → API</strong><br>
-          4. Copie a <strong>Project URL</strong> e a chave <strong>anon public</strong><br>
-          5. Cole nos campos abaixo e clique em <strong>Salvar e conectar</strong><br>
-          6. Clique em <strong>Criar tabelas</strong> para preparar o banco automaticamente
+          <strong style="color:var(--gold);">📋 Paso a paso para configurar:</strong><br>
+          1. Entra a <strong>supabase.com</strong> → crea una cuenta gratuita<br>
+          2. Crea un nuevo proyecto (¡guarda la contraseña de la base!)<br>
+          3. Ve a <strong>Settings → API</strong><br>
+          4. Copia la <strong>Project URL</strong> y la clave <strong>anon public</strong><br>
+          5. Pega en los campos de abajo y haz clic en <strong>Guardar y conectar</strong><br>
+          6. Haz clic en <strong>Crear tablas</strong> para preparar la base automáticamente
         </div>
       </div>
 
@@ -1478,7 +1478,7 @@ pre {
         <div class="card-header">
           <span class="card-title">Credenciais Supabase</span>
           <span id="conn-status" style="font-size:13px; color:var(--ink3);">
-            <span class="status-dot off" id="status-dot"></span>Não conectado
+            <span class="status-dot off" id="status-dot"></span>No conectado
           </span>
         </div>
         <div class="field">
@@ -1490,77 +1490,77 @@ pre {
           <input class="inp" type="text" id="cfg-key" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
         </div>
         <div class="btn-row">
-          <button class="btn btn-accent" onclick="saveConfig()">Salvar e conectar</button>
-          <button class="btn" onclick="testConn()">Testar conexão</button>
+          <button class="btn btn-accent" onclick="saveConfig()">Guardar y conectar</button>
+          <button class="btn" onclick="testConn()">Probar conexión</button>
         </div>
       </div>
 
       <div class="card" style="margin-top:12px;">
-        <div class="card-header"><span class="card-title">Senha de acesso ao painel</span></div>
+        <div class="card-header"><span class="card-title">Contraseña de acceso al panel</span></div>
         <div style="font-size:13px; color:var(--ink2); margin-bottom:10px; line-height:1.6;">
-          Senha padrão: <code>espanol2024</code> — altere após o primeiro acesso.
+          Contraseña por defecto: <code>espanol2024</code> — cámbiala tras el primer acceso.
         </div>
         <div class="field">
-          <label class="field-label">Nova senha</label>
+          <label class="field-label">Nueva contraseña</label>
           <input class="inp" type="password" id="cfg-nova-senha" placeholder="mínimo 6 caracteres">
         </div>
         <div class="field">
-          <label class="field-label">Confirmar nova senha</label>
-          <input class="inp" type="password" id="cfg-conf-senha" placeholder="repita a senha">
+          <label class="field-label">Confirmar nueva contraseña</label>
+          <input class="inp" type="password" id="cfg-conf-senha" placeholder="repite la contraseña">
         </div>
         <div class="btn-row">
-          <button class="btn btn-accent" onclick="salvarSenha()">Alterar senha</button>
+          <button class="btn btn-accent" onclick="salvarSenha()">Cambiar contraseña</button>
         </div>
       </div>
 
       <div class="card" style="margin-top:12px;">
         <div class="card-header"><span class="card-title">Email — Resend API</span></div>
         <div style="font-size:13px; color:var(--ink2); margin-bottom:10px; line-height:1.6;">
-          Usado para enviar o código de acesso aos alunos. Obtenha sua chave em <strong>resend.com</strong>.
+          Se usa para enviar el código de acceso a los alumnos. Obtén tu clave en <strong>resend.com</strong>.
         </div>
         <div class="field">
           <label class="field-label">Resend API Key</label>
           <input class="inp" type="text" id="cfg-resend" placeholder="re_...">
         </div>
         <div class="btn-row">
-          <button class="btn btn-accent" onclick="saveResendKey()">Salvar chave</button>
+          <button class="btn btn-accent" onclick="saveResendKey()">Guardar clave</button>
         </div>
       </div>
 
       <div class="card" style="margin-top:12px;">
-        <div class="card-header"><span class="card-title">Voz padrão TTS</span></div>
+        <div class="card-header"><span class="card-title">Voz por defecto TTS</span></div>
         <div style="font-size:13px; color:var(--ink2); margin-bottom:10px; line-height:1.6;">
-          Voz usada quando o item ou a aula não definem uma própria. Requer a Edge Function <code>tts</code> deployada e o secret <code>GOOGLE_TTS_API_KEY</code> configurado no Supabase.
+          Voz usada cuando el elemento o la lección no definen una propia. Requiere la Edge Function <code>tts</code> desplegada y el secret <code>GOOGLE_TTS_API_KEY</code> configurado en Supabase.
         </div>
         <div class="field">
-          <label class="field-label">Voz padrão (Google Cloud TTS)</label>
+          <label class="field-label">Voz por defecto (Google Cloud TTS)</label>
           <select class="inp" id="cfg-voz-padrao"></select>
         </div>
         <div class="btn-row">
-          <button class="btn btn-accent" onclick="saveVozPadrao()">Salvar voz padrão</button>
+          <button class="btn btn-accent" onclick="saveVozPadrao()">Guardar voz por defecto</button>
           <button class="btn" onclick="previewTtsFromSelect('cfg-voz-padrao')">▶ Pré-ouvir</button>
-          <button class="btn" onclick="atualizarVozesDoGoogle()" style="margin-left:auto;">🔄 Atualizar vozes do Google</button>
+          <button class="btn" onclick="atualizarVozesDoGoogle()" style="margin-left:auto;">🔄 Actualizar voces de Google</button>
         </div>
         <div id="vozes-fetch-status" style="font-size:12px; color:var(--ink3); margin-top:8px;"></div>
       </div>
 
       <div class="card" style="margin-top:12px;">
-        <div class="card-header"><span class="card-title">Manutenção</span></div>
+        <div class="card-header"><span class="card-title">Mantenimiento</span></div>
         <div style="font-size:13px; color:var(--ink2); margin-bottom:10px; line-height:1.6;">
-          Pré-gera todos os áudios de todas as aulas (vocabulário, frases, exercícios <em>escrita_audio</em> e <em>combine áudio</em>, verbos). Itens já em cache são pulados — custo zero pra reexecutar.
+          Pre-genera todos los audios de todas las lecciones (vocabulario, frases, ejercicios <em>escrita_audio</em> y <em>combina audio</em>, verbos). Los elementos ya en caché se saltan — costo cero para reejecutar.
         </div>
         <div class="btn-row">
-          <button class="btn btn-accent" onclick="pregerarTudo()">🔊 Pré-gerar áudios de tudo</button>
+          <button class="btn btn-accent" onclick="pregerarTudo()">🔊 Pre-generar audios de todo</button>
         </div>
       </div>
 
       <div class="card" id="sql-card" style="display:none;">
         <div class="card-header">
-          <span class="card-title">Criar tabelas no banco</span>
+          <span class="card-title">Crear tablas en la base de datos</span>
           <span class="badge badge-gold">Execute uma vez</span>
         </div>
         <div style="font-size:13px; color:var(--ink2); margin-bottom:12px; line-height:1.6;">
-          Copie o SQL abaixo, vá em <strong>SQL Editor</strong> no painel do Supabase, cole e execute.
+          Copia el SQL de abajo, ve a <strong>SQL Editor</strong> en el panel de Supabase, pega y ejecuta.
         </div>
         <pre style="background:var(--surface2); border:1px solid var(--border); border-radius:var(--r); padding:1rem; font-size:12px; color:var(--ink2); line-height:1.7; overflow-x:auto; white-space:pre-wrap;">-- Tabelas principais
 CREATE TABLE IF NOT EXISTS aulas (
@@ -1604,14 +1604,14 @@ ALTER TABLE alunos ENABLE ROW LEVEL SECURITY;
 ALTER TABLE progresso ENABLE ROW LEVEL SECURITY;
 ALTER TABLE badges ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "pub aulas" ON aulas FOR SELECT USING (true);
+CREATE POLICY "pub lecciones" ON aulas FOR SELECT USING (true);
 CREATE POLICY "pub vocab" ON vocabulario FOR SELECT USING (true);
 CREATE POLICY "pub frases" ON frases FOR SELECT USING (true);
 CREATE POLICY "pub alunos" ON alunos FOR SELECT USING (true);
 CREATE POLICY "pub progresso" ON progresso FOR SELECT USING (true);
 CREATE POLICY "pub badges" ON badges FOR SELECT USING (true);
 
-CREATE POLICY "write aulas" ON aulas FOR ALL USING (true);
+CREATE POLICY "write lecciones" ON aulas FOR ALL USING (true);
 CREATE POLICY "write vocab" ON vocabulario FOR ALL USING (true);
 CREATE POLICY "write frases" ON frases FOR ALL USING (true);
 CREATE POLICY "write alunos" ON alunos FOR ALL USING (true);
@@ -1622,11 +1622,11 @@ CREATE POLICY "write badges" ON badges FOR ALL USING (true);</pre>
         </div>
       </div>
         <div class="card-header">
-          <span class="card-title">Criar tabelas no banco</span>
+          <span class="card-title">Crear tablas en la base de datos</span>
           <span class="badge badge-gold">Execute uma vez</span>
         </div>
         <div style="font-size:13px; color:var(--ink2); margin-bottom:12px; line-height:1.6;">
-          Copie o SQL abaixo, vá em <strong>SQL Editor</strong> no painel do Supabase, cole e execute. Depois volte aqui.
+          Copia el SQL de abajo, ve a <strong>SQL Editor</strong> en el panel de Supabase, pega y ejecuta. Luego vuelve aquí.
         </div>
         <pre style="background:var(--surface2); border:1px solid var(--border); border-radius:var(--r); padding:1rem; font-size:12px; color:var(--ink2); line-height:1.7; overflow-x:auto; white-space:pre-wrap;">-- Tabela de aulas
 CREATE TABLE IF NOT EXISTS aulas (
@@ -1666,11 +1666,11 @@ ALTER TABLE aulas ENABLE ROW LEVEL SECURITY;
 ALTER TABLE vocabulario ENABLE ROW LEVEL SECURITY;
 ALTER TABLE frases ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "leitura publica aulas" ON aulas FOR SELECT USING (true);
+CREATE POLICY "leitura publica lecciones" ON aulas FOR SELECT USING (true);
 CREATE POLICY "leitura publica vocab" ON vocabulario FOR SELECT USING (true);
 CREATE POLICY "leitura publica frases" ON frases FOR SELECT USING (true);
 
-CREATE POLICY "escrita autenticada aulas" ON aulas FOR ALL USING (true);
+CREATE POLICY "escrita autenticada lecciones" ON aulas FOR ALL USING (true);
 CREATE POLICY "escrita autenticada vocab" ON vocabulario FOR ALL USING (true);
 CREATE POLICY "escrita autenticada frases" ON frases FOR ALL USING (true);</pre>
         <div class="btn-row">
@@ -1705,7 +1705,7 @@ function initConteudoEditor() {
     previewStyle: 'tab',
     usageStatistics: false,
     autofocus: false,
-    placeholder: 'Comece a escrever o conteúdo da aula...',
+    placeholder: 'Comienza a escribir el contenido de la lección...',
     toolbarItems: [
       ['heading', 'bold', 'italic', 'strike'],
       ['hr', 'quote'],
@@ -1723,7 +1723,7 @@ const PREVIEW_CODIGO = 'preview-prof';
 const PREVIEW_NOME   = 'Profesora Ana (preview)';
 
 async function verComoAluno() {
-  if (!sb) { toast('Configure o Supabase primeiro.', 'err'); return; }
+  if (!sb) { toast('Configura Supabase primero.', 'err'); return; }
   // Idempotente: cria se não existir, reusa se já existir.
   let { data: aluno } = await sb.from('alunos')
     .select('*')
@@ -1772,7 +1772,7 @@ const TTS_VOICES = [
 ];
 
 function vozOptionsHtml(includeInherit, selected) {
-  let html = includeInherit ? '<option value="">— herdar (padrão / aula) —</option>' : '';
+  let html = includeInherit ? '<option value="">— heredar (por defecto / lección) —</option>' : '';
   TTS_VOICES.forEach(g => {
     html += `<optgroup label="${g.group}">`;
     g.voices.forEach(([id, label]) => {
@@ -1791,7 +1791,7 @@ function getVozPadrao() {
 // Busca lista oficial de vozes do Google via Edge Function e re-popula TTS_VOICES.
 // Cached em localStorage por 7 dias pra evitar chamadas repetidas.
 async function atualizarVozesDoGoogle(force = false) {
-  if (!sb) { toast('Configure o Supabase primeiro.', 'err'); return; }
+  if (!sb) { toast('Configura Supabase primero.', 'err'); return; }
   const status = document.getElementById('vozes-fetch-status');
   const setStatus = (s, c='') => { if (status) { status.textContent = s; status.style.color = c || 'var(--ink3)'; } };
 
@@ -1805,7 +1805,7 @@ async function atualizarVozesDoGoogle(force = false) {
         const { ts, voices } = JSON.parse(raw);
         if (Date.now() - ts < CACHE_TTL && Array.isArray(voices) && voices.length) {
           aplicarVozes(voices);
-          setStatus(`Vozes carregadas do cache local (atualizado ${new Date(ts).toLocaleString()}). Clique de novo pra forçar refresh.`);
+          setStatus(`Voces cargadas de la caché local (actualizado ${new Date(ts).toLocaleString()}). Haz clic de nuevo para forzar refresco.`);
           return;
         }
       }
@@ -1825,7 +1825,7 @@ async function atualizarVozesDoGoogle(force = false) {
     );
     localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), voices: filtradas }));
     aplicarVozes(filtradas);
-    setStatus(`✓ ${filtradas.length} vozes em espanhol carregadas.`, 'var(--green)');
+    setStatus(`✓ ${filtradas.length} voces en español cargadas.`, 'var(--green)');
     toast('Vozes atualizadas do Google.', 'ok');
   } catch (e) {
     setStatus('❌ ' + (e.message || e), 'var(--red)');
@@ -1840,7 +1840,7 @@ function aplicarVozes(voices) {
     'es-US': 'América Latina (ES-US)',
     'es-MX': 'México (ES-MX)',
     'es-AR': 'Argentina (ES-AR)',
-    'es-CO': 'Colômbia (ES-CO)',
+    'es-CO': 'Colombia (ES-CO)',
     'es-CL': 'Chile (ES-CL)',
     'es-PE': 'Peru (ES-PE)',
   };
@@ -1889,11 +1889,11 @@ function saveVozPadrao() {
   const sel = document.getElementById('cfg-voz-padrao');
   if (!sel || !sel.value) return;
   localStorage.setItem('tts_voz_padrao', sel.value);
-  toast('Voz padrão salva! ✓', 'ok');
+  toast('¡Voz por defecto guardada! ✓', 'ok');
 }
 
 async function previewTtsFromSelect(selectId, textOverride) {
-  if (!sb) { toast('Configure o Supabase primeiro.', 'err'); return; }
+  if (!sb) { toast('Configura Supabase primero.', 'err'); return; }
   const sel = document.getElementById(selectId);
   let voz = sel?.value || getVozPadrao();
   let texto = textOverride;
@@ -1911,7 +1911,7 @@ async function previewTtsFromSelect(selectId, textOverride) {
     if (!data?.url) throw new Error(data?.error || 'Sem URL retornada');
     await new Audio(data.url).play();
   } catch (e) {
-    toast('Erro TTS: ' + (e.message || e), 'err');
+    toast('Error TTS: ' + (e.message || e), 'err');
   }
 }
 
@@ -1920,10 +1920,10 @@ async function previewTtsFromSelect(selectId, textOverride) {
 async function pregerarAudiosAula(aulaId, opts = {}) {
   // opts.silent: pula confirmação e retorna stats em vez de mostrar toast final.
   // Usado pelo batch pregerarTudo.
-  if (!sb) { if (!opts.silent) toast('Configure o Supabase primeiro.', 'err'); return null; }
+  if (!sb) { if (!opts.silent) toast('Configura Supabase primero.', 'err'); return null; }
   const aula = aulasList.find(a => a.id === aulaId);
-  if (!aula) { if (!opts.silent) toast('Aula não encontrada.', 'err'); return null; }
-  if (!opts.silent && !confirm(`Pré-gerar áudios da Aula ${aula.numero} — "${aula.titulo}"?\n\nIsso varre vocabulário, frases, exercícios e verbos. Itens já em cache são pulados (custo zero). Pode levar alguns minutos.`)) return null;
+  if (!aula) { if (!opts.silent) toast('Lección no encontrada.', 'err'); return null; }
+  if (!opts.silent && !confirm(`¿Pre-generar audios de la Lección ${aula.numero} — "${aula.titulo}"?\n\nEsto recorre vocabulario, frases, ejercicios y verbos. Los elementos ya en caché se saltan (costo cero). Puede tardar algunos minutos.`)) return null;
 
   // Coletar [{texto, voz}] de todas as fontes
   const [vocabRes, frasesRes, exRes] = await Promise.all([
@@ -1971,7 +1971,7 @@ async function pregerarAudiosAula(aulaId, opts = {}) {
   });
 
   if (!itens.length) {
-    if (!opts.silent) toast('Nada pra gerar nesta aula.', 'err');
+    if (!opts.silent) toast('Nada que generar en esta lección.', 'err');
     return { hits: 0, misses: 0, fails: 0, total: 0 };
   }
 
@@ -1983,7 +1983,7 @@ async function pregerarAudiosAula(aulaId, opts = {}) {
     modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:9999;';
     modal.innerHTML = `
       <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:24px;min-width:360px;max-width:520px;">
-        <div style="font-weight:700;font-size:16px;margin-bottom:8px;" id="pregen-title">Pré-gerando áudios...</div>
+        <div style="font-weight:700;font-size:16px;margin-bottom:8px;" id="pregen-title">Pre-generando audios...</div>
         <div style="font-size:13px;color:var(--ink2);margin-bottom:12px;" id="pregen-detail">—</div>
         <div style="background:var(--surface2);border-radius:8px;height:10px;overflow:hidden;margin-bottom:12px;">
           <div id="pregen-bar" style="background:var(--accent);height:100%;width:0%;transition:width 0.2s;"></div>
@@ -2037,8 +2037,8 @@ async function pregerarAudiosAula(aulaId, opts = {}) {
   await Promise.all(Array.from({ length: CONCURRENCY }, worker));
 
   if (!opts.silent) {
-    document.getElementById('pregen-title').textContent = '✓ Pré-geração concluída';
-    setDetail(`Aula ${aula.numero} — "${aula.titulo}"`);
+    document.getElementById('pregen-title').textContent = '✓ Pre-generación completada';
+    setDetail(`Lección ${aula.numero} — "${aula.titulo}"`);
     document.getElementById('pregen-close').style.display = '';
     toast(`Áudios prontos: ${hits} em cache + ${misses} gerados${fails ? ` · ${fails} falhas` : ''}`, fails ? 'err' : 'ok');
   }
@@ -2047,9 +2047,9 @@ async function pregerarAudiosAula(aulaId, opts = {}) {
 
 // Pré-gera áudios de TODAS as aulas em sequência. Usa o mesmo modal compartilhado.
 async function pregerarTudo() {
-  if (!sb) return toast('Configure o Supabase primeiro.', 'err');
-  if (!aulasList?.length) return toast('Nenhuma aula carregada.', 'err');
-  if (!confirm(`Pré-gerar áudios de TODAS as ${aulasList.length} aulas?\n\nItens já em cache são pulados (custo zero). Pode levar alguns minutos dependendo do tamanho.`)) return;
+  if (!sb) return toast('Configura Supabase primero.', 'err');
+  if (!aulasList?.length) return toast('Ninguna lección cargada.', 'err');
+  if (!confirm(`¿Pre-generar audios de TODAS las ${aulasList.length} lecciones?\n\nLos elementos ya en caché se saltan (costo cero). Puede tardar algunos minutos según el tamaño.`)) return;
 
   const totalAulas = aulasList.length;
   let totHits = 0, totMisses = 0, totFails = 0, totItens = 0;
@@ -2058,7 +2058,7 @@ async function pregerarTudo() {
     const aula = aulasList[i];
     const stats = await pregerarAudiosAula(aula.id, {
       silent: true,
-      title: `Pré-gerando áudios... Aula ${i + 1}/${totalAulas} — ${aula.titulo}`,
+      title: `Pre-generando audios... Aula ${i + 1}/${totalAulas} — ${aula.titulo}`,
     });
     if (stats) {
       totHits += stats.hits;
@@ -2068,8 +2068,8 @@ async function pregerarTudo() {
     }
   }
 
-  document.getElementById('pregen-title').textContent = '✓ Pré-geração de tudo concluída';
-  document.getElementById('pregen-detail').textContent = `${totalAulas} aulas processadas · ${totItens} itens`;
+  document.getElementById('pregen-title').textContent = '✓ Pre-generación de todo completada';
+  document.getElementById('pregen-detail').textContent = `${totalAulas} lecciones procesadas · ${totItens} elementos`;
   document.getElementById('pregen-stats').textContent =
     `${totItens} / ${totItens}  ·  ${totHits} em cache  ·  ${totMisses} novos  ·  ${totFails} falhas`;
   document.getElementById('pregen-bar').style.width = '100%';
@@ -2123,8 +2123,8 @@ function atualizarHintsVoz() {
     const v = sel.value;
     setHint(selId + '-hint',
       v
-        ? `🔧 Sobrescrevendo padrão (${labelDe(padrao)})`
-        : `↳ Herdando padrão: ${labelDe(padrao)}`,
+        ? `🔧 Sobrescribiendo por defecto (${labelDe(padrao)})`
+        : `↳ Heredando por defecto: ${labelDe(padrao)}`,
       v ? 'override' : 'inherit'
     );
   });
@@ -2139,7 +2139,7 @@ function atualizarHintsVoz() {
     if (!sel) return;
     const v = sel.value;
     if (v) {
-      setHint(hintId, `🔧 Sobrescrevendo herança`, 'override');
+      setHint(hintId, `🔧 Sobrescribiendo herencia`, 'override');
       return;
     }
     const aulaId = document.getElementById(aulaIdSel)?.value;
@@ -2147,7 +2147,7 @@ function atualizarHintsVoz() {
     if (aula?.voz_tts) {
       setHint(hintId, `↳ Herdando da Aula ${aula.numero}: ${labelDe(aula.voz_tts)}`, 'inherit');
     } else {
-      setHint(hintId, `↳ Herdando padrão: ${labelDe(padrao)}`, 'inherit');
+      setHint(hintId, `↳ Heredando por defecto: ${labelDe(padrao)}`, 'inherit');
     }
   });
 }
@@ -2195,7 +2195,7 @@ function initSupabase(url, key) {
     document.getElementById('sql-card').style.display = '';
     return true;
   } catch(e) {
-    toast('Credenciais inválidas.', 'err');
+    toast('Credenciales inválidas.', 'err');
     return false;
   }
 }
@@ -2203,7 +2203,7 @@ function initSupabase(url, key) {
 function saveConfig() {
   const url = document.getElementById('cfg-url').value.trim();
   const key = document.getElementById('cfg-key').value.trim();
-  if (!url || !key) { toast('Preencha URL e chave.', 'err'); return; }
+  if (!url || !key) { toast('Rellena URL y clave.', 'err'); return; }
   localStorage.setItem('sb_url', url);
   localStorage.setItem('sb_key', key);
   if (initSupabase(url, key)) {
@@ -2217,9 +2217,9 @@ async function testConn() {
   try {
     const { error } = await sb.from('aulas').select('id').limit(1);
     if (error) throw error;
-    toast('Conexão OK! Tabelas encontradas. ✓', 'ok');
+    toast('¡Conexión OK! Tablas encontradas. ✓', 'ok');
   } catch(e) {
-    toast('Erro: ' + (e.message || 'Tabelas não encontradas. Execute o SQL primeiro.'), 'err');
+    toast('Error: ' + (e.message || 'Tablas no encontradas. Ejecuta el SQL primero.'), 'err');
   }
 }
 
@@ -2262,10 +2262,10 @@ function toast(msg, type = 'ok') {
 // AULAS
 // ============================================================
 async function loadAulas() {
-  if (!sb) { document.getElementById('aulas-list').innerHTML = '<div class="empty">Configure o Supabase primeiro.</div>'; return; }
-  document.getElementById('aulas-list').innerHTML = '<div class="loading"><div class="spinner"></div>Carregando...</div>';
+  if (!sb) { document.getElementById('aulas-list').innerHTML = '<div class="empty">Configura Supabase primero.</div>'; return; }
+  document.getElementById('aulas-list').innerHTML = '<div class="loading"><div class="spinner"></div>Cargando...</div>';
   const { data, error } = await sb.from('aulas').select('*').order('numero');
-  if (error) { toast('Erro ao carregar aulas: ' + error.message, 'err'); return; }
+  if (error) { toast('Error al cargar lecciones: ' + error.message, 'err'); return; }
   aulasList = data || [];
   renderAulasList();
   populateAulaSelects();
@@ -2273,8 +2273,8 @@ async function loadAulas() {
 
 function renderAulasList() {
   const el = document.getElementById('aulas-list');
-  if (!aulasList.length) { el.innerHTML = '<div class="empty">Nenhuma aula criada ainda.<br>Clique em "+ Nova aula".</div>'; return; }
-  el.innerHTML = '<div class="reorder-hint">☰ Arraste para reordenar as aulas</div>' +
+  if (!aulasList.length) { el.innerHTML = '<div class="empty">Aún no hay lecciones creadas.<br>Haz clic en "+ Nueva lección".</div>'; return; }
+  el.innerHTML = '<div class="reorder-hint">☰ Arrastra para reordenar las lecciones</div>' +
     aulasList.map(a => `
     <div class="aula-item" id="aula-item-${a.id}"
       draggable="true"
@@ -2290,7 +2290,7 @@ function renderAulasList() {
         <div class="aula-titulo">${a.titulo}</div>
         <div class="aula-meta">${a.nivel} · ${a.tema || '—'}</div>
       </div>
-      <button class="btn btn-sm" title="Pré-gerar áudios desta aula"
+      <button class="btn btn-sm" title="Pre-generar audios de esta lección"
               onclick="event.stopPropagation(); pregerarAudiosAula(${a.id})">🔊</button>
       <button class="btn btn-red btn-sm" onclick="event.stopPropagation(); deletarAula(${a.id})">✕</button>
     </div>`).join('');
@@ -2334,7 +2334,7 @@ function abrirAula(id) {
   document.getElementById('aula-detail-view').style.display = '';
 
   // Preencher header
-  document.getElementById('ad-title').textContent = `Aula ${a.numero} — ${a.titulo}`;
+  document.getElementById('ad-title').textContent = `Lección ${a.numero} — ${a.titulo}`;
   document.getElementById('ad-sub').textContent = `${a.nivel} · ${a.tema || ''}`;
 
   // Botão pré-gerar áudios
@@ -2424,7 +2424,7 @@ function setAulaIdNosForms(aulaId) {
     const exists = Array.from(el.options).some(o => String(o.value) === String(aulaId));
     if (!exists) {
       const aula = aulasList.find(a => String(a.id) === String(aulaId));
-      if (aula) el.innerHTML = `<option value="${aula.id}">Aula ${aula.numero} — ${aula.titulo}</option>`;
+      if (aula) el.innerHTML = `<option value="${aula.id}">Lección ${aula.numero} — ${aula.titulo}</option>`;
     }
     el.value = aulaId;
   });
@@ -2434,7 +2434,7 @@ function setAulaIdNosForms(aulaId) {
 // AULAS — fluxo de criar/editar
 // ============================================================
 function showNovaAula() {
-  // Mostra o card de "+ Nova aula" inline na lista
+  // Mostra o card de "+ Nueva lección" inline na lista
   limparFormAula();
   popularSelectsVoz();
   const wrap = document.getElementById('aula-form-wrap');
@@ -2442,7 +2442,7 @@ function showNovaAula() {
     wrap.style.display = '';
     wrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
-  document.getElementById('aula-form-title').textContent = 'Nova aula';
+  document.getElementById('aula-form-title').textContent = 'Nueva lección';
 }
 
 function cancelarFormAula() {
@@ -2457,7 +2457,7 @@ function editarAula(id) {
 }
 
 async function salvarAula() {
-  if (!sb) { toast('Sem conexão.', 'err'); return; }
+  if (!sb) { toast('Sin conexión.', 'err'); return; }
   const id = document.getElementById('aula-id').value;
   const payload = {
     numero: parseInt(document.getElementById('aula-numero').value),
@@ -2469,13 +2469,13 @@ async function salvarAula() {
     voz_tts: document.getElementById('aula-voz').value || null,
   };
   if (Number.isNaN(payload.numero) || payload.numero < 0 || !payload.titulo) {
-    toast('Preencha número (≥0) e título.', 'err'); return;
+    toast('Rellena número (≥0) y título.', 'err'); return;
   }
   const { data, error } = id
     ? await sb.from('aulas').update(payload).eq('id', id).select().single()
     : await sb.from('aulas').insert(payload).select().single();
   if (error) { toast('Erro: ' + error.message, 'err'); return; }
-  toast(id ? 'Aula atualizada! ✓' : 'Aula criada! ✓', 'ok');
+  toast(id ? '¡Lección actualizada! ✓' : '¡Lección creada! ✓', 'ok');
   cancelarFormAula();
   await loadAulas();
   // Se foi criação nova, abrir o detalhe pra continuar adicionando conteúdo
@@ -2484,7 +2484,7 @@ async function salvarAula() {
 
 // Save do form de detalhes (dentro do drill-in)
 async function salvarAulaDetalhe() {
-  if (!sb || !aulaContext) { toast('Sem conexão ou contexto.', 'err'); return; }
+  if (!sb || !aulaContext) { toast('Sin conexión o contexto.', 'err'); return; }
   const payload = {
     numero: parseInt(document.getElementById('ad-aula-numero').value),
     titulo: document.getElementById('ad-aula-titulo').value.trim(),
@@ -2496,23 +2496,23 @@ async function salvarAulaDetalhe() {
     voz_tts: document.getElementById('ad-aula-voz').value || null,
   };
   if (Number.isNaN(payload.numero) || payload.numero < 0 || !payload.titulo) {
-    toast('Preencha número (≥0) e título.', 'err'); return;
+    toast('Rellena número (≥0) y título.', 'err'); return;
   }
   const { error } = await sb.from('aulas').update(payload).eq('id', aulaContext.id);
   if (error) { toast('Erro: ' + error.message, 'err'); return; }
-  toast('Aula atualizada! ✓', 'ok');
+  toast('¡Lección actualizada! ✓', 'ok');
   // Atualiza header e contexto
   Object.assign(aulaContext, payload);
-  document.getElementById('ad-title').textContent = `Aula ${payload.numero} — ${payload.titulo}`;
+  document.getElementById('ad-title').textContent = `Lección ${payload.numero} — ${payload.titulo}`;
   document.getElementById('ad-sub').textContent = `${payload.nivel} · ${payload.tema || ''}`;
   await loadAulas();
 }
 
 async function deletarAula(id) {
-  if (!confirm('Deletar esta aula e todo o seu conteúdo?')) return;
+  if (!confirm('¿Eliminar esta lección y todo su contenido?')) return;
   const { error } = await sb.from('aulas').delete().eq('id', id);
   if (error) { toast('Erro: ' + error.message, 'err'); return; }
-  toast('Aula removida.', 'ok');
+  toast('Lección eliminada.', 'ok');
   if (aulaContext?.id === id) voltarAulas();
   loadAulas();
 }
@@ -2525,7 +2525,7 @@ function limparFormAula() {
   ['aula-id','aula-numero','aula-titulo','aula-tema','aula-verbos','aula-obs'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('aula-nivel').value = 'A1';
   const vsel = document.getElementById('aula-voz'); if (vsel) vsel.value = '';
-  document.getElementById('aula-form-title').textContent = 'Nova aula';
+  document.getElementById('aula-form-title').textContent = 'Nueva lección';
   document.querySelectorAll('.aula-item').forEach(el => el.classList.remove('selected'));
 }
 
@@ -2544,8 +2544,8 @@ function populateAulaSelects() {
 }
 
 async function loadVocab() {
-  if (!sb) { document.getElementById('vocab-table-wrap').innerHTML = '<div class="empty">Configure o Supabase primeiro.</div>'; return; }
-  document.getElementById('vocab-table-wrap').innerHTML = '<div class="loading"><div class="spinner"></div>Carregando...</div>';
+  if (!sb) { document.getElementById('vocab-table-wrap').innerHTML = '<div class="empty">Configura Supabase primero.</div>'; return; }
+  document.getElementById('vocab-table-wrap').innerHTML = '<div class="loading"><div class="spinner"></div>Cargando...</div>';
   let q = sb.from('vocabulario').select('*, aulas(numero, titulo)')
     .order('numero', { referencedTable: 'aulas', ascending: true });
   const aulaF = document.getElementById('vocab-aula-filter')?.value;
@@ -2558,11 +2558,11 @@ async function loadVocab() {
   if (!rows.length) { document.getElementById('vocab-table-wrap').innerHTML = '<div class="empty">Nenhuma palavra encontrada.</div>'; return; }
   document.getElementById('vocab-table-wrap').innerHTML = `
     <table class="vtable">
-      <thead><tr><th>Img</th><th>Aula</th><th>Espanhol</th><th>Português</th><th>Categoria</th><th>Exemplo</th><th></th></tr></thead>
+      <thead><tr><th>Img</th><th>Lección</th><th>Español</th><th>Portugués</th><th>Categoría</th><th>Exemplo</th><th></th></tr></thead>
       <tbody>${rows.map(r => `
         <tr>
           <td>${r.imagem_url ? `<img src="${r.imagem_url}" style="width:40px;height:40px;object-fit:cover;border-radius:6px;">` : '—'}</td>
-          <td><span class="badge badge-blue">Aula ${r.aulas?.numero ?? '?'}</span></td>
+          <td><span class="badge badge-blue">Lección ${r.aulas?.numero ?? '?'}</span></td>
           <td><strong>${r.espanhol}</strong></td>
           <td>${r.portugues}</td>
           <td><span class="badge badge-orange">${r.categoria}</span></td>
@@ -2639,14 +2639,14 @@ async function editarVocab(id) {
   setVocabImgPreview(data.imagem_url || '');
   document.getElementById('vocab-img-status').textContent = '';
   document.getElementById('vocab-img-file').value = '';
-  document.getElementById('vocab-form-title').textContent = 'Editando palavra';
+  document.getElementById('vocab-form-title').textContent = 'Editando palabra';
   document.getElementById('vocab-form').style.display = '';
   document.getElementById('vocab-form').scrollIntoView({ behavior: 'smooth' });
   atualizarHintsVoz();
 }
 
 async function salvarVocab() {
-  if (!sb) { toast('Sem conexão.', 'err'); return; }
+  if (!sb) { toast('Sin conexión.', 'err'); return; }
   const id = document.getElementById('vocab-id').value;
   const payload = {
     aula_id: aulaContext?.id || document.getElementById('vocab-aula-id').value || null,
@@ -2657,7 +2657,7 @@ async function salvarVocab() {
     imagem_url: document.getElementById('vocab-img-url').value || null,
     voz_tts: document.getElementById('vocab-voz').value || null,
   };
-  if (!payload.espanhol || !payload.portugues) { toast('Preencha espanhol e português.', 'err'); return; }
+  if (!payload.espanhol || !payload.portugues) { toast('Rellena español y portugués.', 'err'); return; }
   const { error } = id
     ? await sb.from('vocabulario').update(payload).eq('id', id)
     : await sb.from('vocabulario').insert(payload);
@@ -2668,7 +2668,7 @@ async function salvarVocab() {
 }
 
 async function deletarVocab(id) {
-  if (!confirm('Deletar esta palavra?')) return;
+  if (!confirm('¿Eliminar esta palabra?')) return;
   const { error } = await sb.from('vocabulario').delete().eq('id', id);
   if (error) { toast('Erro: ' + error.message, 'err'); return; }
   toast('Palavra removida.', 'ok');
@@ -2679,8 +2679,8 @@ async function deletarVocab(id) {
 // FRASES
 // ============================================================
 async function loadFrases() {
-  if (!sb) { document.getElementById('frases-list-wrap').innerHTML = '<div class="empty">Configure o Supabase primeiro.</div>'; return; }
-  document.getElementById('frases-list-wrap').innerHTML = '<div class="loading"><div class="spinner"></div>Carregando...</div>';
+  if (!sb) { document.getElementById('frases-list-wrap').innerHTML = '<div class="empty">Configura Supabase primero.</div>'; return; }
+  document.getElementById('frases-list-wrap').innerHTML = '<div class="loading"><div class="spinner"></div>Cargando...</div>';
   let q = sb.from('frases').select('*, aulas(numero, titulo)')
     .order('numero', { referencedTable: 'aulas', ascending: true });
   const aulaF = document.getElementById('frases-aula-filter')?.value;
@@ -2690,12 +2690,12 @@ async function loadFrases() {
   const { data, error } = await q;
   if (error) { toast('Erro: ' + error.message, 'err'); return; }
   const rows = data || [];
-  if (!rows.length) { document.getElementById('frases-list-wrap').innerHTML = '<div class="empty">Nenhuma frase encontrada.</div>'; return; }
+  if (!rows.length) { document.getElementById('frases-list-wrap').innerHTML = '<div class="empty">Ninguna frase encontrada.</div>'; return; }
   document.getElementById('frases-list-wrap').innerHTML = rows.map(r => `
     <div class="frase-row">
       <div class="frase-content">
         <div style="margin-bottom:4px; display:flex; gap:6px; flex-wrap:wrap;">
-          <span class="badge badge-blue">Aula ${r.aulas?.numero ?? '?'}</span>
+          <span class="badge badge-blue">Lección ${r.aulas?.numero ?? '?'}</span>
           <span class="badge badge-orange">${r.categoria}</span>
         </div>
         <div class="frase-es">${r.espanhol}</div>
@@ -2718,7 +2718,7 @@ function limparFraseForm() {
   ['frase-id','frase-es','frase-pt'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('frase-cat').value = 'geral';
   const vsel = document.getElementById('frase-voz'); if (vsel) vsel.value = '';
-  document.getElementById('frase-form-title').textContent = 'Nova frase';
+  document.getElementById('frase-form-title').textContent = 'Nueva frase';
   popularSelectsVoz();
 }
 
@@ -2740,7 +2740,7 @@ async function editarFrase(id) {
 }
 
 async function salvarFrase() {
-  if (!sb) { toast('Sem conexão.', 'err'); return; }
+  if (!sb) { toast('Sin conexión.', 'err'); return; }
   const id = document.getElementById('frase-id').value;
   const payload = {
     aula_id: aulaContext?.id || document.getElementById('frase-aula-id').value || null,
@@ -2749,21 +2749,21 @@ async function salvarFrase() {
     categoria: document.getElementById('frase-cat').value,
     voz_tts: document.getElementById('frase-voz').value || null,
   };
-  if (!payload.espanhol || !payload.portugues) { toast('Preencha espanhol e português.', 'err'); return; }
+  if (!payload.espanhol || !payload.portugues) { toast('Rellena español y portugués.', 'err'); return; }
   const { error } = id
     ? await sb.from('frases').update(payload).eq('id', id)
     : await sb.from('frases').insert(payload);
   if (error) { toast('Erro: ' + error.message, 'err'); return; }
-  toast(id ? 'Frase atualizada! ✓' : 'Frase adicionada! ✓', 'ok');
+  toast(id ? '¡Frase actualizada! ✓' : 'Frase adicionada! ✓', 'ok');
   toggleFraseForm();
   loadFrases();
 }
 
 async function deletarFrase(id) {
-  if (!confirm('Deletar esta frase?')) return;
+  if (!confirm('¿Eliminar esta frase?')) return;
   const { error } = await sb.from('frases').delete().eq('id', id);
   if (error) { toast('Erro: ' + error.message, 'err'); return; }
-  toast('Frase removida.', 'ok');
+  toast('Frase eliminada.', 'ok');
   loadFrases();
 }
 
@@ -2775,14 +2775,14 @@ function populateExAulaSelects() {
     const el = document.getElementById(sid);
     if (!el) return;
     const isFilter = sid.includes('filter');
-    el.innerHTML = (isFilter ? '<option value="">Todas as aulas</option>' : '') +
+    el.innerHTML = (isFilter ? '<option value="">Todas las lecciones</option>' : '') +
       aulasList.map(a => `<option value="${a.id}">Aula ${a.numero} — ${a.titulo}</option>`).join('');
   });
 }
 
 async function loadExercicios() {
-  if (!sb) { document.getElementById('ex-list-wrap').innerHTML = '<div class="empty">Configure o Supabase primeiro.</div>'; return; }
-  document.getElementById('ex-list-wrap').innerHTML = '<div class="loading"><div class="spinner"></div>Carregando...</div>';
+  if (!sb) { document.getElementById('ex-list-wrap').innerHTML = '<div class="empty">Configura Supabase primero.</div>'; return; }
+  document.getElementById('ex-list-wrap').innerHTML = '<div class="loading"><div class="spinner"></div>Cargando...</div>';
   let q = sb.from('exercicios').select('*, aulas(numero, titulo)')
     .order('numero', { referencedTable: 'aulas', ascending: true });
   const aulaF = document.getElementById('ex-aula-filter')?.value;
@@ -2793,19 +2793,19 @@ async function loadExercicios() {
   if (error) { toast('Erro: ' + error.message, 'err'); return; }
   const rows = data || [];
   if (!rows.length) {
-    document.getElementById('ex-list-wrap').innerHTML = '<div class="empty">Nenhum exercício encontrado.</div>';
+    document.getElementById('ex-list-wrap').innerHTML = '<div class="empty">Ningún ejercicio encontrado.</div>';
     return;
   }
   const tipoLabel = t =>
-    t==='lacuna_escolha'?'Complete o espaço':
-    t==='lacuna_banco'?'Banco de palavras':
-    t==='escrita_audio'?'Ouça e escreva':
-    t==='pares'?'Combine os pares':
-    t==='pares_audio'?'Combine áudio':
-    t==='conjugar_verbo'?'Conjugar verbo':
-    t==='corrigir_frase'?'Corrigir frase':
-    t==='multipla_escolha'?'Múltipla escolha':
-    t==='classificar'?'Classificar':
+    t==='lacuna_escolha'?'Completa el espacio':
+    t==='lacuna_banco'?'Banco de palabras':
+    t==='escrita_audio'?'Escucha y escribe':
+    t==='pares'?'Combina los pares':
+    t==='pares_audio'?'Combina audio':
+    t==='conjugar_verbo'?'Conjuga el verbo':
+    t==='corrigir_frase'?'Corrige la frase':
+    t==='multipla_escolha'?'Opción múltiple':
+    t==='classificar'?'Clasificar':
     t;
   const isParesT = t => t === 'pares' || t === 'pares_audio';
   const fraseResumo = r =>
@@ -2815,10 +2815,10 @@ async function loadExercicios() {
   const respResumo = r => isParesT(r.tipo) ? '—' : (r.resposta || '—');
   document.getElementById('ex-list-wrap').innerHTML = `
     <table class="vtable">
-      <thead><tr><th>Aula</th><th>Tipo</th><th>Frase</th><th>Resposta</th><th></th></tr></thead>
+      <thead><tr><th>Lección</th><th>Tipo</th><th>Frase</th><th>Respuesta</th><th></th></tr></thead>
       <tbody>${rows.map(r => `
         <tr>
-          <td><span class="badge badge-blue">Aula ${r.aulas?.numero ?? '?'}</span></td>
+          <td><span class="badge badge-blue">Lección ${r.aulas?.numero ?? '?'}</span></td>
           <td><span class="badge badge-orange">${tipoLabel(r.tipo)}</span></td>
           <td style="max-width:260px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${fraseResumo(r)}</td>
           <td style="color:var(--green); font-weight:500;">${respResumo(r)}</td>
@@ -2845,7 +2845,7 @@ function limparExForm() {
   });
   document.getElementById('ex-tipo').value = 'lacuna_escolha';
   const vsel = document.getElementById('ex-voz'); if (vsel) vsel.value = '';
-  document.getElementById('ex-form-title').textContent = 'Novo exercício';
+  document.getElementById('ex-form-title').textContent = 'Nuevo ejercicio';
   document.getElementById('ex-preview').style.display = 'none';
   clearParesRows();
   ensureMinParesRows(5);
@@ -2878,28 +2878,28 @@ function updateExFormTipo() {
 
   if (tipo === 'lacuna_escolha') {
     opField.style.display = '';
-    fraseHint.textContent = 'Use ___ onde deve aparecer a lacuna. Ex: El perro ___ muy grande.';
-    respHint.textContent = 'A palavra correta para preencher a lacuna. Ex: es';
+    fraseHint.textContent = 'Usa ___ donde debe aparecer el hueco. Ej: El perro ___ muy grande.';
+    respHint.textContent = 'La palabra correcta para rellenar el hueco. Ej: es';
   } else if (tipo === 'lacuna_banco') {
     opField.style.display = '';
-    fraseHint.textContent = 'Use ___ para cada lacuna. Ex: Hay muchos ___ en mi ___.';
-    respHint.textContent = 'Respostas separadas por vírgula, na ordem das lacunas. Ex: libros,estante';
+    fraseHint.textContent = 'Usa ___ para cada hueco. Ej: Hay muchos ___ en mi ___.';
+    respHint.textContent = 'Respuestas separadas por coma, en el orden de los huecos. Ej: libros,estante';
   } else if (tipo === 'escrita_audio') {
     opField.style.display = 'none';
-    fraseHint.textContent = 'A frase completa que será lida em voz alta. Ex: Los niños juegan en el parque.';
-    respHint.textContent = 'A palavra que o aluno deve escrever. Ex: parque';
+    fraseHint.textContent = 'La frase completa que será leída en voz alta. Ej: Los niños juegan en el parque.';
+    respHint.textContent = 'La palabra que el alumno debe escribir. Ej: parque';
   } else if (tipo === 'conjugar_verbo') {
     opField.style.display = 'none';
-    fraseHint.textContent = 'Frase com ___ na(s) lacuna(s) + verbo entre parênteses. Ex: Hoy (levantarse, yo) ___ tarde.';
-    respHint.textContent = 'Conjugação correta. Múltiplas lacunas: separe por vírgula. Ex: me levanto';
+    fraseHint.textContent = 'Frase con ___ en el/los hueco(s) + verbo entre paréntesis. Ej: Hoy (levantarse, yo) ___ tarde.';
+    respHint.textContent = 'Conjugación correcta. Múltiples huecos: separa por coma. Ej: me levanto';
   } else if (tipo === 'corrigir_frase') {
     opField.style.display = 'none';
-    fraseHint.textContent = 'A frase ERRADA, como será mostrada ao aluno. Ex: Ello es simpático';
-    respHint.textContent = 'A versão CORRETA da frase. Ex: Él es simpático.';
+    fraseHint.textContent = 'La frase ERRÓNEA, como se mostrará al alumno. Ej: Ello es simpático';
+    respHint.textContent = 'La versión CORRECTA de la frase. Ej: Él es simpático.';
   } else if (tipo === 'multipla_escolha') {
     opField.style.display = '';
-    fraseHint.textContent = 'A pergunta inteira. Não precisa de ___. Ex: «No tener vergüenza» es sinónimo de…';
-    respHint.textContent = 'Texto exato da alternativa correta. Para sinônimos use | (ex: sí|si).';
+    fraseHint.textContent = 'La pregunta entera. No necesita ___. Ej: «No tener vergüenza» es sinónimo de…';
+    respHint.textContent = 'Texto exacto de la alternativa correcta. Para sinónimos usa | (ej: sí|si).';
   }
 }
 
@@ -3031,7 +3031,7 @@ async function editarExercicio(id) {
   }
   document.getElementById('ex-imagem').value = data.imagem_url || '';
   document.getElementById('ex-voz').value = data.voz_tts || '';
-  document.getElementById('ex-form-title').textContent = 'Editando exercício';
+  document.getElementById('ex-form-title').textContent = 'Editando ejercicio';
   document.getElementById('ex-form').style.display = '';
   updateExFormTipo();
   document.getElementById('ex-form').scrollIntoView({ behavior: 'smooth' });
@@ -3039,7 +3039,7 @@ async function editarExercicio(id) {
 }
 
 async function salvarExercicio() {
-  if (!sb) { toast('Sem conexão.', 'err'); return; }
+  if (!sb) { toast('Sin conexión.', 'err'); return; }
   const id = document.getElementById('ex-id').value;
   const tipo = document.getElementById('ex-tipo').value;
   const imagem = document.getElementById('ex-imagem').value.trim();
@@ -3047,7 +3047,7 @@ async function salvarExercicio() {
   let payload;
   if (tipo === 'pares' || tipo === 'pares_audio') {
     const pares = paresFromInputs();
-    if (pares.length < 3) { toast('Adicione pelo menos 3 pares preenchidos.', 'err'); return; }
+    if (pares.length < 3) { toast('Añade al menos 3 pares rellenados.', 'err'); return; }
     payload = {
       aula_id: aulaContext?.id || document.getElementById('ex-aula-id').value || null,
       tipo,
@@ -3059,11 +3059,11 @@ async function salvarExercicio() {
     };
   } else if (tipo === 'classificar') {
     const paresRaw = paresFromInputs();
-    if (paresRaw.length < 3) { toast('Adicione pelo menos 3 itens.', 'err'); return; }
+    if (paresRaw.length < 3) { toast('Añade al menos 3 elementos.', 'err'); return; }
     const cats = (document.getElementById('ex-classif-cats').value || '')
       .split(',').map(c => c.trim()).filter(Boolean);
     if (cats.length < 2 || cats.length > 4) {
-      toast('Defina entre 2 e 4 categorias.', 'err'); return;
+      toast('Define entre 2 y 4 categorías.', 'err'); return;
     }
     // Normaliza comparação: case-insensitive + trim. Se o item bate por
     // case-insensitive, "canoniza" a categoria do item pro valor exato da lista
@@ -3093,15 +3093,15 @@ async function salvarExercicio() {
     const frase = document.getElementById('ex-frase').value.trim();
     const resposta = document.getElementById('ex-resposta').value.trim();
     const opcoesRaw = document.getElementById('ex-opcoes').value.trim();
-    if (!frase) { toast('Escreva a frase.', 'err'); return; }
-    if (!resposta) { toast('Escreva a resposta correta.', 'err'); return; }
+    if (!frase) { toast('Escribe la frase.', 'err'); return; }
+    if (!resposta) { toast('Escribe la respuesta correcta.', 'err'); return; }
     // Tipos sem opções: escrita_audio, conjugar_verbo, corrigir_frase
     const TIPOS_SEM_OPCOES = ['escrita_audio', 'conjugar_verbo', 'corrigir_frase'];
-    if (!TIPOS_SEM_OPCOES.includes(tipo) && !opcoesRaw) { toast('Adicione as opções de resposta.', 'err'); return; }
+    if (!TIPOS_SEM_OPCOES.includes(tipo) && !opcoesRaw) { toast('Añade las opciones de respuesta.', 'err'); return; }
     // Tipos que exigem ___ na frase: lacuna_escolha, lacuna_banco, conjugar_verbo
     const TIPOS_COM_LACUNA = ['lacuna_escolha', 'lacuna_banco', 'conjugar_verbo'];
     if (TIPOS_COM_LACUNA.includes(tipo) && !frase.includes('___')) {
-      toast('A frase deve conter ___ para marcar a lacuna.', 'err'); return;
+      toast('La frase debe contener ___ para marcar el hueco.', 'err'); return;
     }
     const opcoes = opcoesRaw ? opcoesRaw.split(',').map(o => o.trim()).filter(Boolean) : [];
     payload = {
@@ -3116,16 +3116,16 @@ async function salvarExercicio() {
     ? await sb.from('exercicios').update(payload).eq('id', id)
     : await sb.from('exercicios').insert(payload);
   if (error) { toast('Erro: ' + error.message, 'err'); return; }
-  toast(id ? 'Exercício atualizado! ✓' : 'Exercício criado! ✓', 'ok');
+  toast(id ? '¡Ejercicio actualizado! ✓' : '¡Ejercicio creado! ✓', 'ok');
   toggleExForm();
   loadExercicios();
 }
 
 async function deletarExercicio(id) {
-  if (!confirm('Deletar este exercício?')) return;
+  if (!confirm('¿Eliminar este ejercicio?')) return;
   const { error } = await sb.from('exercicios').delete().eq('id', id);
   if (error) { toast('Erro: ' + error.message, 'err'); return; }
-  toast('Exercício removido.', 'ok');
+  toast('Ejercicio eliminado.', 'ok');
   loadExercicios();
 }
 
@@ -3138,7 +3138,7 @@ function testarExercicio() {
   if (tipo === 'pares' || tipo === 'pares_audio') {
     const pares = paresFromInputs()
       .map(p => p.split('||').map(s => s.trim()));
-    if (pares.length < 3) { toast('Adicione pelo menos 3 pares.', 'err'); return; }
+    if (pares.length < 3) { toast('Añade al menos 3 pares.', 'err'); return; }
     const isAudio = tipo === 'pares_audio';
     const lefts  = pares.map(p => p[0]);
     const rights = pares.map(p => p[1]).slice().sort(() => Math.random() - 0.5);
@@ -3160,17 +3160,17 @@ function testarExercicio() {
   const frase = document.getElementById('ex-frase').value.trim();
   const resposta = document.getElementById('ex-resposta').value.trim();
   const opcoes = document.getElementById('ex-opcoes').value.split(',').map(o=>o.trim()).filter(Boolean);
-  if (!frase) { toast('Preencha a frase primeiro.', 'err'); return; }
+  if (!frase) { toast('Rellena la frase primero.', 'err'); return; }
 
   const labelTipo =
-    tipo==='lacuna_escolha'?'Complete o espaço':
-    tipo==='lacuna_banco'?'Complete com as palavras':
-    tipo==='escrita_audio'?'Ouça e escreva':
-    tipo==='conjugar_verbo'?'Conjugar verbo':
-    tipo==='corrigir_frase'?'Corrigir frase':
-    tipo==='multipla_escolha'?'Múltipla escolha':
-    tipo==='classificar'?'Classificar':
-    'Exercício';
+    tipo==='lacuna_escolha'?'Completa el espacio':
+    tipo==='lacuna_banco'?'Completa con las palabras':
+    tipo==='escrita_audio'?'Escucha y escribe':
+    tipo==='conjugar_verbo'?'Conjuga el verbo':
+    tipo==='corrigir_frase'?'Corrige la frase':
+    tipo==='multipla_escolha'?'Opción múltiple':
+    tipo==='classificar'?'Clasificar':
+    'Ejercicio';
 
   // multipla_escolha: pergunta + opções, sem lacuna
   if (tipo === 'multipla_escolha') {
@@ -3187,7 +3187,7 @@ function testarExercicio() {
   // classificar: preview compacto
   if (tipo === 'classificar') {
     let h = `<div style="font-size:13px; font-weight:600; color:var(--ink); margin-bottom:8px;">${labelTipo}</div>`;
-    h += `<div style="font-size:13px; color:var(--ink3); margin-bottom:8px;">Preview simplificado — use "👁️ Ver como aluno" pra testar a interação completa.</div>`;
+    h += `<div style="font-size:13px; color:var(--ink3); margin-bottom:8px;">Vista previa simplificada — usa "👁️ Ver como alumno" para probar la interacción completa.</div>`;
     const cats = (document.getElementById('ex-classif-cats')?.value || '').split(',').map(c=>c.trim()).filter(Boolean);
     h += `<div style="font-size:12px;color:var(--ink3);margin-bottom:4px;">Categorias: <strong>${cats.join(' · ')}</strong></div>`;
     const pares = paresFromInputs();
@@ -3201,9 +3201,9 @@ function testarExercicio() {
 
   // corrigir_frase: mostra a frase errada e input pra digitar a correta
   if (tipo === 'corrigir_frase') {
-    html += `<div style="font-size:11px;color:var(--ink3);text-transform:uppercase;letter-spacing:0.08em;font-weight:700;margin-bottom:4px;">Frase com erro:</div>`;
+    html += `<div style="font-size:11px;color:var(--ink3);text-transform:uppercase;letter-spacing:0.08em;font-weight:700;margin-bottom:4px;">Frase con error:</div>`;
     html += `<div style="padding:10px 14px;border:1.5px solid var(--red-bord);border-radius:8px;background:var(--red-dim);font-size:15px;color:var(--red);margin-bottom:8px;text-decoration:line-through;text-decoration-color:rgba(255,87,87,0.4);">${frase}</div>`;
-    html += `<div style="padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);font-size:14px;color:var(--ink3);">Escreva a versão correta...</div>`;
+    html += `<div style="padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);font-size:14px;color:var(--ink3);">Escribe la versión correcta...</div>`;
     html += `<div style="margin-top:8px; font-size:12px; color:var(--green); font-weight:500;">✓ Resposta: ${resposta}</div>`;
     content.innerHTML = html;
     preview.style.display = '';
@@ -3229,7 +3229,7 @@ function testarExercicio() {
     </div>
     <div style="padding:10px 14px; border:1.5px solid var(--border); border-radius:var(--r); background:var(--surface2); font-size:14px; color:var(--ink3);">Escreva a palavra em espanhol...</div>`;
   } else if (tipo === 'conjugar_verbo') {
-    html += `<div style="padding:10px 14px; border:1.5px solid var(--border); border-radius:var(--r); background:var(--surface); font-size:14px; color:var(--ink3);">Digite a(s) conjugação(ões) correta(s)...</div>`;
+    html += `<div style="padding:10px 14px; border:1.5px solid var(--border); border-radius:var(--r); background:var(--surface); font-size:14px; color:var(--ink3);">Escribe la(s) conjugación(es) correcta(s)...</div>`;
   }
   html += `<div style="margin-top:8px; font-size:12px; color:var(--green); font-weight:500;">✓ Resposta: ${resposta}</div>`;
 
@@ -3243,8 +3243,8 @@ function testarExercicio() {
 let alunosList = [];
 
 async function loadAlunos() {
-  if (!sb) { document.getElementById('alunos-list').innerHTML = '<div class="empty">Configure o Supabase primeiro.</div>'; return; }
-  document.getElementById('alunos-list').innerHTML = '<div class="loading"><div class="spinner"></div>Carregando...</div>';
+  if (!sb) { document.getElementById('alunos-list').innerHTML = '<div class="empty">Configura Supabase primero.</div>'; return; }
+  document.getElementById('alunos-list').innerHTML = '<div class="loading"><div class="spinner"></div>Cargando...</div>';
   const { data, error } = await sb.from('alunos')
     .select('*')
     .neq('email', PREVIEW_EMAIL)
@@ -3256,13 +3256,13 @@ async function loadAlunos() {
 
 function renderAlunosList() {
   const el = document.getElementById('alunos-list');
-  if (!alunosList.length) { el.innerHTML = '<div class="empty">Nenhum aluno cadastrado.</div>'; return; }
+  if (!alunosList.length) { el.innerHTML = '<div class="empty">Aún no hay alumnos registrados.</div>'; return; }
   el.innerHTML = alunosList.map(a => `
     <div class="aula-item" onclick="editarAluno(${a.id})" id="aluno-item-${a.id}">
       <div class="aula-num" style="font-size:16px;">${a.nome.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase()}</div>
       <div class="aula-info">
         <div class="aula-titulo">${a.nome}</div>
-        <div class="aula-meta">${a.email} · <code style="font-size:11px;">${a.codigo}</code> · ${a.ativo ? '<span style="color:var(--green)">Ativo</span>' : '<span style="color:var(--red)">Inativo</span>'}</div>
+        <div class="aula-meta">${a.email} · <code style="font-size:11px;">${a.codigo}</code> · ${a.ativo ? '<span style="color:var(--green)">Activo</span>' : '<span style="color:var(--red)">Inativo</span>'}</div>
       </div>
       <button class="btn btn-red btn-sm" onclick="event.stopPropagation(); deletarAluno(${a.id})">✕</button>
     </div>`).join('');
@@ -3270,7 +3270,7 @@ function renderAlunosList() {
 
 function showNovoAluno() {
   limparFormAluno();
-  document.getElementById('aluno-form-title').textContent = 'Novo aluno';
+  document.getElementById('aluno-form-title').textContent = 'Nuevo alumno';
   document.getElementById('btn-enviar-email').style.display = 'none';
 }
 
@@ -3297,7 +3297,7 @@ function gerarCodigo() {
 }
 
 async function salvarAluno() {
-  if (!sb) { toast('Sem conexão.', 'err'); return; }
+  if (!sb) { toast('Sin conexión.', 'err'); return; }
   const id = document.getElementById('aluno-id').value;
   const payload = {
     nome: document.getElementById('aluno-nome').value.trim(),
@@ -3305,12 +3305,12 @@ async function salvarAluno() {
     codigo: document.getElementById('aluno-codigo').value.trim().toLowerCase(),
     ativo: document.getElementById('aluno-ativo').value === 'true',
   };
-  if (!payload.nome || !payload.email || !payload.codigo) { toast('Preencha nome, email e código.', 'err'); return; }
+  if (!payload.nome || !payload.email || !payload.codigo) { toast('Rellena nombre, email y código.', 'err'); return; }
   const { data, error } = id
     ? await sb.from('alunos').update(payload).eq('id', id).select().single()
     : await sb.from('alunos').insert(payload).select().single();
   if (error) { toast('Erro: ' + error.message, 'err'); return; }
-  toast(id ? 'Aluno atualizado! ✓' : 'Aluno cadastrado! ✓', 'ok');
+  toast(id ? '¡Alumno actualizado! ✓' : '¡Alumno registrado! ✓', 'ok');
   if (!id && data) {
     // Pre-fill for email sending
     document.getElementById('aluno-id').value = data.id;
@@ -3325,17 +3325,17 @@ async function salvarAluno() {
 }
 
 async function deletarAluno(id) {
-  if (!confirm('Deletar este aluno e todo o seu progresso?')) return;
+  if (!confirm('¿Eliminar este alumno y todo su progreso?')) return;
   const { error } = await sb.from('alunos').delete().eq('id', id);
   if (error) { toast('Erro: ' + error.message, 'err'); return; }
-  toast('Aluno removido.', 'ok');
+  toast('Alumno eliminado.', 'ok');
   loadAlunos();
 }
 
 function limparFormAluno() {
   ['aluno-id','aluno-nome','aluno-email','aluno-codigo'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('aluno-ativo').value = 'true';
-  document.getElementById('aluno-form-title').textContent = 'Novo aluno';
+  document.getElementById('aluno-form-title').textContent = 'Nuevo alumno';
   document.getElementById('btn-enviar-email').style.display = 'none';
   document.getElementById('email-status').innerHTML = '';
   document.querySelectorAll('.aula-item').forEach(el => el.classList.remove('selected'));
@@ -3348,7 +3348,7 @@ async function enviarEmailAcesso() {
   const nome = document.getElementById('aluno-nome').value.trim();
   const email = document.getElementById('aluno-email').value.trim();
   const codigo = document.getElementById('aluno-codigo').value.trim();
-  if (!nome || !email || !codigo) { toast('Salve o aluno antes de enviar.', 'err'); return; }
+  if (!nome || !email || !codigo) { toast('Guarda el alumno antes de enviar.', 'err'); return; }
   if (!sb) { toast('Sem conexão com Supabase.', 'err'); return; }
 
   const statusEl = document.getElementById('email-status');
@@ -3375,11 +3375,11 @@ async function enviarEmailAcesso() {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Erro desconhecido');
 
-    statusEl.innerHTML = `<div style="background:var(--green-dim);color:var(--green);padding:10px 14px;border-radius:var(--r);font-size:13px;font-weight:500;">✓ Email enviado para ${email}!</div>`;
+    statusEl.innerHTML = `<div style="background:var(--green-dim);color:var(--green);padding:10px 14px;border-radius:var(--r);font-size:13px;font-weight:500;">✓ ¡Email enviado a ${email}!</div>`;
     toast('Email enviado! ✓', 'ok');
   } catch(e) {
     statusEl.innerHTML = `<div style="background:var(--red-dim);color:var(--red);padding:10px 14px;border-radius:var(--r);font-size:13px;">Erro: ${e.message}</div>`;
-    toast('Erro ao enviar email.', 'err');
+    toast('Error al enviar email.', 'err');
   }
   document.getElementById('btn-enviar-email').disabled = false;
 }
@@ -3394,14 +3394,14 @@ async function populateAlunoFilter() {
   }
   const el = document.getElementById('prog-aluno-filter');
   if (!el) return;
-  el.innerHTML = '<option value="">Todos os alunos</option>' +
+  el.innerHTML = '<option value="">Todos los alumnos</option>' +
     alunosList.map(a => `<option value="${a.id}">${a.nome}</option>`).join('');
 }
 
 async function loadProgresso() {
   if (!sb) return;
   const wrap = document.getElementById('progresso-wrap');
-  wrap.innerHTML = '<div class="loading"><div class="spinner"></div>Carregando...</div>';
+  wrap.innerHTML = '<div class="loading"><div class="spinner"></div>Cargando...</div>';
   const alunoFilter = document.getElementById('prog-aluno-filter')?.value;
 
   const [{ data: aulas }, { data: alunos }, { data: prog }, { data: bdgs }] = await Promise.all([
@@ -3417,7 +3417,7 @@ async function loadProgresso() {
   const progAll = prog || [];
   const bdgsAll = bdgs || [];
 
-  if (!alunosAll.length) { wrap.innerHTML = '<div class="empty">Nenhum aluno encontrado.</div>'; return; }
+  if (!alunosAll.length) { wrap.innerHTML = '<div class="empty">Ningún alumno encontrado.</div>'; return; }
 
   wrap.innerHTML = alunosAll.map(aluno => {
     const alunoProgresso = progAll.filter(p => p.aluno_id === aluno.id);
@@ -3436,7 +3436,7 @@ async function loadProgresso() {
         </div>
         <div style="text-align:right;">
           <div style="font-size:20px; font-weight:800; color:var(--ink);">${pct}%</div>
-          <div style="font-size:11px; color:var(--ink3);">${concluidas}/${total} aulas</div>
+          <div style="font-size:11px; color:var(--ink3);">${concluidas}/${total} lecciones</div>
         </div>
       </div>
       <div style="background:var(--surface2); border-radius:99px; height:6px; margin-bottom:12px;">
@@ -3467,8 +3467,8 @@ async function loadProgresso() {
             // Primeira aula é sempre acessível — esconde botão de bloquear pra não travar o aluno.
             const btn = isFirst ? ''
               : desbloqueada
-                ? `<button class="lock-btn" onclick="toggleDesbloqueio(${aluno.id},${aula.id},${progId||'null'},false,'${aluno.nome.replace(/'/g, "\\'")}','${aula.numero}')" title="Bloquear acesso">🔒</button>`
-                : `<button class="unlock-btn" onclick="toggleDesbloqueio(${aluno.id},${aula.id},${progId||'null'},true,'${aluno.nome.replace(/'/g, "\\'")}','${aula.numero}')" title="Desbloquear acesso">🔓</button>`;
+                ? `<button class="lock-btn" onclick="toggleDesbloqueio(${aluno.id},${aula.id},${progId||'null'},false,'${aluno.nome.replace(/'/g, "\\'")}','${aula.numero}')" title="Bloquear acceso">🔒</button>`
+                : `<button class="unlock-btn" onclick="toggleDesbloqueio(${aluno.id},${aula.id},${progId||'null'},true,'${aluno.nome.replace(/'/g, "\\'")}','${aula.numero}')" title="Desbloquear acceso">🔓</button>`;
 
             return `<div class="aula-prog-row" style="padding:5px 10px; border-radius:8px;
               background:${bg};
@@ -3481,7 +3481,7 @@ async function loadProgresso() {
           }).join('');
         })()}
       </div>
-      ${alunoBadges.length ? `<div style="margin-top:10px; font-size:12px; color:var(--ink3);">Badges: ${alunoBadges.map(b=>b.tipo).join(', ')}</div>` : ''}
+      ${alunoBadges.length ? `<div style="margin-top:10px; font-size:12px; color:var(--ink3);">Logros: ${alunoBadges.map(b=>b.tipo).join(', ')}</div>` : ''}
     </div>`;
   }).join('');
 }
@@ -3536,10 +3536,10 @@ async function dragDrop(e, targetId) {
     if (error) errors++;
   }
   if (errors) {
-    toast('Erro ao salvar ordem. Recarregando...', 'err');
+    toast('Error al guardar el orden. Recargando...', 'err');
     loadAulas();
   } else {
-    toast('Ordem salva! ✓', 'ok');
+    toast('¡Orden guardado! ✓', 'ok');
     populateAulaSelects();
   }
 }
@@ -3566,7 +3566,7 @@ async function toggleDesbloqueio(alunoId, aulaId, progId, desbloqueada, nomeAlun
     });
     if (error) { toast('Erro: ' + error.message, 'err'); return; }
   }
-  toast(`Aula ${aulaNumero} ${desbloqueada ? 'desbloqueada' : 'bloqueada'} para ${nomeAluno}. ✓`, 'ok');
+  toast(`Lección ${aulaNumero} ${desbloqueada ? 'desbloqueada' : 'bloqueada'} para ${nomeAluno}. ✓`, 'ok');
   loadProgresso();
 }
 
@@ -3607,12 +3607,12 @@ function loginProf() {
 function salvarSenha() {
   const nova = document.getElementById('cfg-nova-senha').value;
   const conf = document.getElementById('cfg-conf-senha').value;
-  if (!nova || nova.length < 6) { toast('A senha deve ter pelo menos 6 caracteres.', 'err'); return; }
-  if (nova !== conf) { toast('As senhas não coincidem.', 'err'); return; }
+  if (!nova || nova.length < 6) { toast('La contraseña debe tener al menos 6 caracteres.', 'err'); return; }
+  if (nova !== conf) { toast('Las contraseñas no coinciden.', 'err'); return; }
   localStorage.setItem('prof_senha', nova);
   document.getElementById('cfg-nova-senha').value = '';
   document.getElementById('cfg-conf-senha').value = '';
-  toast('Senha alterada com sucesso! ✓', 'ok');
+  toast('¡Contraseña cambiada con éxito! ✓', 'ok');
 }
 
 function logoutProf() {

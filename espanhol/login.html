@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Profesora Ana — Entrar</title>
+<title>Profesora Ana — Iniciar sesión</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -358,28 +358,28 @@ label {
         Aprende español
       </div>
       <div class="hero-tagline">
-        Aulas particulares com a professora Ana — vocabulário, frases, exercícios e prática de pronúncia.
+        Clases particulares con la profesora Ana — vocabulario, frases, ejercicios y práctica de pronunciación.
       </div>
       <div class="word-chips">
-        <div class="word-chip">¡Hola!<span>Olá!</span></div>
-        <div class="word-chip">Gracias<span>Obrigado</span></div>
-        <div class="word-chip">¿Cómo estás?<span>Como vai?</span></div>
-        <div class="word-chip">Me llamo…<span>Meu nome é…</span></div>
+        <div class="word-chip">¡Hola!<span>Hola</span></div>
+        <div class="word-chip">Gracias<span>Gracias</span></div>
+        <div class="word-chip">¿Cómo estás?<span>¿Cómo estás?</span></div>
+        <div class="word-chip">Me llamo…<span>Me llamo…</span></div>
       </div>
     </div>
 
-    <div class="hero-footer">Profesora Ana · Sistema de aulas</div>
+    <div class="hero-footer">Profesora Ana · Sistema de clases</div>
   </div>
 
   <!-- FORM -->
   <div class="form-panel">
     <div class="form-inner">
       <div class="form-eyebrow">Bienvenido</div>
-      <h1 class="form-heading">Olá! 👋</h1>
-      <p class="form-sub">Insira o código que a professora Ana enviou pra você acessar suas aulas.</p>
+      <h1 class="form-heading">¡Hola! 👋</h1>
+      <p class="form-sub">Introduce el código que la profesora Ana te envió para acceder a tus lecciones.</p>
 
       <div class="field">
-        <label for="codigo">Código de acesso</label>
+        <label for="codigo">Código de acceso</label>
         <input class="inp" type="text" id="codigo"
           autocomplete="off" autocapitalize="off"
           onkeydown="if(event.key==='Enter')entrar()">
@@ -391,10 +391,10 @@ label {
       </button>
 
       <div class="err-msg" id="err-msg">
-        <span>Código não encontrado. Verifique com a professora.</span>
+        <span>Código no encontrado. Verifica con la profesora.</span>
       </div>
 
-      <div class="help-text">Não tem um código? Entre em contato com a professora Ana.</div>
+      <div class="help-text">¿No tienes un código? Ponte en contacto con la profesora Ana.</div>
     </div>
   </div>
 
@@ -434,7 +434,7 @@ async function entrar() {
   try {
     const { data, error } = await sb.from('alunos').select('*').eq('codigo', codigo).eq('ativo', true).single();
     if (error || !data) {
-      err.querySelector('span').textContent = 'Código não encontrado. Verifique com a professora.';
+      err.querySelector('span').textContent = 'Código no encontrado. Verifica con la profesora.';
       err.classList.add('show');
       btn.disabled = false;
       btn.innerHTML = 'Entrar <span aria-hidden="true">→</span>';
@@ -444,7 +444,7 @@ async function entrar() {
     localStorage.setItem('ev_aluno', JSON.stringify(data));
     window.location.href = 'index.html';
   } catch(e) {
-    err.querySelector('span').textContent = 'Erro de conexão. Tente novamente.';
+    err.querySelector('span').textContent = 'Error de conexión. Inténtalo de nuevo.';
     err.classList.add('show');
     btn.disabled = false;
     btn.innerHTML = 'Entrar <span aria-hidden="true">→</span>';

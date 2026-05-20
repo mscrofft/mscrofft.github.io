@@ -1519,11 +1519,11 @@ button { font-family: var(--font); }
 <!-- MODO PREVIEW (mostrado quando professora entra via admin) -->
 <div id="preview-banner" class="preview-banner" style="display:none;">
   <div class="preview-banner-label">
-    👁️ <strong>Modo preview</strong> · você está vendo como aluno
+    👁️ <strong>Modo vista previa</strong> · estás viendo como alumno
   </div>
   <div class="preview-banner-actions">
-    <button class="btn-pv-reset" onclick="resetarPreview()">↺ Resetar progresso</button>
-    <button class="btn-pv-voltar" onclick="voltarAoAdmin()">← Voltar ao admin</button>
+    <button class="btn-pv-reset" onclick="resetarPreview()">↺ Resetear progreso</button>
+    <button class="btn-pv-voltar" onclick="voltarAoAdmin()">← Volver al admin</button>
   </div>
 </div>
 
@@ -1534,7 +1534,7 @@ button { font-family: var(--font); }
     <div class="logo-mark"></div>
     <div class="brand-name">Profesora Ana</div>
   </div>
-  <button class="topbar-btn" onclick="logout()" aria-label="Sair">↩</button>
+  <button class="topbar-btn" onclick="logout()" aria-label="Salir">↩</button>
 </header>
 
 <!-- DRAWER OVERLAY (mobile) -->
@@ -1551,20 +1551,20 @@ button { font-family: var(--font); }
       <div class="avatar" id="sb-avatar">?</div>
       <div style="flex:1; min-width:0;">
         <div class="student-name" id="sb-name">—</div>
-        <div class="student-level" id="sb-level">Carregando...</div>
+        <div class="student-level" id="sb-level">Cargando...</div>
         <div class="progress-mini">
           <div class="progress-mini-bar"><div class="progress-mini-fill" id="sb-prog" style="width:0%"></div></div>
-          <div class="progress-mini-label" id="sb-prog-label">0% concluído</div>
+          <div class="progress-mini-label" id="sb-prog-label">0% completado</div>
         </div>
       </div>
     </div>
   </div>
   <nav class="sidebar-nav">
-    <div class="nav-section-label">Minhas aulas</div>
+    <div class="nav-section-label">Mis lecciones</div>
     <div id="aulas-nav"></div>
   </nav>
   <div class="sidebar-bottom">
-    <button class="logout-btn" onclick="logout()">← Sair</button>
+    <button class="logout-btn" onclick="logout()">← Salir</button>
   </div>
 </aside>
 
@@ -1584,10 +1584,10 @@ button { font-family: var(--font); }
       <!-- Progress hero card -->
       <div class="progress-card">
         <div class="progress-card-label">Seu progresso geral</div>
-        <div class="progress-card-title" id="dash-next-title">Carregando...</div>
+        <div class="progress-card-title" id="dash-next-title">Cargando...</div>
         <div class="progress-card-sub" id="dash-next-sub"></div>
         <div class="prog-bar-white"><div class="prog-bar-white-fill" id="dash-prog-bar" style="width:0%"></div></div>
-        <div class="prog-pct" id="dash-prog-pct">0% concluído</div>
+        <div class="prog-pct" id="dash-prog-pct">0% completado</div>
       </div>
 
       <!-- Stats -->
@@ -1595,17 +1595,17 @@ button { font-family: var(--font); }
         <div class="stat-card">
           <div class="stat-icon">📚</div>
           <div class="stat-n" id="stat-concluidas">0</div>
-          <div class="stat-l">Aulas concluídas</div>
+          <div class="stat-l">Lecciones completadas</div>
         </div>
         <div class="stat-card">
           <div class="stat-icon">🏅</div>
           <div class="stat-n" id="stat-badges">0</div>
-          <div class="stat-l">Badges</div>
+          <div class="stat-l">Logros</div>
         </div>
         <div class="stat-card">
           <div class="stat-icon">⭐</div>
           <div class="stat-n" id="stat-media">—</div>
-          <div class="stat-l">Média no quiz</div>
+          <div class="stat-l">Promedio</div>
         </div>
       </div>
 
@@ -1618,7 +1618,7 @@ button { font-family: var(--font); }
 
       <!-- Aulas grid -->
       <div class="section-hd">
-        <div class="section-title">Todas as aulas</div>
+        <div class="section-title">Todas las lecciones</div>
       </div>
       <div class="aulas-grid" id="aulas-grid"></div>
     </div>
@@ -1626,9 +1626,9 @@ button { font-family: var(--font); }
     <!-- CONQUISTAS VIEW -->
     <div id="view-conquistas" style="display:none;">
       <div class="aula-view-header">
-        <button class="back-btn" onclick="showDashboard()">← Voltar</button>
+        <button class="back-btn" onclick="showDashboard()">← Volver</button>
         <div class="aula-view-title-row">
-          <div class="aula-view-title">🏆 Conquistas</div>
+          <div class="aula-view-title">🏆 Logros</div>
         </div>
         <div class="aula-view-tema" id="conq-resumo">—</div>
       </div>
@@ -1638,7 +1638,7 @@ button { font-family: var(--font); }
     <!-- AULA VIEW -->
     <div id="view-aula" class="aula-view" style="display:none;">
       <div class="aula-view-header">
-        <button class="back-btn" onclick="showDashboard()">← Voltar</button>
+        <button class="back-btn" onclick="showDashboard()">← Volver</button>
         <div class="aula-view-title-row">
           <div class="aula-view-title" id="av-title">—</div>
           <span class="nivel-pill pill-A1" id="av-nivel">A1</span>
@@ -1758,8 +1758,8 @@ button { font-family: var(--font); }
 <div class="badge-modal-overlay" id="badge-modal">
   <div class="badge-modal">
     <span class="badge-modal-emoji" id="bm-emoji">🏅</span>
-    <div class="badge-modal-title" id="bm-title">Badge desbloqueado!</div>
-    <div class="badge-modal-sub" id="bm-sub">Você conquistou um novo badge.</div>
+    <div class="badge-modal-title" id="bm-title">¡Logro desbloqueado!</div>
+    <div class="badge-modal-sub" id="bm-sub">¡Has conseguido un nuevo logro!</div>
     <button class="badge-modal-close" onclick="closeBadgeModal()">Continuar →</button>
   </div>
 </div>
@@ -1828,35 +1828,35 @@ document.addEventListener('click', (e) => {
 // ============================================================
 // Categorias: 'marcos' (aulas individuais e níveis), 'volume' (totais), 'performance', 'consistencia'
 const BADGE_DEFS = {
-  iniciante:      { emoji:'🚀', nome:'Iniciante',       desc:'Concluiu a primeira aula!',   cat:'marcos' },
-  aula_1:         { emoji:'1️⃣',  nome:'Aula 1',          desc:'Concluiu a Aula 1',           cat:'marcos' },
-  aula_2:         { emoji:'2️⃣',  nome:'Aula 2',          desc:'Concluiu a Aula 2',           cat:'marcos' },
-  aula_3:         { emoji:'3️⃣',  nome:'Aula 3',          desc:'Concluiu a Aula 3',           cat:'marcos' },
-  aula_4:         { emoji:'4️⃣',  nome:'Aula 4',          desc:'Concluiu a Aula 4',           cat:'marcos' },
-  aula_5:         { emoji:'5️⃣',  nome:'Aula 5',          desc:'Concluiu a Aula 5',           cat:'marcos' },
-  aula_6:         { emoji:'6️⃣',  nome:'Aula 6',          desc:'Concluiu a Aula 6',           cat:'marcos' },
-  aula_7:         { emoji:'7️⃣',  nome:'Aula 7',          desc:'Concluiu a Aula 7',           cat:'marcos' },
-  aula_8:         { emoji:'8️⃣',  nome:'Aula 8',          desc:'Concluiu a Aula 8',           cat:'marcos' },
-  aula_9:         { emoji:'9️⃣',  nome:'Aula 9',          desc:'Concluiu a Aula 9',           cat:'marcos' },
-  aula_10:        { emoji:'🔟', nome:'Aula 10',         desc:'Concluiu a Aula 10',          cat:'marcos' },
-  aula_15:        { emoji:'🎯', nome:'Aula 15',         desc:'Concluiu a Aula 15',          cat:'marcos' },
-  aula_20:        { emoji:'🎓', nome:'Aula 20',         desc:'Concluiu a Aula 20',          cat:'marcos' },
-  a1_completo:    { emoji:'🥉', nome:'A1 completo',     desc:'Concluiu todas as aulas A1',  cat:'marcos' },
-  mestre:         { emoji:'👑', nome:'Mestre',          desc:'Concluiu todas as aulas!',    cat:'marcos' },
-  dedicado:       { emoji:'🏆', nome:'Dedicado',        desc:'Concluiu 5 aulas!',           cat:'volume' },
-  superdedicado:  { emoji:'💪', nome:'Superdedicado',   desc:'Concluiu 10 aulas!',          cat:'volume' },
-  perfeito:       { emoji:'⭐', nome:'Nota perfeita',   desc:'100% no quiz!',               cat:'performance' },
-  excelente:      { emoji:'💎', nome:'Excelente',       desc:'Média ≥90% nas 5 últimas aulas', cat:'performance' },
-  sequencia:      { emoji:'🔥', nome:'Em chamas',       desc:'3 aulas seguidas!',           cat:'consistencia' },
-  sequencia_5:    { emoji:'🌟', nome:'Imparável',       desc:'5 aulas seguidas!',           cat:'consistencia' },
-  veloz:          { emoji:'⚡', nome:'Veloz',           desc:'Duas aulas no mesmo dia!',    cat:'consistencia' },
+  iniciante:      { emoji:'🚀', nome:'Principiante',    desc:'¡Completaste la primera lección!',     cat:'marcos' },
+  aula_1:         { emoji:'1️⃣',  nome:'Lección 1',       desc:'Completaste la Lección 1',             cat:'marcos' },
+  aula_2:         { emoji:'2️⃣',  nome:'Lección 2',       desc:'Completaste la Lección 2',             cat:'marcos' },
+  aula_3:         { emoji:'3️⃣',  nome:'Lección 3',       desc:'Completaste la Lección 3',             cat:'marcos' },
+  aula_4:         { emoji:'4️⃣',  nome:'Lección 4',       desc:'Completaste la Lección 4',             cat:'marcos' },
+  aula_5:         { emoji:'5️⃣',  nome:'Lección 5',       desc:'Completaste la Lección 5',             cat:'marcos' },
+  aula_6:         { emoji:'6️⃣',  nome:'Lección 6',       desc:'Completaste la Lección 6',             cat:'marcos' },
+  aula_7:         { emoji:'7️⃣',  nome:'Lección 7',       desc:'Completaste la Lección 7',             cat:'marcos' },
+  aula_8:         { emoji:'8️⃣',  nome:'Lección 8',       desc:'Completaste la Lección 8',             cat:'marcos' },
+  aula_9:         { emoji:'9️⃣',  nome:'Lección 9',       desc:'Completaste la Lección 9',             cat:'marcos' },
+  aula_10:        { emoji:'🔟', nome:'Lección 10',      desc:'Completaste la Lección 10',            cat:'marcos' },
+  aula_15:        { emoji:'🎯', nome:'Lección 15',      desc:'Completaste la Lección 15',            cat:'marcos' },
+  aula_20:        { emoji:'🎓', nome:'Lección 20',      desc:'Completaste la Lección 20',            cat:'marcos' },
+  a1_completo:    { emoji:'🥉', nome:'A1 completo',     desc:'Completaste todas las lecciones A1',   cat:'marcos' },
+  mestre:         { emoji:'👑', nome:'Maestro',         desc:'¡Completaste todas las lecciones!',    cat:'marcos' },
+  dedicado:       { emoji:'🏆', nome:'Dedicado',        desc:'¡Completaste 5 lecciones!',            cat:'volume' },
+  superdedicado:  { emoji:'💪', nome:'Superdedicado',   desc:'¡Completaste 10 lecciones!',           cat:'volume' },
+  perfeito:       { emoji:'⭐', nome:'Nota perfecta',   desc:'¡100% en un cuestionario!',            cat:'performance' },
+  excelente:      { emoji:'💎', nome:'Excelente',       desc:'Promedio ≥90% en las 5 últimas lecciones', cat:'performance' },
+  sequencia:      { emoji:'🔥', nome:'En racha',        desc:'¡3 lecciones seguidas!',               cat:'consistencia' },
+  sequencia_5:    { emoji:'🌟', nome:'Imparable',       desc:'¡5 lecciones seguidas!',               cat:'consistencia' },
+  veloz:          { emoji:'⚡', nome:'Veloz',           desc:'¡Dos lecciones en el mismo día!',      cat:'consistencia' },
 };
 
 const BADGE_CATEGORIAS = [
-  { id:'marcos',       label:'Marcos',       desc:'Aulas concluídas e níveis' },
-  { id:'volume',       label:'Volume',       desc:'Quantidade de aulas' },
-  { id:'performance',  label:'Performance',  desc:'Qualidade no quiz' },
-  { id:'consistencia', label:'Consistência', desc:'Constância nos estudos' },
+  { id:'marcos',       label:'Hitos',         desc:'Lecciones completadas y niveles' },
+  { id:'volume',       label:'Volumen',       desc:'Cantidad de lecciones' },
+  { id:'performance',  label:'Rendimiento',   desc:'Calidad en el cuestionario' },
+  { id:'consistencia', label:'Constancia',    desc:'Constancia en el estudio' },
 ];
 
 const VERB_MEANINGS = {
@@ -1923,7 +1923,7 @@ async function init() {
   setupSidebar();
 
   // Show loading state in dashboard while fetching
-  document.getElementById('dash-next-title').textContent = 'Carregando suas aulas...';
+  document.getElementById('dash-next-title').textContent = 'Cargando tus lecciones...';
   document.getElementById('dash-next-sub').textContent = '';
 
   await loadAll();
@@ -1959,19 +1959,19 @@ async function loadAll() {
   } catch(e) {
     console.error('loadAll error:', e);
     // Show visible error on dashboard
-    document.getElementById('dash-next-title').textContent = 'Erro ao carregar aulas';
-    document.getElementById('dash-next-sub').textContent = e.message + ' — tente recarregar a página.';
+    document.getElementById('dash-next-title').textContent = 'Error al cargar lecciones';
+    document.getElementById('dash-next-sub').textContent = e.message + ' — intenta recargar la página.';
     document.getElementById('dash-prog-pct').textContent = '';
     document.getElementById('aulas-nav').innerHTML =
       `<div style="padding:1rem 1.5rem; font-size:12px; color:rgba(255,255,255,0.4); line-height:1.6;">
-        Erro de conexão.<br>Recarregue a página.
+        Error de conexión.<br>Recarga la página.
       </div>`;
     document.getElementById('aulas-grid').innerHTML =
       `<div style="grid-column:1/-1; padding:2rem; text-align:center; background:var(--white); border-radius:var(--r-lg);">
         <div style="font-size:32px; margin-bottom:8px;">⚠️</div>
-        <div style="font-weight:700; color:var(--ink); margin-bottom:4px;">Erro ao carregar o conteúdo</div>
+        <div style="font-weight:700; color:var(--ink); margin-bottom:4px;">Error al cargar el contenido</div>
         <div style="font-size:13px; color:var(--ink3); margin-bottom:1rem;">${e.message}</div>
-        <button class="btn btn-coral" onclick="location.reload()">Recarregar página</button>
+        <button class="btn btn-coral" onclick="location.reload()">Recargar página</button>
       </div>`;
   }
 }
@@ -1981,8 +1981,8 @@ function updateSidebarProgress() {
   const done = aulasList.filter(a => progressoMap[String(a.id)]?.concluida).length;
   const pct = total ? Math.round(done/total*100) : 0;
   document.getElementById('sb-prog').style.width = pct + '%';
-  document.getElementById('sb-prog-label').textContent = pct + '% concluído';
-  document.getElementById('sb-level').textContent = done + ' de ' + total + ' aulas';
+  document.getElementById('sb-prog-label').textContent = pct + '% completado';
+  document.getElementById('sb-level').textContent = done + ' de ' + total + ' lecciones';
 }
 
 function isUnlocked(aula) {
@@ -2011,7 +2011,7 @@ function renderAulasNav() {
       <div class="aula-nav-num">${a.numero}</div>
       <div class="aula-nav-info">
         <div class="aula-nav-title">${a.titulo}</div>
-        <div class="aula-nav-meta">${a.nivel} · ${done ? 'Concluída' : (!unlocked ? 'Bloqueada' : 'Disponível')}</div>
+        <div class="aula-nav-meta">${a.nivel} · ${done ? 'Completada' : (!unlocked ? 'Bloqueada' : 'Disponible')}</div>
       </div>
       <div class="aula-nav-badge">${icon}</div>
     </div>`;
@@ -2034,7 +2034,7 @@ function renderConquistas() {
   const total = Object.keys(BADGE_DEFS).length;
   const conquistadas = Object.keys(BADGE_DEFS).filter(t => badgesSet.has(t)).length;
   document.getElementById('conq-resumo').textContent =
-    `${conquistadas} de ${total} conquistadas`;
+    `${conquistadas} de ${total} conseguidos`;
 
   const fmtData = (iso) => {
     if (!iso) return '';
@@ -2057,7 +2057,7 @@ function renderConquistas() {
         <div class="conq-info">
           <div class="conq-nome">${def.nome}</div>
           <div class="conq-desc">${def.desc}</div>
-          ${earned && data ? `<div class="conq-meta">🗓️ Conquistada em ${fmtData(data)}</div>` : ''}
+          ${earned && data ? `<div class="conq-meta">🗓️ Conseguido el ${fmtData(data)}</div>` : ''}
           ${!earned && hint ? `<div class="conq-meta conq-hint">↳ ${hint}</div>` : ''}
         </div>
       </div>`;
@@ -2115,17 +2115,17 @@ function renderDashboard() {
   // Hero card
   const nextAula = aulasList.find(a => !progressoMap[String(a.id)]?.concluida && isUnlocked(a));
   if (nextAula) {
-    document.getElementById('dash-next-title').textContent = `Próxima: Aula ${nextAula.numero} — ${nextAula.titulo}`;
+    document.getElementById('dash-next-title').textContent = `Siguiente: Lección ${nextAula.numero} — ${nextAula.titulo}`;
     document.getElementById('dash-next-sub').textContent = nextAula.tema || '';
   } else if (done === total && total > 0) {
-    document.getElementById('dash-next-title').textContent = '¡Felicitaciones! Curso concluído! 🎉';
-    document.getElementById('dash-next-sub').textContent = 'Você completou todas as aulas!';
+    document.getElementById('dash-next-title').textContent = '¡Felicidades! ¡Curso completado! 🎉';
+    document.getElementById('dash-next-sub').textContent = '¡Has completado todas las lecciones!';
   } else {
-    document.getElementById('dash-next-title').textContent = 'Nenhuma aula disponível ainda.';
+    document.getElementById('dash-next-title').textContent = 'Aún no hay lecciones disponibles.';
     document.getElementById('dash-next-sub').textContent = '';
   }
   document.getElementById('dash-prog-bar').style.width = pct + '%';
-  document.getElementById('dash-prog-pct').textContent = `${done} de ${total} aulas · ${pct}%`;
+  document.getElementById('dash-prog-pct').textContent = `${done} de ${total} lecciones · ${pct}%`;
 
   // Stats
   document.getElementById('stat-concluidas').textContent = done;
@@ -2147,28 +2147,28 @@ function progressoBadge(tipo) {
   const total = aulasList.length;
   const done = aulasList.filter(a => progressoMap[String(a.id)]?.concluida).length;
 
-  if (tipo === 'iniciante') return done >= 1 ? null : 'Conclua sua primeira aula';
-  if (tipo === 'dedicado')      return done >= 5  ? null : `Faltam ${5  - done} (${done}/5)`;
-  if (tipo === 'superdedicado') return done >= 10 ? null : `Faltam ${10 - done} (${done}/10)`;
-  if (tipo === 'mestre')        return done >= total ? null : `Faltam ${total - done} (${done}/${total})`;
+  if (tipo === 'iniciante') return done >= 1 ? null : 'Completa tu primera lección';
+  if (tipo === 'dedicado')      return done >= 5  ? null : `Faltan ${5  - done} (${done}/5)`;
+  if (tipo === 'superdedicado') return done >= 10 ? null : `Faltan ${10 - done} (${done}/10)`;
+  if (tipo === 'mestre')        return done >= total ? null : `Faltan ${total - done} (${done}/${total})`;
   if (tipo === 'a1_completo') {
     const a1 = aulasList.filter(a => a.nivel === 'A1');
     const a1Done = a1.filter(a => progressoMap[String(a.id)]?.concluida).length;
-    return a1Done >= a1.length ? null : `Faltam ${a1.length - a1Done} aulas A1 (${a1Done}/${a1.length})`;
+    return a1Done >= a1.length ? null : `Faltan ${a1.length - a1Done} lecciones A1 (${a1Done}/${a1.length})`;
   }
   const mAula = tipo.match(/^aula_(\d+)$/);
   if (mAula) {
     const n = parseInt(mAula[1]);
     const aulaAlvo = aulasList.find(a => a.numero === n);
-    if (!aulaAlvo) return 'Aula ainda não disponível';
+    if (!aulaAlvo) return 'Lección aún no disponible';
     if (progressoMap[String(aulaAlvo.id)]?.concluida) return null;
-    return `Conclua a Aula ${n}`;
+    return `Completa la Lección ${n}`;
   }
-  if (tipo === 'sequencia')   return 'Conclua 3 aulas seguidas';
-  if (tipo === 'sequencia_5') return 'Conclua 5 aulas seguidas';
-  if (tipo === 'veloz')       return 'Conclua 2 aulas no mesmo dia';
-  if (tipo === 'perfeito')    return 'Tire 100% em um quiz';
-  if (tipo === 'excelente')   return 'Tenha média ≥90% nas 5 últimas aulas';
+  if (tipo === 'sequencia')   return 'Completa 3 lecciones seguidas';
+  if (tipo === 'sequencia_5') return 'Completa 5 lecciones seguidas';
+  if (tipo === 'veloz')       return 'Completa 2 lecciones en el mismo día';
+  if (tipo === 'perfeito')    return 'Saca 100% en un cuestionario';
+  if (tipo === 'excelente')   return 'Promedio ≥90% en las 5 últimas lecciones';
   return null;
 }
 
@@ -2215,7 +2215,7 @@ function renderAulasGrid() {
       </div>
       <div class="aula-card-footer">
         <div class="prog-bar-sm"><div class="prog-bar-sm-fill" style="width:${pct}%"></div></div>
-        <div class="prog-bar-sm-label">${done ? '100%' : (score ? score+'%' : (unlocked ? 'Iniciar' : 'Bloqueada'))}</div>
+        <div class="prog-bar-sm-label">${done ? '100%' : (score ? score+'%' : (unlocked ? 'Comenzar' : 'Bloqueada'))}</div>
       </div>
       ${!unlocked ? '<div class="lock-overlay">🔒</div>' : ''}
     </div>`;
@@ -2296,7 +2296,7 @@ async function loadAula(id) {
     exerciciosData = exRes.data || [];
   } catch(e) {
     document.getElementById('quiz-area').innerHTML =
-      `<div style="color:var(--coral); padding:1rem;">Erro ao carregar conteúdo: ${e.message}</div>`;
+      `<div style="color:var(--coral); padding:1rem;">Error al cargar contenido: ${e.message}</div>`;
     return;
   }
 
@@ -2344,13 +2344,13 @@ function updateQuizProgressBar() {
   document.getElementById('av-quiz-prog').style.background = done ? 'var(--green)' : 'var(--coral)';
 
   if (done) {
-    document.getElementById('av-quiz-prog-label').textContent = `✓ Aula concluída · Melhor nota: ${best}%`;
+    document.getElementById('av-quiz-prog-label').textContent = `✓ Lección completada · Mejor nota: ${best}%`;
   } else if (best >= MIN_SCORE && hasEx && !exDone) {
-    document.getElementById('av-quiz-prog-label').textContent = `Quiz: ${best}% ✓ · Exercícios: pendentes ⚠️`;
+    document.getElementById('av-quiz-prog-label').textContent = `Cuestionario: ${best}% ✓ · Ejercicios: pendientes ⚠️`;
   } else if (best >= MIN_SCORE && (!hasEx || exDone)) {
-    document.getElementById('av-quiz-prog-label').textContent = `Quiz: ${best}% ✓ · Pronto para concluir!`;
+    document.getElementById('av-quiz-prog-label').textContent = `Cuestionario: ${best}% ✓ · ¡Listo para terminar!`;
   } else if (best > 0) {
-    document.getElementById('av-quiz-prog-label').textContent = `Melhor nota: ${best}% · Meta: ${MIN_SCORE}%`;
+    document.getElementById('av-quiz-prog-label').textContent = `Mejor nota: ${best}% · Meta: ${MIN_SCORE}%`;
   } else {
     document.getElementById('av-quiz-prog-label').textContent =
       hasEx
@@ -2498,7 +2498,7 @@ function renderQuizQ() {
 
   // No vocab at all
   if (!quizPool.length) {
-    area.innerHTML = '<div class="empty">Esta aula ainda não tem vocabulário cadastrado.<br>Volte em breve!</div>';
+    area.innerHTML = '<div class="empty">Esta lección aún no tiene vocabulario registrado.<br>¡Vuelve pronto!</div>';
     document.getElementById('quiz-next-btn').style.display = 'none';
     return;
   }
@@ -2509,7 +2509,7 @@ function renderQuizQ() {
     area.innerHTML = `<div style="padding:2rem 0; text-align:center;">
       <div class="result-big">${quizScore}/${quizPool.length}</div>
       <div class="result-msg">${pct>=80?'🌟 ¡Excelente!':pct>=60?'👍 ¡Buen trabajo!':'💪 ¡Sigue practicando!'}</div>
-      <div style="font-size:15px; color:var(--ink3); margin-top:8px; font-weight:500;">${pct}% de aproveitamento</div>
+      <div style="font-size:15px; color:var(--ink3); margin-top:8px; font-weight:500;">${pct}% de aprovechamiento</div>
     </div>`;
     document.getElementById('quiz-next-btn').style.display = 'none';
     saveProgress(pct);
@@ -2642,20 +2642,27 @@ async function concluirAula() {
   renderAulasNav();
   updateQuizProgressBar();
 
-  // Find next aula
+  // Find next aula — só auto-carrega se a professora já liberou.
+  // Sem desbloqueio manual: aluno volta ao dashboard com mensagem.
   const nextAula = aulasList.find(a => a.numero === currentAula.numero + 1);
+  const nextUnlocked = nextAula && isUnlocked(nextAula);
 
   // Check badges
   const newBadges = await checkBadges();
   if (newBadges.length > 0) {
-    window._afterBadge = nextAula ? () => loadAula(nextAula.id) : () => showDashboard();
+    window._afterBadge = nextUnlocked
+      ? () => loadAula(nextAula.id)
+      : () => showDashboard();
     showBadgeModal(newBadges[0]);
   } else {
-    if (nextAula) {
-      toast('✓ Aula concluída! Próxima aula desbloqueada.', 'ok');
+    if (nextUnlocked) {
+      toast('✓ ¡Lección completada!', 'ok');
       await loadAula(nextAula.id);
+    } else if (nextAula) {
+      toast('✓ ¡Lección completada! Espera a que tu profesora libere la siguiente.', 'ok');
+      showDashboard();
     } else {
-      toast('🏆 Parabéns! Você concluiu todas as aulas!', 'ok');
+      toast('🏆 ¡Felicidades! ¡Has completado todas las lecciones!', 'ok');
       showDashboard();
     }
   }
@@ -2685,18 +2692,18 @@ function checkConcludeEligibility() {
   if (quizOk && exOk) {
     // ELEGÍVEL — mostra barra global em qualquer aba + conclude-wrap dentro do Quiz
     if (bar && barSub) {
-      barSub.textContent = `Quiz: ${pct}%${hasEx ? ' · Exercícios completos ✓' : ''}`;
+      barSub.textContent = `Cuestionario: ${pct}%${hasEx ? ' · Ejercicios completos ✓' : ''}`;
       bar.style.display = '';
     }
     document.getElementById('conclude-sub').textContent =
-      `Quiz: ${pct}%${hasEx ? ' · Exercícios completos ✓' : ''} · Clique para avançar!`;
+      `Cuestionario: ${pct}%${hasEx ? ' · Ejercicios completos ✓' : ''} · ¡Haz clic para avanzar!`;
     if (warning) warning.style.display = 'none';
     if (btn) btn.disabled = false;
     wrap.classList.add('show');
   } else if (quizOk && !exOk) {
     // Quiz ok mas exercícios pendentes — barra global some, conclude-wrap mostra warning
     if (bar) bar.style.display = 'none';
-    document.getElementById('conclude-sub').textContent = `Quiz: ${pct}% ✓ — agora complete os exercícios!`;
+    document.getElementById('conclude-sub').textContent = `Cuestionario: ${pct}% ✓ — ¡ahora completa los ejercicios!`;
     if (warning) warning.style.display = '';
     if (btn) btn.disabled = true;
     wrap.classList.add('show');
@@ -3405,8 +3412,8 @@ function showBadgeModal(tipo) {
   const def = BADGE_DEFS[tipo];
   if (!def) return;
   document.getElementById('bm-emoji').textContent = def.emoji;
-  document.getElementById('bm-title').textContent = '¡Badge desbloqueado!';
-  document.getElementById('bm-sub').textContent = `Você conquistou o badge "${def.nome}" — ${def.desc}`;
+  document.getElementById('bm-title').textContent = '¡Logro desbloqueado!';
+  document.getElementById('bm-sub').textContent = `Has conseguido el logro "${def.nome}" — ${def.desc}`;
   document.getElementById('badge-modal').classList.add('show');
 }
 function closeBadgeModal() {
@@ -3416,7 +3423,7 @@ function closeBadgeModal() {
     window._afterBadge = null;
     fn();
   } else {
-    toast('✓ Aula concluída! Próxima aula desbloqueada.', 'ok');
+    toast('✓ ¡Lección completada!', 'ok');
   }
 }
 
@@ -3425,7 +3432,7 @@ function closeBadgeModal() {
 // ============================================================
 function renderFrases() {
   const el = document.getElementById('frases-list');
-  if (!frasesData.length) { el.innerHTML = '<div class="empty">Nenhuma frase nesta aula.</div>'; return; }
+  if (!frasesData.length) { el.innerHTML = '<div class="empty">Aún no hay frases en esta lección.</div>'; return; }
   el.innerHTML = frasesData.map(f => `
     <div class="frase-card" onclick="this.classList.toggle('revealed')">
       ${f.imagem_url ? `<img class="frase-img" src="${f.imagem_url}" alt="" onerror="this.style.display='none'">` : ''}
@@ -3455,7 +3462,7 @@ function speakFrases() {
 // ============================================================
 function renderVerbos() {
   const el = document.getElementById('verbos-content');
-  if (!currentAula?.verbos?.length) { el.innerHTML='<div class="empty">Nenhum verbo definido.</div>'; return; }
+  if (!currentAula?.verbos?.length) { el.innerHTML='<div class="empty">Aún no hay verbos definidos.</div>'; return; }
   el.innerHTML = `
     <div style="font-size:13px; color:#14a86e; margin-bottom:12px; font-weight:800;">Verbos de esta lección:</div>
     <div class="verb-grid">${currentAula.verbos.map(v=>`
@@ -3497,15 +3504,15 @@ function voltarAoAdmin() {
 }
 
 async function resetarPreview() {
-  if (!confirm('Apagar todo o progresso e badges do aluno preview? (não afeta alunos reais)')) return;
-  if (!sb || !aluno?.id) { toast('Sem conexão.', 'err'); return; }
+  if (!confirm('¿Borrar todo el progreso y logros del alumno de vista previa? (no afecta a alumnos reales)')) return;
+  if (!sb || !aluno?.id) { toast('Sin conexión.', 'err'); return; }
   await sb.from('progresso').delete().eq('aluno_id', aluno.id);
   await sb.from('badges').delete().eq('aluno_id', aluno.id);
   // Limpa o cache local de "exDone" pra forçar refazer exercícios
   Object.keys(localStorage)
     .filter(k => k.startsWith('ev_exDone_'))
     .forEach(k => localStorage.removeItem(k));
-  toast('Progresso resetado. Recarregando...', 'ok');
+  toast('Progreso reseteado. Recargando...', 'ok');
   setTimeout(() => window.location.reload(), 700);
 }
 
