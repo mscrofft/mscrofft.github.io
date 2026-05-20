@@ -1653,19 +1653,19 @@ button { font-family: var(--font); }
       <!-- BARRA GLOBAL DE CONCLUSÃO — visível em qualquer aba quando elegível -->
       <div id="conclude-bar" class="conclude-bar" style="display:none;">
         <div class="conclude-bar-text">
-          <div class="conclude-bar-title">🎉 Pronto para concluir!</div>
+          <div class="conclude-bar-title">🎉 ¡Listo para terminar!</div>
           <div class="conclude-bar-sub" id="conclude-bar-sub"></div>
         </div>
-        <button class="btn-conclude" onclick="concluirAula()">✓ Concluir aula e avançar</button>
+        <button class="btn-conclude" onclick="concluirAula()">✓ Completar lección y avanzar</button>
       </div>
 
       <div class="tab-bar">
-        <button class="tab-btn" id="tab-btn-conteudo" onclick="switchTab('conteudo',this)" style="display:none;">📖 Conteúdo</button>
-        <button class="tab-btn active" onclick="switchTab('flashcards',this)">🃏 Flashcards</button>
+        <button class="tab-btn" id="tab-btn-conteudo" onclick="switchTab('conteudo',this)" style="display:none;">📖 Contenido</button>
+        <button class="tab-btn active" onclick="switchTab('flashcards',this)">🃏 Tarjetas</button>
         <button class="tab-btn" onclick="switchTab('frases',this)">💬 Frases</button>
         <button class="tab-btn" onclick="switchTab('verbos',this)">📚 Verbos</button>
-        <button class="tab-btn" onclick="switchTab('quiz',this)">❓ Quiz</button>
-        <button class="tab-btn" onclick="switchTab('exercicios',this)">✏️ Exercícios</button>
+        <button class="tab-btn" onclick="switchTab('quiz',this)">❓ Cuestionario</button>
+        <button class="tab-btn" onclick="switchTab('exercicios',this)">✏️ Ejercicios</button>
       </div>
 
       <!-- CONTEÚDO EXPOSITIVO -->
@@ -1678,20 +1678,20 @@ button { font-family: var(--font); }
         <div class="fc-wrap" id="fc" onclick="flipFC()">
           <div class="fc-inner">
             <div class="fc-front">
-              <div class="fc-hint">toque para revelar</div>
-              <div class="fc-lbl" id="fc-lbl-es">em espanhol</div>
+              <div class="fc-hint">toca para revelar</div>
+              <div class="fc-lbl" id="fc-lbl-es">en español</div>
               <div class="fc-word" id="fc-es">—</div>
               <div class="fc-ex" id="fc-ex"></div>
             </div>
             <div class="fc-back">
-              <div class="fc-lbl">em português</div>
+              <div class="fc-lbl">en portugués</div>
               <div class="fc-word pt" id="fc-pt">—</div>
             </div>
           </div>
         </div>
         <div class="fc-controls">
           <button class="btn" onclick="prevFC()">← Anterior</button>
-          <button class="btn btn-coral" onclick="nextFC()">Próxima →</button>
+          <button class="btn btn-coral" onclick="nextFC()">Siguiente →</button>
           <button class="speak-btn" onclick="speakFC()">🔊</button>
           <span style="font-size:13px; color:var(--ink-3); margin-left:auto; font-weight:600;" id="fc-counter">0/0</span>
         </div>
@@ -1712,12 +1712,12 @@ button { font-family: var(--font); }
         </div>
         <!-- Conclude section -->
         <div class="conclude-wrap" id="conclude-wrap">
-          <div class="conclude-title">🎉 Quiz concluído com sucesso!</div>
+          <div class="conclude-title">🎉 ¡Cuestionario completado con éxito!</div>
           <div class="conclude-sub" id="conclude-sub"></div>
           <div id="conclude-ex-warning" style="display:none; margin-bottom:12px; font-size:13px; color:var(--danger); font-weight:600;">
-            ⚠️ Complete também os <strong>Exercícios</strong> para poder avançar.
+            ⚠️ Completa también los <strong>Ejercicios</strong> para poder avanzar.
           </div>
-          <button class="btn-conclude" id="btn-concluir" onclick="concluirAula()">✓ Concluir aula e avançar</button>
+          <button class="btn-conclude" id="btn-concluir" onclick="concluirAula()">✓ Completar lección y avanzar</button>
         </div>
       </div>
 
@@ -1729,10 +1729,10 @@ button { font-family: var(--font); }
       <!-- FRASES -->
       <div class="tab-pane" id="tab-frases">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
-          <span style="font-size:13px; color:var(--ink-3); font-weight:500;">Toque em cada frase para ver a tradução</span>
+          <span style="font-size:13px; color:var(--ink-3); font-weight:500;">Toca cada frase para ver la traducción</span>
           <div style="display:flex; gap:6px;">
-            <button class="btn" onclick="revealAllFrases()">Revelar</button>
-            <button class="btn" onclick="hideAllFrases()">Esconder</button>
+            <button class="btn" onclick="revealAllFrases()">Mostrar</button>
+            <button class="btn" onclick="hideAllFrases()">Ocultar</button>
             <button class="speak-btn" onclick="speakFrases()">🔊</button>
           </div>
         </div>
@@ -2265,7 +2265,7 @@ async function loadAula(id) {
 
   // Show loading spinner in quiz area while fetching
   document.getElementById('quiz-area').innerHTML =
-    '<div class="loading"><div class="spinner"></div>Carregando conteúdo...</div>';
+    '<div class="loading"><div class="spinner"></div>Cargando contenido...</div>';
 
   try {
     const [vocabRes, frasesRes, exRes] = await Promise.all([
@@ -2302,9 +2302,15 @@ async function loadAula(id) {
   // exercícios feitos em sessão anterior, a barra global aparece de cara.
   checkConcludeEligibility();
 
-  // switchTab: use querySelector scoped to the aula view to avoid grabbing wrong button
-  const firstTabBtn = viewAula.querySelector('.tab-btn');
-  if (firstTabBtn) switchTab('flashcards', firstTabBtn);
+  // Aba inicial: "conteudo" se existir, senão "flashcards"
+  const hasConteudo = !!(aula.conteudo_md && aula.conteudo_md.trim());
+  if (hasConteudo && btnConteudo) {
+    switchTab('conteudo', btnConteudo);
+  } else {
+    // primeira aba visível (pula a de conteúdo escondida)
+    const firstVisible = viewAula.querySelector('.tab-btn:not([style*="display:none"]):not([style*="display: none"])');
+    if (firstVisible) switchTab('flashcards', firstVisible);
+  }
 
   updateQuizProgressBar();
 }
@@ -2330,8 +2336,8 @@ function updateQuizProgressBar() {
   } else {
     document.getElementById('av-quiz-prog-label').textContent =
       hasEx
-        ? `Complete o quiz (${MIN_SCORE}%+) e os exercícios para concluir esta aula`
-        : `Complete o quiz com ${MIN_SCORE}% ou mais para concluir esta aula`;
+        ? `Completa el cuestionario (${MIN_SCORE}%+) y los ejercicios para terminar esta lección`
+        : `Completa el cuestionario con ${MIN_SCORE}% o más para terminar esta lección`;
   }
 }
 
