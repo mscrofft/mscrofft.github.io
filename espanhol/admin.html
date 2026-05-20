@@ -2562,7 +2562,7 @@ async function loadVocab() {
       <tbody>${rows.map(r => `
         <tr>
           <td>${r.imagem_url ? `<img src="${r.imagem_url}" style="width:40px;height:40px;object-fit:cover;border-radius:6px;">` : '—'}</td>
-          <td><span class="badge badge-blue">Aula ${r.aulas?.numero || '?'}</span></td>
+          <td><span class="badge badge-blue">Aula ${r.aulas?.numero ?? '?'}</span></td>
           <td><strong>${r.espanhol}</strong></td>
           <td>${r.portugues}</td>
           <td><span class="badge badge-orange">${r.categoria}</span></td>
@@ -2695,7 +2695,7 @@ async function loadFrases() {
     <div class="frase-row">
       <div class="frase-content">
         <div style="margin-bottom:4px; display:flex; gap:6px; flex-wrap:wrap;">
-          <span class="badge badge-blue">Aula ${r.aulas?.numero || '?'}</span>
+          <span class="badge badge-blue">Aula ${r.aulas?.numero ?? '?'}</span>
           <span class="badge badge-orange">${r.categoria}</span>
         </div>
         <div class="frase-es">${r.espanhol}</div>
@@ -2818,7 +2818,7 @@ async function loadExercicios() {
       <thead><tr><th>Aula</th><th>Tipo</th><th>Frase</th><th>Resposta</th><th></th></tr></thead>
       <tbody>${rows.map(r => `
         <tr>
-          <td><span class="badge badge-blue">Aula ${r.aulas?.numero||'?'}</span></td>
+          <td><span class="badge badge-blue">Aula ${r.aulas?.numero ?? '?'}</span></td>
           <td><span class="badge badge-orange">${tipoLabel(r.tipo)}</span></td>
           <td style="max-width:260px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${fraseResumo(r)}</td>
           <td style="color:var(--green); font-weight:500;">${respResumo(r)}</td>
