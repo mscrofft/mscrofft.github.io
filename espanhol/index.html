@@ -1661,6 +1661,7 @@ button { font-family: var(--font); }
 
       <div class="tab-bar">
         <button class="tab-btn" id="tab-btn-conteudo" onclick="switchTab('conteudo',this)" style="display:none;">📖 Contenido</button>
+        <button class="tab-btn" id="tab-btn-apoio" onclick="switchTab('apoio',this)" style="display:none;">📄 Texto de Apoyo</button>
         <button class="tab-btn active" onclick="switchTab('flashcards',this)">🃏 Tarjetas</button>
         <button class="tab-btn" onclick="switchTab('frases',this)">💬 Frases</button>
         <button class="tab-btn" onclick="switchTab('verbos',this)">📚 Verbos</button>
@@ -1671,6 +1672,11 @@ button { font-family: var(--font); }
       <!-- CONTEÚDO EXPOSITIVO -->
       <div class="tab-pane" id="tab-conteudo">
         <div id="conteudo-render" class="prose"></div>
+      </div>
+
+      <!-- TEXTO DE APOYO -->
+      <div class="tab-pane" id="tab-apoio">
+        <div id="apoio-render" style="white-space:pre-wrap; font-size:15px; line-height:1.7; color:var(--ink); padding:8px 4px;"></div>
       </div>
 
       <!-- FLASHCARDS -->
@@ -2255,6 +2261,19 @@ async function loadAula(id) {
     if (btnConteudo) btnConteudo.style.display = 'none';
     if (paneConteudo) paneConteudo.classList.remove('active');
     if (renderEl) renderEl.innerHTML = '';
+  }
+
+  // Aba "Texto de Apoyo": só aparece se houver observacoes (texto colado pela professora)
+  const btnApoio = document.getElementById('tab-btn-apoio');
+  const paneApoio = document.getElementById('tab-apoio');
+  const apoioEl = document.getElementById('apoio-render');
+  if (aula.observacoes && aula.observacoes.trim() && apoioEl) {
+    if (btnApoio) btnApoio.style.display = '';
+    apoioEl.textContent = aula.observacoes;
+  } else {
+    if (btnApoio) btnApoio.style.display = 'none';
+    if (paneApoio) paneApoio.classList.remove('active');
+    if (apoioEl) apoioEl.textContent = '';
   }
 
   // Sidebar active state
