@@ -1986,19 +1986,18 @@ function updateSidebarProgress() {
 }
 
 function isUnlocked(aula) {
-  // A primeira aula da lista (menor número, geralmente 0 ou 1) começa desbloqueada.
-  // Coerce pra Number defensivamente (caso o banco devolva string).
+  // Controle manual pela professora: aula só fica acessível se ela liberou
+  // explicitamente (progresso.desbloqueada=true). Exceção: a primeira aula
+  // (menor número) é sempre acessível pra não travar o início do aluno.
   const num = Number(aula.numero);
-  if (!aulasList.length) return num === 0 || num === 1;
-  const nums = aulasList.map(a => Number(a.numero));
-  const menorNumero = Math.min(...nums);
-  if (num === menorNumero) return true;
-  // Aula desbloqueia quando a anterior (em ordem) foi concluída.
-  const anteriores = aulasList
-    .filter(a => Number(a.numero) < num)
-    .sort((a, b) => Number(b.numero) - Number(a.numero));
-  const prev = anteriores[0];
-  return prev && !!progressoMap[String(prev.id)]?.concluida;
+  if (aulasList.length) {
+    const menorNumero = Math.min(...aulasList.map(a => Number(a.numero)));
+    if (num === menorNumero) return true;
+  } else if (num === 0 || num === 1) {
+    return true; // fallback defensivo enquanto aulasList não carregou
+  }
+  // Demais aulas: precisam de desbloqueio explícito pela professora no admin.
+  return !!progressoMap[String(aula.id)]?.desbloqueada;
 }
 
 function renderAulasNav() {

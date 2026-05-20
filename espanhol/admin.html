@@ -957,7 +957,7 @@ pre {
             </div>
             <div class="field">
               <label class="field-label">Colar textos de Apoio</label>
-              <textarea class="inp" id="aula-obs" placeholder="Cole aqui textos de apoio que serão lidos pelo aluno..."></textarea>
+              <textarea class="inp" id="aula-obs" rows="12" style="min-height:260px; resize:vertical; font-family:var(--font); line-height:1.5;" placeholder="Cole aqui textos de apoio que serão lidos pelo aluno..."></textarea>
             </div>
             <div class="field">
               <label class="field-label">Voz TTS desta aula (opcional — vazio = usa a padrão)</label>
@@ -1031,7 +1031,7 @@ pre {
             </div>
             <div class="field">
               <label class="field-label">Colar textos de Apoio</label>
-              <textarea class="inp" id="ad-aula-obs" placeholder="Cole aqui textos de apoio que serão lidos pelo aluno..."></textarea>
+              <textarea class="inp" id="ad-aula-obs" rows="12" style="min-height:260px; resize:vertical; font-family:var(--font); line-height:1.5;" placeholder="Cole aqui textos de apoio que serão lidos pelo aluno..."></textarea>
             </div>
             <div class="field">
               <label class="field-label">Contenido</label>
@@ -3442,26 +3442,44 @@ async function loadProgresso() {
       <div style="background:var(--surface2); border-radius:99px; height:6px; margin-bottom:12px;">
         <div style="background:${pct===100?'var(--green)':'var(--accent)'}; height:6px; border-radius:99px; width:${pct}%; transition:width 0.5s;"></div>
       </div>
+      <div style="font-size:11px; color:var(--ink3); margin-bottom:6px;">
+        <span style="color:var(--green); font-weight:600;">✓ concluída</span> ·
+        <span style="color:var(--gold); font-weight:600;">🔓 liberada</span> ·
+        <span style="color:var(--ink3); font-weight:600;">🔒 bloqueada</span>
+      </div>
       <div style="display:flex; flex-wrap:wrap; gap:6px;">
-        ${aulasAll.map(aula => {
-          const p = alunoProgresso.find(x => x.aula_id === aula.id);
-          const done = p?.concluida;
-          const score = p?.melhor_pontuacao || 0;
-          const progId = p?.id;
-          return `<div class="aula-prog-row" style="padding:5px 10px; border-radius:8px;
-            background:${done?'var(--green-dim)':score>0?'var(--gold-dim)':'var(--surface2)'};
-            border:1px solid ${done?'rgba(61,190,122,0.2)':'transparent'};">
-            <span style="font-size:12px; font-weight:600;
-              color:${done?'var(--green)':score>0?'var(--gold)':'var(--ink3)'};"
-              title="${aula.titulo}">
-              Aula ${aula.numero} ${done ? '✓' : score > 0 ? score+'%' : '—'}
-            </span>
-            ${done
-              ? `<button class="lock-btn" onclick="toggleConcluida(${aluno.id},${aula.id},${progId||'null'},false,'${aluno.nome}','${aula.numero}')" title="Revogar conclusão">🔒</button>`
-              : `<button class="unlock-btn" onclick="toggleConcluida(${aluno.id},${aula.id},${progId||'null'},true,'${aluno.nome}','${aula.numero}')" title="Desbloquear manualmente">🔓</button>`
-            }
-          </div>`;
-        }).join('')}
+        ${(() => {
+          const menorNumero = Math.min(...aulasAll.map(a => Number(a.numero)));
+          return aulasAll.map(aula => {
+            const p = alunoProgresso.find(x => x.aula_id === aula.id);
+            const concluida = !!p?.concluida;
+            const desbloqueada = !!p?.desbloqueada;
+            const score = p?.melhor_pontuacao || 0;
+            const progId = p?.id;
+            const isFirst = Number(aula.numero) === menorNumero;
+            const acessivel = desbloqueada || isFirst;
+
+            const bg = concluida ? 'var(--green-dim)' : acessivel ? 'var(--gold-dim)' : 'var(--surface2)';
+            const cor = concluida ? 'var(--green)' : acessivel ? 'var(--gold)' : 'var(--ink3)';
+            const icone = concluida ? '✓' : acessivel ? '🔓' : '🔒';
+            const label = concluida ? `${score}%` : '';
+
+            // Primeira aula é sempre acessível — esconde botão de bloquear pra não travar o aluno.
+            const btn = isFirst ? ''
+              : desbloqueada
+                ? `<button class="lock-btn" onclick="toggleDesbloqueio(${aluno.id},${aula.id},${progId||'null'},false,'${aluno.nome.replace(/'/g, "\\'")}','${aula.numero}')" title="Bloquear acesso">🔒</button>`
+                : `<button class="unlock-btn" onclick="toggleDesbloqueio(${aluno.id},${aula.id},${progId||'null'},true,'${aluno.nome.replace(/'/g, "\\'")}','${aula.numero}')" title="Desbloquear acesso">🔓</button>`;
+
+            return `<div class="aula-prog-row" style="padding:5px 10px; border-radius:8px;
+              background:${bg};
+              border:1px solid ${concluida?'rgba(61,190,122,0.2)':'transparent'};">
+              <span style="font-size:12px; font-weight:600; color:${cor};" title="${aula.titulo}">
+                Aula ${aula.numero} ${icone}${label ? ' ' + label : ''}
+              </span>
+              ${btn}
+            </div>`;
+          }).join('');
+        })()}
       </div>
       ${alunoBadges.length ? `<div style="margin-top:10px; font-size:12px; color:var(--ink3);">Badges: ${alunoBadges.map(b=>b.tipo).join(', ')}</div>` : ''}
     </div>`;
@@ -3527,31 +3545,28 @@ async function dragDrop(e, targetId) {
 }
 
 // ============================================================
-// MANUAL UNLOCK — toggle aula concluida for a student
+// DESBLOQUEIO MANUAL — professora controla acesso por aluno × aula
 // ============================================================
-async function toggleConcluida(alunoId, aulaId, progId, concluida, nomeAluno, aulaNumero) {
+// Escreve em `progresso.desbloqueada` (separado de `concluida` — preserva
+// histórico de conclusão do aluno). Concluir não cascateia mais.
+async function toggleDesbloqueio(alunoId, aulaId, progId, desbloqueada, nomeAluno, aulaNumero) {
   if (!sb) return;
-  const acao = concluida ? 'desbloquear' : 'bloquear';
-  if (!confirm(`${acao === 'desbloquear' ? 'Desbloquear' : 'Revogar'} Aula ${aulaNumero} para ${nomeAluno}?`)) return;
+  const acao = desbloqueada ? 'Desbloquear' : 'Bloquear';
+  if (!confirm(`${acao} Aula ${aulaNumero} para ${nomeAluno}?`)) return;
 
   if (progId && progId !== 'null') {
-    // Update existing
-    const { error } = await sb.from('progresso').update({
-      concluida,
-      concluida_em: concluida ? new Date().toISOString() : null,
-    }).eq('id', progId);
+    const { error } = await sb.from('progresso').update({ desbloqueada }).eq('id', progId);
     if (error) { toast('Erro: ' + error.message, 'err'); return; }
   } else {
-    // Insert new record
+    // Cria registro inicial sem conclusão — só marca acesso.
     const { error } = await sb.from('progresso').insert({
       aluno_id: alunoId, aula_id: aulaId,
-      concluida, melhor_pontuacao: concluida ? 100 : 0,
-      tentativas: 0,
-      concluida_em: concluida ? new Date().toISOString() : null,
+      desbloqueada,
+      concluida: false, melhor_pontuacao: 0, tentativas: 0,
     });
     if (error) { toast('Erro: ' + error.message, 'err'); return; }
   }
-  toast(`Aula ${aulaNumero} ${concluida ? 'desbloqueada' : 'bloqueada'} para ${nomeAluno}. ✓`, 'ok');
+  toast(`Aula ${aulaNumero} ${desbloqueada ? 'desbloqueada' : 'bloqueada'} para ${nomeAluno}. ✓`, 'ok');
   loadProgresso();
 }
 
