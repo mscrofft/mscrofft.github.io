@@ -1165,14 +1165,14 @@ button { font-family: var(--font); }
   margin-bottom: 1.5rem;
 }
 .ex-tipo {
-  font-size: 11px; font-weight: 700;
+  font-size: 11px; font-weight: 800;
   letter-spacing: 0.08em; text-transform: uppercase;
-  color: var(--ink-3);
+  color: #14a86e;
 }
 .ex-counter {
   font-size: 13px;
-  color: var(--ink-3);
-  font-weight: 600;
+  color: #14a86e;
+  font-weight: 800;
 }
 .ex-prog {
   background: var(--border);
@@ -2530,7 +2530,7 @@ function renderQuizQ() {
   window._quizCorrect = w.espanhol;
 
   area.innerHTML = `
-    <div style="font-size:13px; color:var(--ink3); margin-bottom:6px; font-weight:500;">Como se diz em espanhol?</div>
+    <div style="font-size:13px; color:#14a86e; margin-bottom:6px; font-weight:800;">¿Cómo se dice en español?</div>
     <div class="quiz-q-word">${w.portugues}</div>
     <div class="quiz-opts">${opts.map((o, i) =>
       `<button class="quiz-opt" onclick="checkQ(this,${i})">${o.espanhol}</button>`
@@ -2831,7 +2831,7 @@ function renderClassificar(ex) {
                  style="padding:6px 12px;font-size:13px;min-height:36px;">${cat}</button>`
       ).join('')}</div>
     </div>`).join('');
-  return `<div style="font-size:14px;color:var(--ink2);margin-bottom:12px;">
+  return `<div style="font-size:14px;color:#14a86e;margin-bottom:12px;font-weight:800;">
             Toca la categoría correcta para cada elemento.
           </div>
           <div style="display:flex;flex-direction:column;gap:8px;">${itemsHtml}</div>`;
@@ -2955,7 +2955,7 @@ function renderPares(ex) {
     </button>`).join('');
 
   return `
-    <div style="font-size:14px; color:var(--ink2); margin-bottom:12px;">
+    <div style="font-size:14px; color:#14a86e; margin-bottom:12px; font-weight:800;">
       Toca una palabra a la izquierda y luego su traducción a la derecha.
     </div>
     <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
@@ -3061,7 +3061,7 @@ function renderParesAudio(ex) {
     </button>`).join('');
 
   return `
-    <div style="font-size:14px; color:var(--ink2); margin-bottom:12px;">
+    <div style="font-size:14px; color:#14a86e; margin-bottom:12px; font-weight:800;">
       Toca un audio a la izquierda (escucha) y luego su traducción a la derecha.
     </div>
     <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
@@ -3157,9 +3157,9 @@ function renderConjugarVerbo(ex) {
 // ============================================================
 function renderCorrigirFrase(ex) {
   return `
-    <div style="font-size:11px; color:var(--ink-3); text-transform:uppercase; letter-spacing:0.08em; font-weight:700; margin-bottom:6px;">Frase con error</div>
+    <div style="font-size:11px; color:#14a86e; text-transform:uppercase; letter-spacing:0.08em; font-weight:800; margin-bottom:6px;">Frase con error</div>
     <div class="ex-frase-errada" style="padding:12px 16px; border:1.5px solid #ffc4c4; border-radius:var(--r); background:#ffe5e5; color:#c53030; font-size:18px; font-weight:600; margin-bottom:16px;">${ex.frase || ''}</div>
-    <div style="font-size:13px; color:var(--ink-2); margin-bottom:6px;">Reescribe la versi\u00f3n correcta:</div>
+    <div style="font-size:13px; color:#14a86e; margin-bottom:6px; font-weight:800;">Reescribe la versi\u00f3n correcta:</div>
     <input class="ex-input" id="corrigir-input" type="text"
       placeholder="Escribe la frase corregida..."
       autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
@@ -3458,7 +3458,7 @@ function renderVerbos() {
   const el = document.getElementById('verbos-content');
   if (!currentAula?.verbos?.length) { el.innerHTML='<div class="empty">Nenhum verbo definido.</div>'; return; }
   el.innerHTML = `
-    <div style="font-size:13px; color:var(--ink3); margin-bottom:12px; font-weight:500;">Verbos desta aula:</div>
+    <div style="font-size:13px; color:#14a86e; margin-bottom:12px; font-weight:800;">Verbos de esta lección:</div>
     <div class="verb-grid">${currentAula.verbos.map(v=>`
       <div class="verb-card">
         <div style="display:flex;align-items:center;gap:8px;">

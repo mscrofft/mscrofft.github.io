@@ -3058,16 +3058,27 @@ async function salvarExercicio() {
       voz_tts: document.getElementById('ex-voz').value || null,
     };
   } else if (tipo === 'classificar') {
-    const pares = paresFromInputs();
-    if (pares.length < 3) { toast('Adicione pelo menos 3 itens.', 'err'); return; }
+    const paresRaw = paresFromInputs();
+    if (paresRaw.length < 3) { toast('Adicione pelo menos 3 itens.', 'err'); return; }
     const cats = (document.getElementById('ex-classif-cats').value || '')
       .split(',').map(c => c.trim()).filter(Boolean);
     if (cats.length < 2 || cats.length > 4) {
       toast('Defina entre 2 e 4 categorias.', 'err'); return;
     }
-    const invalido = pares.find(p => !cats.includes(p.split('||')[1].trim()));
-    if (invalido) {
-      toast(`Item "${invalido.split('||')[0]}" usa categoria fora da lista.`, 'err'); return;
+    // Normaliza comparação: case-insensitive + trim. Se o item bate por
+    // case-insensitive, "canoniza" a categoria do item pro valor exato da lista
+    // (assim o aluno sempre vê a categoria escrita do mesmo jeito).
+    const norm = s => String(s||'').trim().toLowerCase();
+    const catsByNorm = new Map(cats.map(c => [norm(c), c]));
+    const pares = [];
+    for (const p of paresRaw) {
+      const [item, catRaw] = p.split('||').map(s => s.trim());
+      const catCanonica = catsByNorm.get(norm(catRaw));
+      if (!catCanonica) {
+        toast(`Item "${item}" usa categoria "${catRaw}" fora da lista (${cats.join(', ')}).`, 'err');
+        return;
+      }
+      pares.push(`${item}||${catCanonica}`);
     }
     payload = {
       aula_id: aulaContext?.id || document.getElementById('ex-aula-id').value || null,
