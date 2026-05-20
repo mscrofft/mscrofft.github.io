@@ -1259,6 +1259,8 @@ pre {
               <option value="pares_audio">Combine áudio com palavra</option>
               <option value="conjugar_verbo">Conjugar verbo</option>
               <option value="corrigir_frase">Corrigir frase</option>
+              <option value="multipla_escolha">Múltipla escolha</option>
+              <option value="classificar">Classificar em categorias</option>
             </select>
           </div>
           <div class="field" style="margin:0; display:flex; align-items:flex-end;">
@@ -1287,6 +1289,8 @@ pre {
               <option value="pares_audio">Combine áudio com palavra</option>
               <option value="conjugar_verbo">Conjugar verbo</option>
               <option value="corrigir_frase">Corrigir frase</option>
+              <option value="multipla_escolha">Múltipla escolha (pergunta + opções)</option>
+              <option value="classificar">Classificar em categorias</option>
             </select>
           </div>
         </div>
@@ -1328,8 +1332,18 @@ pre {
             <button type="button" class="btn btn-sm" onclick="addParesRow()" style="margin-top:8px;">
               + Adicionar par
             </button>
-            <div style="font-size:11px; color:var(--ink3); margin-top:6px;">
-              Mínimo 3 pares preenchidos. Linhas em branco são ignoradas. Os lados são embaralhados pro aluno.
+            <div style="font-size:11px; color:var(--ink3); margin-top:6px;" id="ex-pares-hint">
+              Mínimo 3 pares preenchidos. Linhas em branco são ignoradas. Os lados são embaralhados pro aluno. 💡 <em>Também funciona pra relacionar pergunta com resposta: cadastre a pergunta na esquerda e a resposta na direita.</em>
+            </div>
+          </div>
+        </div>
+
+        <div id="ex-classif-cats-field" style="display:none;">
+          <div class="field" style="margin-top:10px;">
+            <label class="field-label">Categorias (separadas por vírgula)</label>
+            <input class="inp" type="text" id="ex-classif-cats" placeholder="ser, estar">
+            <div style="font-size:11px; color:var(--ink3); margin-top:4px;">
+              2 a 4 categorias. Cada item será classificado em uma delas. Use exatamente os mesmos nomes na coluna "categoría correcta" de cada item.
             </div>
           </div>
         </div>
@@ -2790,9 +2804,14 @@ async function loadExercicios() {
     t==='pares_audio'?'Combine áudio':
     t==='conjugar_verbo'?'Conjugar verbo':
     t==='corrigir_frase'?'Corrigir frase':
+    t==='multipla_escolha'?'Múltipla escolha':
+    t==='classificar'?'Classificar':
     t;
   const isParesT = t => t === 'pares' || t === 'pares_audio';
-  const fraseResumo = r => isParesT(r.tipo) ? `${(r.opcoes||[]).length} pares` : (r.frase || '—');
+  const fraseResumo = r =>
+    isParesT(r.tipo) ? `${(r.opcoes||[]).length} pares`
+    : r.tipo === 'classificar' ? `${(r.opcoes||[]).length} itens · ${String(r.resposta||'').split('|').length} categorias`
+    : (r.frase || '—');
   const respResumo = r => isParesT(r.tipo) ? '—' : (r.resposta || '—');
   document.getElementById('ex-list-wrap').innerHTML = `
     <table class="vtable">
@@ -2842,16 +2861,20 @@ function updateExFormTipo() {
   const padraoBlock = document.getElementById('ex-fields-padrao');
   const paresBlock = document.getElementById('ex-pares-field');
 
-  if (tipo === 'pares' || tipo === 'pares_audio') {
+  const classifCats = document.getElementById('ex-classif-cats-field');
+
+  if (tipo === 'pares' || tipo === 'pares_audio' || tipo === 'classificar') {
     if (padraoBlock) padraoBlock.style.display = 'none';
     if (paresBlock) paresBlock.style.display = '';
-    ensureMinParesRows(5);
+    ensureMinParesRows(tipo === 'classificar' ? 3 : 5);
     setParesLabels(tipo);
+    if (classifCats) classifCats.style.display = (tipo === 'classificar') ? '' : 'none';
     return;
   }
 
   if (padraoBlock) padraoBlock.style.display = '';
   if (paresBlock) paresBlock.style.display = 'none';
+  if (classifCats) classifCats.style.display = 'none';
 
   if (tipo === 'lacuna_escolha') {
     opField.style.display = '';
@@ -2873,6 +2896,10 @@ function updateExFormTipo() {
     opField.style.display = 'none';
     fraseHint.textContent = 'A frase ERRADA, como será mostrada ao aluno. Ex: Ello es simpático';
     respHint.textContent = 'A versão CORRETA da frase. Ex: Él es simpático.';
+  } else if (tipo === 'multipla_escolha') {
+    opField.style.display = '';
+    fraseHint.textContent = 'A pergunta inteira. Não precisa de ___. Ex: «No tener vergüenza» es sinónimo de…';
+    respHint.textContent = 'Texto exato da alternativa correta. Para sinônimos use | (ex: sí|si).';
   }
 }
 
@@ -2883,8 +2910,9 @@ function addParesRow(left = '', right = '') {
   if (!wrap) return;
   const tipo = document.getElementById('ex-tipo')?.value || 'pares';
   const isAudio = tipo === 'pares_audio';
-  const leftPh  = isAudio ? 'espanhol (vira áudio)' : 'esquerda';
-  const rightPh = isAudio ? 'português' : 'direita';
+  const isClassif = tipo === 'classificar';
+  const leftPh  = isClassif ? 'elemento' : (isAudio ? 'espanhol (vira áudio)' : 'esquerda');
+  const rightPh = isClassif ? 'categoría correcta' : (isAudio ? 'português' : 'direita');
   const row = document.createElement('div');
   row.className = 'pares-row';
   row.style.cssText = 'display:grid; grid-template-columns:1fr 1fr 36px; gap:6px; align-items:center;';
@@ -2917,8 +2945,9 @@ function setParesLabels(tipo) {
   const wrap = document.getElementById('ex-pares-rows');
   if (!wrap) return;
   const isAudio = tipo === 'pares_audio';
-  const leftPh  = isAudio ? 'espanhol (vira áudio)' : 'esquerda';
-  const rightPh = isAudio ? 'português' : 'direita';
+  const isClassif = tipo === 'classificar';
+  const leftPh  = isClassif ? 'elemento' : (isAudio ? 'espanhol (vira áudio)' : 'esquerda');
+  const rightPh = isClassif ? 'categoría correcta' : (isAudio ? 'português' : 'direita');
   wrap.querySelectorAll('.pares-row').forEach(row => {
     const l = row.querySelector('.pares-left');
     const r = row.querySelector('.pares-right');
@@ -2987,14 +3016,18 @@ async function editarExercicio(id) {
   document.getElementById('ex-tipo').value = data.tipo;
   document.getElementById('ex-frase').value = data.frase || '';
   document.getElementById('ex-resposta').value = data.resposta || '';
-  const isPares = data.tipo === 'pares' || data.tipo === 'pares_audio';
-  document.getElementById('ex-opcoes').value = isPares ? '' : (data.opcoes || []).join(', ');
-  if (isPares) {
+  const isParesLike = ['pares', 'pares_audio', 'classificar'].includes(data.tipo);
+  document.getElementById('ex-opcoes').value = isParesLike ? '' : (data.opcoes || []).join(', ');
+  if (isParesLike) {
     paresToInputs(data.opcoes);
     setParesLabels(data.tipo);
   } else {
     clearParesRows();
     ensureMinParesRows(5);
+  }
+  if (data.tipo === 'classificar') {
+    const cf = document.getElementById('ex-classif-cats');
+    if (cf) cf.value = String(data.resposta || '').split('|').join(', ');
   }
   document.getElementById('ex-imagem').value = data.imagem_url || '';
   document.getElementById('ex-voz').value = data.voz_tts || '';
@@ -3020,6 +3053,27 @@ async function salvarExercicio() {
       tipo,
       frase: tipo === 'pares_audio' ? 'Combine áudio com palavra' : 'Combine os pares',
       resposta: '',
+      opcoes: pares,
+      imagem_url: imagem || null,
+      voz_tts: document.getElementById('ex-voz').value || null,
+    };
+  } else if (tipo === 'classificar') {
+    const pares = paresFromInputs();
+    if (pares.length < 3) { toast('Adicione pelo menos 3 itens.', 'err'); return; }
+    const cats = (document.getElementById('ex-classif-cats').value || '')
+      .split(',').map(c => c.trim()).filter(Boolean);
+    if (cats.length < 2 || cats.length > 4) {
+      toast('Defina entre 2 e 4 categorias.', 'err'); return;
+    }
+    const invalido = pares.find(p => !cats.includes(p.split('||')[1].trim()));
+    if (invalido) {
+      toast(`Item "${invalido.split('||')[0]}" usa categoria fora da lista.`, 'err'); return;
+    }
+    payload = {
+      aula_id: aulaContext?.id || document.getElementById('ex-aula-id').value || null,
+      tipo,
+      frase: 'Clasifica',
+      resposta: cats.join('|'),
       opcoes: pares,
       imagem_url: imagem || null,
       voz_tts: document.getElementById('ex-voz').value || null,
@@ -3103,7 +3157,35 @@ function testarExercicio() {
     tipo==='escrita_audio'?'Ouça e escreva':
     tipo==='conjugar_verbo'?'Conjugar verbo':
     tipo==='corrigir_frase'?'Corrigir frase':
+    tipo==='multipla_escolha'?'Múltipla escolha':
+    tipo==='classificar'?'Classificar':
     'Exercício';
+
+  // multipla_escolha: pergunta + opções, sem lacuna
+  if (tipo === 'multipla_escolha') {
+    let h = `<div style="font-size:13px; font-weight:600; color:var(--ink); margin-bottom:8px;">${labelTipo}</div>`;
+    h += `<div style="font-size:16px; font-weight:600; margin-bottom:10px;">${frase}</div>`;
+    h += `<div style="display:flex; flex-direction:column; gap:6px;">` +
+      opcoes.map(o => `<span style="padding:8px 14px; border-radius:8px; border:1.5px solid var(--border); background:var(--surface); font-size:14px;">${o}</span>`).join('') + `</div>`;
+    h += `<div style="margin-top:8px; font-size:12px; color:var(--green); font-weight:500;">✓ Resposta: ${resposta}</div>`;
+    content.innerHTML = h;
+    preview.style.display = '';
+    return;
+  }
+
+  // classificar: preview compacto
+  if (tipo === 'classificar') {
+    let h = `<div style="font-size:13px; font-weight:600; color:var(--ink); margin-bottom:8px;">${labelTipo}</div>`;
+    h += `<div style="font-size:13px; color:var(--ink3); margin-bottom:8px;">Preview simplificado — use "👁️ Ver como aluno" pra testar a interação completa.</div>`;
+    const cats = (document.getElementById('ex-classif-cats')?.value || '').split(',').map(c=>c.trim()).filter(Boolean);
+    h += `<div style="font-size:12px;color:var(--ink3);margin-bottom:4px;">Categorias: <strong>${cats.join(' · ')}</strong></div>`;
+    const pares = paresFromInputs();
+    h += `<div style="display:flex;flex-direction:column;gap:4px;">` +
+      pares.map(p => { const [l,r] = p.split('||'); return `<div style="padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;"><strong>${l}</strong> → <em>${r}</em></div>`; }).join('') + `</div>`;
+    content.innerHTML = h;
+    preview.style.display = '';
+    return;
+  }
   let html = `<div style="font-size:13px; font-weight:600; color:var(--ink); margin-bottom:8px;">${labelTipo}</div>`;
 
   // corrigir_frase: mostra a frase errada e input pra digitar a correta

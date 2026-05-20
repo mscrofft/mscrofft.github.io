@@ -2735,6 +2735,8 @@ function renderExercicio() {
   else if (ex.tipo === 'pares_audio') body = renderParesAudio(ex);
   else if (ex.tipo === 'conjugar_verbo') body = renderConjugarVerbo(ex);
   else if (ex.tipo === 'corrigir_frase') body = renderCorrigirFrase(ex);
+  else if (ex.tipo === 'multipla_escolha') body = renderMultiplaEscolha(ex);
+  else if (ex.tipo === 'classificar') body = renderClassificar(ex);
 
   area.innerHTML = `
     <div class="ex-prog"><div class="ex-prog-fill" style="width:${pct}%"></div></div>
@@ -2759,6 +2761,8 @@ function tipoLabel(t) {
     :t==='pares_audio'?'Combina audio con palabra'
     :t==='conjugar_verbo'?'Conjuga el verbo'
     :t==='corrigir_frase'?'Corrige la frase'
+    :t==='multipla_escolha'?'Elige la opción correcta'
+    :t==='classificar'?'Clasifica cada elemento'
     :'Ejercicio';
 }
 
@@ -2770,6 +2774,56 @@ function renderLacunaEscolha(ex) {
     <div class="ex-opcoes">${(ex.opcoes||[]).map((o,i)=>
       `<button class="ex-opcao" id="ex-op-${i}" onclick="selecionarOpcao(${i})">${o}</button>`
     ).join('')}</div>`;
+}
+
+// ============================================================
+// MÚLTIPLA ESCOLHA — pergunta + alternativas (sem lacuna)
+// ============================================================
+function renderMultiplaEscolha(ex) {
+  window._exOpcoes = ex.opcoes || [];
+  return `<div class="ex-frase" style="font-size:16px; font-weight:600;">${ex.frase}</div>
+    <div class="ex-opcoes">${(ex.opcoes||[]).map((o,i)=>
+      `<button class="ex-opcao" id="ex-op-${i}" onclick="selecionarOpcao(${i})">${o}</button>`
+    ).join('')}</div>`;
+}
+
+// ============================================================
+// CLASSIFICAR — N itens em 2-4 categorias
+// ============================================================
+let _classifState = null; // { items: [{txt, correta, atribuida}], categorias: [...] }
+function renderClassificar(ex) {
+  const pares = (ex.opcoes||[]).map(o => String(o).split('||').map(s=>s.trim()))
+    .filter(p => p.length===2 && p[0] && p[1]);
+  const categorias = String(ex.resposta||'').split('|').map(s=>s.trim()).filter(Boolean);
+  if (!pares.length || categorias.length < 2) {
+    return `<div class="ex-frase">Ejercicio mal configurado.</div>`;
+  }
+  _classifState = {
+    items: pares.map(p => ({ txt: p[0], correta: p[1], atribuida: null })),
+    categorias,
+  };
+  const escAttr = s => String(s||'').replace(/"/g,'&quot;').replace(/'/g,"\\'");
+  const itemsHtml = _classifState.items.map((it,i) => `
+    <div class="classif-row" id="classif-row-${i}" style="display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;padding:10px;border:1px solid var(--border);border-radius:10px;background:var(--surface);">
+      <span style="font-weight:600;">${it.txt}</span>
+      <div style="display:flex;gap:4px;flex-wrap:wrap;">${categorias.map(cat =>
+        `<button class="ex-opcao classif-cat" data-item="${i}" data-cat="${escAttr(cat)}"
+                 onclick="atribuirCategoria(${i},'${escAttr(cat)}')"
+                 style="padding:6px 12px;font-size:13px;min-height:36px;">${cat}</button>`
+      ).join('')}</div>
+    </div>`).join('');
+  return `<div style="font-size:14px;color:var(--ink2);margin-bottom:12px;">
+            Toca la categoría correcta para cada elemento.
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px;">${itemsHtml}</div>`;
+}
+
+function atribuirCategoria(itemIdx, cat) {
+  if (exAnswered || !_classifState) return;
+  _classifState.items[itemIdx].atribuida = cat;
+  document.querySelectorAll(`.classif-cat[data-item="${itemIdx}"]`).forEach(b=>{
+    b.classList.toggle('selected', b.dataset.cat === cat);
+  });
 }
 
 let _exSelected = null;
@@ -3195,12 +3249,42 @@ function checkExercicio() {
     const validas = parseRespostas(ex.resposta)[0] || [];
     correct = validas.includes(normalize(val));
     if (inp) { inp.disabled = true; inp.classList.add(correct ? 'correct' : 'wrong'); }
+
+  } else if (ex.tipo === 'multipla_escolha') {
+    if (!_exSelected) { fb.textContent='Selecciona una opción.'; fb.className='ex-feedback fail'; return; }
+    const validas = parseRespostas(ex.resposta)[0] || [];
+    correct = validas.includes(normalize(_exSelected));
+    document.querySelectorAll('.ex-opcao').forEach(b=>{
+      b.disabled=true;
+      if(validas.includes(normalize(b.textContent.trim()))) b.classList.add('correct');
+    });
+    if(!correct) document.querySelector('.ex-opcao.selected')?.classList.add('wrong');
+
+  } else if (ex.tipo === 'classificar') {
+    const st = _classifState;
+    if (!st) { fb.textContent='Ejercicio mal configurado.'; fb.className='ex-feedback fail'; return; }
+    const faltam = st.items.filter(it => it.atribuida === null).length;
+    if (faltam > 0) {
+      fb.textContent = `Clasifica todos los elementos (faltan ${faltam}).`;
+      fb.className = 'ex-feedback fail'; return;
+    }
+    correct = st.items.every(it => normalize(it.atribuida) === normalize(it.correta));
+    st.items.forEach((it,i) => {
+      document.querySelectorAll(`.classif-cat[data-item="${i}"]`).forEach(b=>{
+        b.disabled = true;
+        const ok = normalize(it.correta) === normalize(b.dataset.cat);
+        if (ok) b.classList.add('correct');
+        else if (b.dataset.cat === it.atribuida) b.classList.add('wrong');
+      });
+    });
   }
 
   exAnswered = true;
   if (correct) exScore++;
   if (ex.tipo === 'pares' || ex.tipo === 'pares_audio') {
     fb.textContent = correct ? `✓ ¡Todos los ${_paresState.total} pares correctos!` : '✗ Algo salió mal.';
+  } else if (ex.tipo === 'classificar') {
+    fb.textContent = correct ? '✓ ¡Todo correcto!' : '✗ Revisa los marcados en rojo.';
   } else {
     // Em caso de erro mostra apenas a 1ª resposta principal (sem "|alternativas")
     fb.textContent = correct ? '✓ ¡Correcto!' : `✗ Respuesta: ${primeiraRespostaPorGap(ex.resposta)}`;
