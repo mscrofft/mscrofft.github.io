@@ -9,6 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
 <style>
 /* =====================================================
    DESIGN TOKENS — Profesora Ana
@@ -1534,6 +1535,7 @@ button { font-family: var(--font); }
     <div class="logo-mark"></div>
     <div class="brand-name">Profesora Ana</div>
   </div>
+  <button class="topbar-btn" id="sound-toggle" onclick="toggleSound()" aria-label="Activar/desactivar sonido">🔊</button>
   <button class="topbar-btn" onclick="logout()" aria-label="Salir">↩</button>
 </header>
 
@@ -2656,12 +2658,15 @@ async function concluirAula() {
     showBadgeModal(newBadges[0]);
   } else {
     if (nextUnlocked) {
+      celebrate('mini');
       toast('✓ ¡Lección completada!', 'ok');
       await loadAula(nextAula.id);
     } else if (nextAula) {
+      celebrate('mini');
       toast('✓ ¡Lección completada! Espera a que tu profesora libere la siguiente.', 'ok');
       showDashboard();
     } else {
+      celebrate('big');
       toast('🏆 ¡Felicidades! ¡Has completado todas las lecciones!', 'ok');
       showDashboard();
     }
@@ -3415,6 +3420,7 @@ function showBadgeModal(tipo) {
   document.getElementById('bm-title').textContent = '¡Logro desbloqueado!';
   document.getElementById('bm-sub').textContent = `Has conseguido el logro "${def.nome}" — ${def.desc}`;
   document.getElementById('badge-modal').classList.add('show');
+  celebrate('big');
 }
 function closeBadgeModal() {
   document.getElementById('badge-modal').classList.remove('show');
@@ -3492,6 +3498,93 @@ function logout() {
   localStorage.removeItem('ev_modo_preview');
   window.location.href = 'login.html';
 }
+
+// ============================================================
+// CELEBRAÇÃO — confete + som + vibração (estilo Duolingo)
+// ============================================================
+function isSoundOn() {
+  return localStorage.getItem('ev_sound') !== 'off';
+}
+function toggleSound() {
+  const on = !isSoundOn();
+  localStorage.setItem('ev_sound', on ? 'on' : 'off');
+  const btn = document.getElementById('sound-toggle');
+  if (btn) btn.textContent = on ? '🔊' : '🔇';
+  if (on) playJingle('toggle');
+}
+
+// Web Audio jingle — sem arquivo externo. Gera notas com osciladores sine.
+let _audioCtx = null;
+function playJingle(variant = 'badge') {
+  if (!isSoundOn()) return;
+  try {
+    _audioCtx = _audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    const ctx = _audioCtx;
+    if (ctx.state === 'suspended') ctx.resume();
+    const now = ctx.currentTime;
+    const notes = variant === 'badge'
+      ? [{ f: 523.25, t: 0    },   // C5
+         { f: 659.25, t: 0.10 },   // E5
+         { f: 783.99, t: 0.20 }]   // G5  — acorde ascendente
+      : variant === 'mini'
+      ? [{ f: 659.25, t: 0    },   // E5
+         { f: 880.00, t: 0.08 }]   // A5  — duas notas curtas
+      : [{ f: 523.25, t: 0 }];      // toggle: C5
+    notes.forEach(({ f, t }) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = f;
+      gain.gain.setValueAtTime(0.0001, now + t);
+      gain.gain.exponentialRampToValueAtTime(0.18, now + t + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + t + 0.20);
+      osc.connect(gain).connect(ctx.destination);
+      osc.start(now + t);
+      osc.stop(now + t + 0.22);
+    });
+  } catch {}
+}
+
+function vibrate(pattern) {
+  try { navigator.vibrate?.(pattern); } catch {}
+}
+
+function celebrate(intensity = 'mini') {
+  // 1. Confete (paleta do app)
+  if (typeof confetti === 'function') {
+    if (intensity === 'big') {
+      const colors = ['#E8622A','#FDE9D7','#F8DABE','#3F8A4F','#D4A843'];
+      confetti({
+        particleCount: 90, spread: 75, origin: { y: 0.7 }, colors,
+        startVelocity: 45, ticks: 200,
+      });
+      setTimeout(() => confetti({
+        particleCount: 60, spread: 100, origin: { x: 0.2, y: 0.6 }, colors,
+        startVelocity: 40,
+      }), 180);
+      setTimeout(() => confetti({
+        particleCount: 60, spread: 100, origin: { x: 0.8, y: 0.6 }, colors,
+        startVelocity: 40,
+      }), 360);
+    } else {
+      confetti({
+        particleCount: 40, spread: 60, origin: { y: 0.75 },
+        colors: ['#E8622A','#FDE9D7','#3F8A4F'],
+        startVelocity: 35, ticks: 120,
+      });
+    }
+  }
+  // 2. Som
+  playJingle(intensity === 'big' ? 'badge' : 'mini');
+  // 3. Vibração
+  vibrate(intensity === 'big' ? [40, 30, 60] : 30);
+}
+
+// Aplica estado do toggle de som ao carregar
+document.addEventListener('DOMContentLoaded', () => {
+  const btn = document.getElementById('sound-toggle');
+  if (btn) btn.textContent = isSoundOn() ? '🔊' : '🔇';
+});
 
 // ============================================================
 // MODO PREVIEW — professora entrou via admin pra testar conteúdo
