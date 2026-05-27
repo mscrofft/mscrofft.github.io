@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title data-i18n="appTitle">BEAD PATTERN GENERATOR</title>
+<link rel="stylesheet" href="css/styles.css" />
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js" defer></script>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">BEAD PATTERN GENERATOR</div>
+  <div class="topbar-actions">
+    <label data-i18n="stitch">Ponto:</label>
+    <select id="stitch-select">
+      <option value="peyote-even" data-i18n="peyoteEven">Peyote Par</option>
+      <option value="peyote-odd" data-i18n="peyoteOdd">Peyote Ímpar</option>
+      <option value="brick" data-i18n="brick">Tijolo</option>
+      <option value="herringbone" data-i18n="herringbone">Espinha de Peixe</option>
+      <option value="square" data-i18n="square">Quadrado</option>
+      <option value="embroidery" data-i18n="embroidery">Costura (Embroidery)</option>
+      <option value="contour" data-i18n="contour">Contorno</option>
+    </select>
+    <button id="btn-new" data-i18n="new">Novo</button>
+    <button id="btn-undo" title="Ctrl+Z">↶</button>
+    <button id="btn-redo" title="Ctrl+Y">↷</button>
+    <button id="btn-import-img" data-i18n="importImg">Importar Imagem</button>
+    <button id="btn-save-json" data-i18n="save">Salvar</button>
+    <button id="btn-load-json" data-i18n="open">Abrir</button>
+    <button id="btn-export-png" data-i18n="exportPng">PNG</button>
+    <button id="btn-export-pdf" data-i18n="exportPdf">PDF A4</button>
+    <select id="lang-select" title="Language">
+      <option value="pt">PT</option>
+      <option value="en">EN</option>
+    </select>
+  </div>
+</header>
+
+<main class="workspace">
+  <aside class="tools-panel">
+    <h3 data-i18n="tools">Ferramentas</h3>
+    <button class="tool" data-tool="brush" data-i18n="brush">Pincel</button>
+    <button class="tool" data-tool="bucket" data-i18n="bucket">Balde</button>
+    <button class="tool" data-tool="eraser" data-i18n="eraser">Borracha</button>
+    <button class="tool" data-tool="picker" data-i18n="picker">Conta-gotas</button>
+    <button class="tool" data-tool="line" data-i18n="line">Linha</button>
+    <button class="tool" data-tool="rect" data-i18n="rect">Retângulo</button>
+    <hr/>
+    <label data-i18n="zoom">Zoom</label>
+    <input type="range" id="zoom" min="6" max="40" value="18" />
+    <label><input type="checkbox" id="show-numbers" /> <span data-i18n="showNumbers">Mostrar números</span></label>
+    <hr/>
+    <button id="btn-clear" data-i18n="clear">Limpar</button>
+  </aside>
+
+  <section class="canvas-area">
+    <canvas id="grid-canvas"></canvas>
+  </section>
+
+  <aside class="palette-panel">
+    <h3 data-i18n="palette">Paleta</h3>
+    <select id="palette-select">
+      <option value="custom" data-i18n="custom">Personalizada</option>
+      <option value="miyuki" data-i18n="miyuki">Miyuki Delica</option>
+      <option value="toho" data-i18n="toho">Toho Round</option>
+    </select>
+    <div id="palette-list" class="palette-list"></div>
+    <hr/>
+    <h4 data-i18n="usedColors">Cores usadas</h4>
+    <div id="used-colors"></div>
+    <div class="custom-color-row">
+      <input type="color" id="custom-color" value="#cc3366" />
+      <button id="btn-add-custom" data-i18n="addColor">+ cor</button>
+    </div>
+  </aside>
+</main>
+
+<!-- Modal: Novo padrão -->
+<div class="modal hidden" id="modal-new">
+  <div class="modal-content">
+    <h3 data-i18n="newPattern">Novo padrão</h3>
+    <label data-i18n="stitch">Ponto:</label>
+    <select id="new-stitch">
+      <option value="peyote-even">Peyote Par</option>
+      <option value="peyote-odd">Peyote Ímpar</option>
+      <option value="brick">Brick</option>
+      <option value="herringbone">Herringbone</option>
+      <option value="square">Square</option>
+      <option value="embroidery">Embroidery</option>
+      <option value="contour">Contour</option>
+    </select>
+    <label data-i18n="width">Largura (miçangas):</label>
+    <input type="number" id="new-width" value="30" min="2" max="300" />
+    <label data-i18n="height">Altura (linhas):</label>
+    <input type="number" id="new-height" value="40" min="2" max="300" />
+    <div class="modal-actions">
+      <button id="btn-new-cancel" data-i18n="cancel">Cancelar</button>
+      <button id="btn-new-create" data-i18n="create">Criar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Importar imagem -->
+<div class="modal hidden" id="modal-import">
+  <div class="modal-content">
+    <h3 data-i18n="importImg">Importar imagem</h3>
+    <input type="file" id="img-file" accept="image/*" />
+    <label data-i18n="width">Largura (miçangas):</label>
+    <input type="number" id="img-width" value="40" min="4" max="200" />
+    <label data-i18n="height">Altura (linhas):</label>
+    <input type="number" id="img-height" value="50" min="4" max="200" />
+    <label data-i18n="numColors">Nº de cores:</label>
+    <input type="number" id="img-colors" value="10" min="2" max="32" />
+    <label><input type="checkbox" id="img-lock-ratio" checked /> <span data-i18n="lockRatio">Manter proporção da imagem</span></label>
+    <canvas id="img-preview" width="200" height="200"></canvas>
+    <div class="modal-actions">
+      <button id="btn-import-cancel" data-i18n="cancel">Cancelar</button>
+      <button id="btn-import-apply" data-i18n="apply">Aplicar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Export PDF -->
+<div class="modal hidden" id="modal-pdf">
+  <div class="modal-content">
+    <h3 data-i18n="exportPdf">Exportar PDF A4</h3>
+    <label data-i18n="title">Título:</label>
+    <input type="text" id="pdf-title" placeholder="Minha receita" />
+    <label data-i18n="author">Autora:</label>
+    <input type="text" id="pdf-author" placeholder="" />
+    <label><input type="checkbox" id="pdf-legend" checked /> <span data-i18n="includeLegend">Incluir legenda de cores</span></label>
+    <label><input type="checkbox" id="pdf-wordchart" checked /> <span data-i18n="includeWordchart">Incluir word chart</span></label>
+    <label data-i18n="labelMode">Identificação das cores:</label>
+    <select id="pdf-label-mode">
+      <option value="both" data-i18n="labelBoth">Nome + código</option>
+      <option value="name" data-i18n="labelName">Só nome</option>
+      <option value="code" data-i18n="labelCode">Só código</option>
+    </select>
+    <div class="modal-actions">
+      <button id="btn-pdf-cancel" data-i18n="cancel">Cancelar</button>
+      <button id="btn-pdf-generate" data-i18n="generate">Gerar PDF</button>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="json-file-input" accept="application/json" style="display:none" />
+
+<script src="js/i18n.js" defer></script>
+<script src="data/palettes.js" defer></script>
+<script src="js/palette.js" defer></script>
+<script src="js/history.js" defer></script>
+<script src="js/stitches.js" defer></script>
+<script src="js/grid.js" defer></script>
+<script src="js/tools.js" defer></script>
+<script src="js/image-import.js" defer></script>
+<script src="js/sequencer.js" defer></script>
+<script src="js/export.js" defer></script>
+<script src="js/app.js" defer></script>
+</body>
+</html>
