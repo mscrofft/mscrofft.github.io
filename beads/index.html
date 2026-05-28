@@ -9,7 +9,9 @@
 </head>
 <body>
 <header class="topbar">
+  <button id="btn-toggle-tools" class="drawer-toggle" aria-label="Tools">☰</button>
   <div class="brand">BEAD PATTERN GENERATOR</div>
+  <button id="btn-toggle-palette" class="drawer-toggle" aria-label="Palette">🎨</button>
   <div class="topbar-actions">
     <label data-i18n="stitch">Ponto:</label>
     <select id="stitch-select">
@@ -46,6 +48,13 @@
     <button class="tool" data-tool="line" data-i18n="line">Linha</button>
     <button class="tool" data-tool="rect" data-i18n="rect">Retângulo</button>
     <hr/>
+    <label data-i18n="brushSize">Tamanho do pincel</label>
+    <input type="range" id="brush-size" min="1" max="9" step="2" value="1" />
+    <div class="brush-shape-row">
+      <button class="brush-shape-btn active" data-shape="square" title="Quadrado">□</button>
+      <button class="brush-shape-btn" data-shape="circle" title="Círculo">○</button>
+    </div>
+    <hr/>
     <label data-i18n="zoom">Zoom</label>
     <input type="range" id="zoom" min="6" max="40" value="18" />
     <label><input type="checkbox" id="show-numbers" /> <span data-i18n="showNumbers">Mostrar números</span></label>
@@ -68,12 +77,18 @@
     <hr/>
     <h4 data-i18n="usedColors">Cores usadas</h4>
     <div id="used-colors"></div>
+    <div class="palette-ops">
+      <button id="btn-prune-unused" data-i18n="pruneUnused">Limpar não usadas</button>
+      <button id="btn-reduce-colors" data-i18n="reduceColors">Reduzir cores...</button>
+    </div>
     <div class="custom-color-row">
       <input type="color" id="custom-color" value="#cc3366" />
       <button id="btn-add-custom" data-i18n="addColor">+ cor</button>
     </div>
   </aside>
 </main>
+
+<div id="drawer-backdrop" class="drawer-backdrop hidden"></div>
 
 <!-- Modal: Novo padrão -->
 <div class="modal hidden" id="modal-new">

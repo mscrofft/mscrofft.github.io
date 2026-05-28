@@ -82,6 +82,43 @@ const Grid = {
 
   showNumbers: false,
 
+  // Remove do swatchMap as cores com contagem zero no grid; remapeia índices.
+  removeUnusedSwatches() {
+    const used = new Set();
+    this.cells.forEach(row => row.forEach(v => { if (v >= 0) used.add(v); }));
+    if (used.size === this.swatchMap.length) return;
+    const remap = new Map();
+    const newMap = [];
+    this.swatchMap.forEach((s, i) => {
+      if (used.has(i)) { remap.set(i, newMap.length); newMap.push(s); }
+    });
+    this.cells = this.cells.map(row => row.map(v => v >= 0 ? remap.get(v) : -1));
+    this.swatchMap = newMap;
+    History.push(this.snapshot());
+    this.render();
+  },
+
+  // Reduz a paleta para K cores via k-means ponderado pelo uso, remapeia células.
+  reduceColors(K) {
+    if (K < 1 || K >= this.swatchMap.length) return;
+    const counts = new Array(this.swatchMap.length).fill(0);
+    this.cells.forEach(row => row.forEach(v => { if (v >= 0) counts[v]++; }));
+    const points = this.swatchMap.map((s, i) => {
+      const c = hexToRgbGrid(s.hex);
+      return [c.r, c.g, c.b, counts[i] || 1];
+    });
+    const { centers, assign } = kmeansWeighted(points, K, 12);
+    const toHex = v => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0');
+    const newSwatchMap = centers.map((c, i) => {
+      const hex = '#' + toHex(c[0]) + toHex(c[1]) + toHex(c[2]);
+      return { ref: `reduced:${i}`, hex, code: 'C' + (i + 1).toString().padStart(3, '0'), name: hex.toUpperCase() };
+    });
+    this.cells = this.cells.map(row => row.map(v => v >= 0 ? assign[v] : -1));
+    this.swatchMap = newSwatchMap;
+    History.push(this.snapshot());
+    this.render();
+  },
+
   render() {
     const bounds = stitchBounds(this.stitch, this.cols, this.rows);
     const W = Math.ceil(bounds.w * this.cellPx) + 2;
@@ -119,6 +156,45 @@ const Grid = {
     UsedColors.render();
   }
 };
+
+function hexToRgbGrid(hex) {
+  const h = hex.replace('#', '');
+  return { r: parseInt(h.slice(0, 2), 16), g: parseInt(h.slice(2, 4), 16), b: parseInt(h.slice(4, 6), 16) };
+}
+
+// K-means ponderado em RGB. points = [[r,g,b,weight], ...]. Retorna {centers, assign}
+// onde assign[i] é o índice do centróide do ponto i (na ordem original).
+function kmeansWeighted(points, k, iter = 12) {
+  const n = points.length;
+  k = Math.min(k, n);
+  // init: ordenar por peso decrescente e pegar os k mais usados como sementes
+  const order = points.map((p, i) => i).sort((a, b) => points[b][3] - points[a][3]);
+  let centers = order.slice(0, k).map(i => [points[i][0], points[i][1], points[i][2]]);
+  const assign = new Uint16Array(n);
+  for (let it = 0; it < iter; it++) {
+    for (let i = 0; i < n; i++) {
+      const [r, g, b] = points[i];
+      let best = 0, bestD = Infinity;
+      for (let c = 0; c < k; c++) {
+        const d = (centers[c][0] - r) ** 2 + (centers[c][1] - g) ** 2 + (centers[c][2] - b) ** 2;
+        if (d < bestD) { bestD = d; best = c; }
+      }
+      assign[i] = best;
+    }
+    const sums = Array.from({ length: k }, () => [0, 0, 0, 0]);
+    for (let i = 0; i < n; i++) {
+      const c = assign[i], w = points[i][3];
+      sums[c][0] += points[i][0] * w;
+      sums[c][1] += points[i][1] * w;
+      sums[c][2] += points[i][2] * w;
+      sums[c][3] += w;
+    }
+    for (let c = 0; c < k; c++) {
+      if (sums[c][3] > 0) centers[c] = [sums[c][0] / sums[c][3], sums[c][1] / sums[c][3], sums[c][2] / sums[c][3]];
+    }
+  }
+  return { centers, assign };
+}
 
 // Escolhe preto ou branco baseado na luminância da cor de fundo
 function contrastText(hex) {

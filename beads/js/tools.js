@@ -2,25 +2,65 @@ const Tools = {
   active: 'brush',
   isDrawing: false,
   lineStart: null,
+  brushSize: 1,             // diâmetro em células (ímpar: 1,3,5,7,9)
+  brushShape: 'square',     // 'square' | 'circle'
 
   set(name) {
     this.active = name;
     document.querySelectorAll('.tool').forEach(b => b.classList.toggle('active', b.dataset.tool === name));
   },
 
+  setBrushSize(n) { this.brushSize = Math.max(1, n | 1); }, // força ímpar
+  setBrushShape(s) {
+    this.brushShape = s;
+    document.querySelectorAll('.brush-shape-btn').forEach(b => b.classList.toggle('active', b.dataset.shape === s));
+  },
+
   currentSwatch() {
     return Grid.ensureSwatch(Palette.active, Palette.selectedIndex);
+  },
+
+  // Retorna lista de [r, c] que o pincel cobre centrado em (cr, cc)
+  brushCells(cr, cc) {
+    const size = this.brushSize;
+    if (size <= 1) return [[cr, cc]];
+    const half = (size - 1) / 2;
+    const out = [];
+    const r2 = half * half + 0.25; // tolerância pra círculo
+    for (let dr = -half; dr <= half; dr++) {
+      for (let dc = -half; dc <= half; dc++) {
+        if (this.brushShape === 'circle' && (dr * dr + dc * dc) > r2) continue;
+        out.push([cr + dr, cc + dc]);
+      }
+    }
+    return out;
+  },
+
+  paintBrush(row, col) {
+    const sw = this.currentSwatch();
+    let changed = false;
+    for (const [r, c] of this.brushCells(row, col)) {
+      if (Grid.paint(r, c, sw)) changed = true;
+    }
+    return changed;
+  },
+
+  eraseBrush(row, col) {
+    let changed = false;
+    for (const [r, c] of this.brushCells(row, col)) {
+      if (Grid.erase(r, c)) changed = true;
+    }
+    return changed;
   },
 
   handleDown(row, col) {
     if (!row && row !== 0) return;
     this.isDrawing = true;
-    const sw = this.currentSwatch();
     let changed = false;
     switch (this.active) {
-      case 'brush': changed = Grid.paint(row, col, sw); break;
-      case 'eraser': changed = Grid.erase(row, col); break;
-      case 'bucket': changed = Grid.floodFill(row, col, sw); break;
+      case 'brush': changed = this.paintBrush(row, col); break;
+      case 'eraser': changed = this.eraseBrush(row, col); break;
+      case 'bucket': changed = Grid.floodFill(row, col, this.currentSwatch()); break;
       case 'picker':
         const v = Grid.cells[row][col];
         if (v >= 0) {
@@ -38,16 +78,16 @@ const Tools = {
         this.lineStart = { row, col };
         return;
     }
-    if (changed) { Grid.render(); History.push(Grid.snapshot()); }
+    if (changed) { Grid.render(); }
   },
 
   handleMove(row, col) {
     if (!this.isDrawing) return;
     if (row === null || row === undefined) return;
     if (this.active === 'brush') {
-      if (Grid.paint(row, col, this.currentSwatch())) Grid.render();
+      if (this.paintBrush(row, col)) Grid.render();
     } else if (this.active === 'eraser') {
-      if (Grid.erase(row, col)) Grid.render();
+      if (this.eraseBrush(row, col)) Grid.render();
     }
   },
 
@@ -79,5 +119,11 @@ const Tools = {
       Grid.render();
     }
     History.push(Grid.snapshot());
+  },
+
+  // Cancela a pintura sem snapshot (usado quando entra 2º dedo para pinch)
+  cancel() {
+    this.isDrawing = false;
+    this.lineStart = null;
   }
 };

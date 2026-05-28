@@ -35,6 +35,16 @@ const App = {
 
     // Palette
     document.getElementById('palette-select').addEventListener('change', e => Palette.setActive(e.target.value));
+    document.getElementById('btn-prune-unused').addEventListener('click', () => Grid.removeUnusedSwatches());
+    document.getElementById('btn-reduce-colors').addEventListener('click', () => {
+      const cur = Grid.swatchMap.length;
+      if (cur < 2) return;
+      const ans = prompt(t('howManyColors'), Math.max(2, cur - 1));
+      if (ans === null) return;
+      const k = parseInt(ans, 10);
+      if (!isFinite(k) || k < 1 || k >= cur) return;
+      Grid.reduceColors(k);
+    });
     document.getElementById('btn-add-custom').addEventListener('click', () => {
       Palette.addCustom(document.getElementById('custom-color').value);
       document.getElementById('palette-select').value = 'custom';
@@ -65,26 +75,111 @@ const App = {
       Grid.render();
     });
 
-    // Canvas mouse
+    // Canvas pointer events (mouse + touch + pen unificados)
     const canvas = document.getElementById('grid-canvas');
+    const canvasArea = document.querySelector('.canvas-area');
     const getCell = e => {
       const rect = canvas.getBoundingClientRect();
       const x = (e.clientX - rect.left) * (canvas.width / rect.width);
       const y = (e.clientY - rect.top) * (canvas.height / rect.height);
       return hitTestCell(Grid.stitch, x, y, Grid.cols, Grid.rows, Grid.cellPx);
     };
-    canvas.addEventListener('mousedown', e => {
-      const cell = getCell(e);
-      if (cell) Tools.handleDown(cell.row, cell.col);
+    // Estado de multi-touch
+    const pointers = new Map(); // pointerId → {x, y}
+    let pinch = null; // {startDist, startCellPx, startMid, startScrollLeft, startScrollTop}
+
+    const pointerListSnapshot = () => {
+      const arr = Array.from(pointers.values());
+      const dx = arr[0].x - arr[1].x, dy = arr[0].y - arr[1].y;
+      return {
+        dist: Math.hypot(dx, dy),
+        mid: { x: (arr[0].x + arr[1].x) / 2, y: (arr[0].y + arr[1].y) / 2 }
+      };
+    };
+
+    canvas.addEventListener('pointerdown', e => {
+      canvas.setPointerCapture(e.pointerId);
+      pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (pointers.size === 1) {
+        const cell = getCell(e);
+        if (cell) Tools.handleDown(cell.row, cell.col);
+      } else if (pointers.size === 2) {
+        // Segundo dedo entrou — cancela pintura, inicia pinch+pan
+        Tools.cancel();
+        const snap = pointerListSnapshot();
+        pinch = {
+          startDist: snap.dist,
+          startCellPx: Grid.cellPx,
+          startMid: snap.mid,
+          startScrollLeft: canvasArea.scrollLeft,
+          startScrollTop: canvasArea.scrollTop
+        };
+      }
     });
-    canvas.addEventListener('mousemove', e => {
-      const cell = getCell(e);
-      if (cell) Tools.handleMove(cell.row, cell.col);
+
+    canvas.addEventListener('pointermove', e => {
+      if (!pointers.has(e.pointerId)) return;
+      pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (pointers.size === 1 && !pinch) {
+        const cell = getCell(e);
+        if (cell) Tools.handleMove(cell.row, cell.col);
+      } else if (pointers.size === 2 && pinch) {
+        const snap = pointerListSnapshot();
+        // Pinch zoom
+        const scale = snap.dist / pinch.startDist;
+        const newPx = Math.max(6, Math.min(40, Math.round(pinch.startCellPx * scale)));
+        if (newPx !== Grid.cellPx) {
+          Grid.cellPx = newPx;
+          document.getElementById('zoom').value = newPx;
+          Grid.render();
+        }
+        // Pan (delta do midpoint)
+        canvasArea.scrollLeft = pinch.startScrollLeft - (snap.mid.x - pinch.startMid.x);
+        canvasArea.scrollTop = pinch.startScrollTop - (snap.mid.y - pinch.startMid.y);
+      }
     });
-    window.addEventListener('mouseup', e => {
-      const cell = getCell(e);
-      Tools.handleUp(cell?.row, cell?.col);
+
+    const endPointer = e => {
+      if (!pointers.has(e.pointerId)) return;
+      pointers.delete(e.pointerId);
+      if (pointers.size < 2) pinch = null;
+      if (pointers.size === 0) {
+        const cell = getCell(e);
+        Tools.handleUp(cell?.row, cell?.col);
+      }
+    };
+    canvas.addEventListener('pointerup', endPointer);
+    canvas.addEventListener('pointercancel', endPointer);
+    canvas.addEventListener('pointerleave', endPointer);
+
+    // Brush size e shape
+    document.getElementById('brush-size').addEventListener('input', e => {
+      Tools.setBrushSize(parseInt(e.target.value, 10));
     });
+    document.querySelectorAll('.brush-shape-btn').forEach(b => {
+      b.addEventListener('click', () => Tools.setBrushShape(b.dataset.shape));
+    });
+
+    // Drawers mobile
+    const backdrop = document.getElementById('drawer-backdrop');
+    const toolsPanel = document.querySelector('.tools-panel');
+    const palettePanel = document.querySelector('.palette-panel');
+    const closeDrawers = () => {
+      toolsPanel.classList.remove('open');
+      palettePanel.classList.remove('open');
+      backdrop.classList.add('hidden');
+    };
+    document.getElementById('btn-toggle-tools').addEventListener('click', () => {
+      palettePanel.classList.remove('open');
+      toolsPanel.classList.toggle('open');
+      backdrop.classList.toggle('hidden', !toolsPanel.classList.contains('open'));
+    });
+    document.getElementById('btn-toggle-palette').addEventListener('click', () => {
+      toolsPanel.classList.remove('open');
+      palettePanel.classList.toggle('open');
+      backdrop.classList.toggle('hidden', !palettePanel.classList.contains('open'));
+    });
+    backdrop.addEventListener('click', closeDrawers);
 
     // Undo/redo
     document.getElementById('btn-undo').addEventListener('click', () => { const s = History.undo(); if (s) Grid.restore(s); });
@@ -111,8 +206,19 @@ const App = {
       document.getElementById('modal-new').classList.add('hidden');
     });
 
-    // Importar imagem
-    document.getElementById('btn-import-img').addEventListener('click', () => document.getElementById('modal-import').classList.remove('hidden'));
+    // Importar imagem (reabre com imagem em memória se houver)
+    document.getElementById('btn-import-img').addEventListener('click', () => {
+      document.getElementById('modal-import').classList.remove('hidden');
+      if (ImageImport.image) {
+        // Pré-preenche com as dimensões atuais do padrão
+        document.getElementById('img-width').value = Grid.cols;
+        document.getElementById('img-height').value = Grid.rows;
+        const k = Math.max(2, Math.min(32, Grid.swatchMap.length || 8));
+        document.getElementById('img-colors').value = k;
+        // Re-render do preview com a imagem que já está em memória
+        setTimeout(() => refreshPreview(), 0);
+      }
+    });
     document.getElementById('btn-import-cancel').addEventListener('click', () => document.getElementById('modal-import').classList.add('hidden'));
     let importGrid = null;
     // Proporção de uma célula (w/h) por ponto, para compensar geometrias não-quadradas

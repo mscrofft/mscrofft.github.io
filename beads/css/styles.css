@@ -76,6 +76,9 @@ html, body { margin: 0; height: 100%; font-family: -apple-system, BlinkMacSystem
   flex: 1; background: #1f1f23; color: #eee; border: 1px solid #f7b955;
   padding: 2px 4px; font-size: 11px; border-radius: 3px; min-width: 0;
 }
+.palette-ops { display: flex; flex-direction: column; gap: 4px; margin-top: 8px; }
+.palette-ops button { width: 100%; padding: 6px; background: #3a3a42; color: #eee; border: 1px solid #555; border-radius: 4px; cursor: pointer; font-size: 11px; }
+.palette-ops button:hover { background: #4a4a55; }
 .custom-color-row { display: flex; gap: 6px; align-items: center; margin-top: 8px; }
 .custom-color-row input[type=color] { width: 40px; height: 30px; padding: 0; border: 1px solid #555; }
 .custom-color-row button { flex: 1; padding: 6px; background: #3a3a42; color: #eee; border: 1px solid #555; border-radius: 4px; cursor: pointer; }
@@ -98,6 +101,44 @@ html, body { margin: 0; height: 100%; font-family: -apple-system, BlinkMacSystem
 #img-preview { background: #fff; margin-top: 8px; max-width: 100%; }
 
 
+/* Pincel */
+.brush-shape-row { display: flex; gap: 4px; margin-top: 4px; }
+.brush-shape-btn {
+  flex: 1; padding: 6px; background: #3a3a42; color: #eee; border: 1px solid #555;
+  border-radius: 4px; cursor: pointer; font-size: 18px; line-height: 1;
+}
+.brush-shape-btn.active { background: #f7b955; color: #222; border-color: #f7b955; }
+
+/* Canvas: desabilita scroll/zoom nativo durante interação */
+#grid-canvas { touch-action: none; }
+
+/* Drawer toggles — escondidos no desktop */
+.drawer-toggle {
+  display: none; background: none; border: 1px solid #555; color: #eee;
+  width: 40px; height: 40px; border-radius: 4px; font-size: 18px; cursor: pointer;
+}
+.drawer-backdrop { position: fixed; inset: 53px 0 0 0; background: rgba(0,0,0,0.5); z-index: 49; }
+.drawer-backdrop.hidden { display: none; }
+
 @media (max-width: 900px) {
   .workspace { grid-template-columns: 140px 1fr 180px; }
+}
+
+@media (max-width: 640px) {
+  .topbar { flex-wrap: wrap; gap: 6px; padding: 6px 8px; }
+  .topbar .brand { font-size: 14px; flex: 1; text-align: center; }
+  .drawer-toggle { display: inline-flex; align-items: center; justify-content: center; }
+  .topbar-actions { width: 100%; justify-content: center; }
+  .topbar-actions button, .topbar-actions select { min-height: 36px; }
+
+  .workspace { display: block; height: calc(100vh - 100px); }
+  .canvas-area { width: 100%; height: 100%; padding: 8px; }
+
+  .tools-panel, .palette-panel {
+    position: fixed; top: 100px; bottom: 0; width: 80vw; max-width: 320px;
+    z-index: 50; transition: transform 0.2s ease; box-shadow: 0 0 20px rgba(0,0,0,0.6);
+  }
+  .tools-panel { left: 0; transform: translateX(-100%); border-right: 1px solid #111; border-left: none; }
+  .palette-panel { right: 0; transform: translateX(100%); border-left: 1px solid #111; border-right: none; }
+  .tools-panel.open, .palette-panel.open { transform: translateX(0); }
 }
