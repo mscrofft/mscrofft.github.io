@@ -118,6 +118,45 @@ const Presets = {
     return out;
   },
 
+  // Losangos tiled (harlequim): cada tile size×size tem um losango, cor alterna por (rt+ct)%2
+  diamondsTiled(cols, rows, colors, { size = 6 } = {}) {
+    const a = colors[0], b = colors[1] !== undefined ? colors[1] : a;
+    const half = size / 2;
+    const out = [];
+    for (let r = 0; r < rows; r++) {
+      const row = [];
+      for (let c = 0; c < cols; c++) {
+        const rt = Math.floor(r / size), ct = Math.floor(c / size);
+        const dx = (c % size) - half + 0.5;
+        const dy = (r % size) - half + 0.5;
+        const inside = Math.abs(dx) + Math.abs(dy) <= half;
+        const tileColor = (rt + ct) % 2 === 0 ? a : b;
+        const bgColor = (rt + ct) % 2 === 0 ? b : a;
+        row.push(inside ? tileColor : bgColor);
+      }
+      out.push(row);
+    }
+    return out;
+  },
+
+  // Quadrados tiled: tiles (size+gap)x(size+gap), quadrado de lado size centralizado em cada
+  squaresTiled(cols, rows, colors, { size = 4, gap = 2 } = {}) {
+    const bg = colors[0], fg = colors[1] !== undefined ? colors[1] : colors[0];
+    const tile = size + gap;
+    const inset = gap / 2; // distância da borda do tile até o quadrado
+    const out = [];
+    for (let r = 0; r < rows; r++) {
+      const row = [];
+      for (let c = 0; c < cols; c++) {
+        const rx = c % tile, ry = r % tile;
+        const inside = rx >= inset && rx < inset + size && ry >= inset && ry < inset + size;
+        row.push(inside ? fg : bg);
+      }
+      out.push(row);
+    }
+    return out;
+  },
+
   waves(cols, rows, colors, { amp = 4, period = 10, thickness = 1 } = {}) {
     const bg = colors[0], fg = colors[1] !== undefined ? colors[1] : colors[0];
     const out = [];

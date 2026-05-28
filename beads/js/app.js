@@ -170,6 +170,11 @@ const App = {
       diagonalBackslash: [{ key: 'width', label: 'paramWidth', type: 'number', default: 1, min: 1, max: 30 }],
       checker: [{ key: 'size', label: 'paramSize', type: 'number', default: 1, min: 1, max: 20 }],
       diamond: [{ key: 'size', label: 'paramSize', type: 'number', default: 0.6, min: 0.1, max: 1, step: 0.1 }],
+      diamondsTiled: [{ key: 'size', label: 'paramSize', type: 'number', default: 6, min: 2, max: 30 }],
+      squaresTiled: [
+        { key: 'size', label: 'paramSize', type: 'number', default: 4, min: 1, max: 30 },
+        { key: 'gap', label: 'paramGap', type: 'number', default: 2, min: 0, max: 20 }
+      ],
       waves: [
         { key: 'amp', label: 'paramAmp', type: 'number', default: 4, min: 1, max: 30 },
         { key: 'period', label: 'paramPeriod', type: 'number', default: 10, min: 2, max: 60 },
