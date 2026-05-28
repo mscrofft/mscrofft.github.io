@@ -160,6 +160,53 @@ const App = {
       b.addEventListener('click', () => Tools.setBrushShape(b.dataset.shape));
     });
 
+    // Presets
+    const presetSelect = document.getElementById('preset-select');
+    const presetParams = document.getElementById('preset-params');
+    const PRESET_PARAMS = {
+      stripesH: [{ key: 'width', label: 'paramWidth', type: 'number', default: 1, min: 1, max: 30 }],
+      stripesV: [{ key: 'width', label: 'paramWidth', type: 'number', default: 1, min: 1, max: 30 }],
+      diagonalSlash: [{ key: 'width', label: 'paramWidth', type: 'number', default: 1, min: 1, max: 30 }],
+      diagonalBackslash: [{ key: 'width', label: 'paramWidth', type: 'number', default: 1, min: 1, max: 30 }],
+      checker: [{ key: 'size', label: 'paramSize', type: 'number', default: 1, min: 1, max: 20 }],
+      diamond: [{ key: 'size', label: 'paramSize', type: 'number', default: 0.6, min: 0.1, max: 1, step: 0.1 }],
+      waves: [
+        { key: 'amp', label: 'paramAmp', type: 'number', default: 4, min: 1, max: 30 },
+        { key: 'period', label: 'paramPeriod', type: 'number', default: 10, min: 2, max: 60 },
+        { key: 'thickness', label: 'paramThickness', type: 'number', default: 1, min: 1, max: 10 }
+      ]
+    };
+    const renderPresetParams = () => {
+      presetParams.innerHTML = '';
+      const conf = PRESET_PARAMS[presetSelect.value];
+      if (!conf) return;
+      conf.forEach(p => {
+        const wrap = document.createElement('div');
+        const lab = document.createElement('label');
+        lab.textContent = t(p.label) + ':';
+        const inp = document.createElement('input');
+        inp.type = p.type;
+        inp.id = 'preset-param-' + p.key;
+        inp.value = p.default;
+        if (p.min !== undefined) inp.min = p.min;
+        if (p.max !== undefined) inp.max = p.max;
+        if (p.step !== undefined) inp.step = p.step;
+        wrap.appendChild(lab); wrap.appendChild(inp);
+        presetParams.appendChild(wrap);
+      });
+    };
+    presetSelect.addEventListener('change', renderPresetParams);
+    document.getElementById('btn-preset-apply').addEventListener('click', () => {
+      const name = presetSelect.value;
+      if (!name) return;
+      const params = {};
+      (PRESET_PARAMS[name] || []).forEach(p => {
+        const el = document.getElementById('preset-param-' + p.key);
+        if (el) params[p.key] = parseFloat(el.value);
+      });
+      Grid.applyPreset(name, params);
+    });
+
     // Drawers mobile
     const backdrop = document.getElementById('drawer-backdrop');
     const toolsPanel = document.querySelector('.tools-panel');

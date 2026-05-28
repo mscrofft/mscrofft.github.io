@@ -101,6 +101,14 @@ html, body { margin: 0; height: 100%; font-family: -apple-system, BlinkMacSystem
 #img-preview { background: #fff; margin-top: 8px; max-width: 100%; }
 
 
+/* Presets */
+#preset-select { width: 100%; padding: 4px; background: #3a3a42; color: #eee; border: 1px solid #555; border-radius: 4px; margin-top: 4px; font-size: 12px; }
+#preset-params { display: flex; flex-direction: column; gap: 4px; margin: 6px 0; }
+#preset-params label { font-size: 11px; opacity: 0.8; }
+#preset-params input { background: #1f1f23; color: #eee; border: 1px solid #555; padding: 4px; border-radius: 3px; font-size: 12px; width: 100%; }
+#btn-preset-apply { width: 100%; padding: 6px; background: #f7b955; color: #222; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 12px; }
+#btn-preset-apply:hover { background: #ffc875; }
+
 /* Pincel */
 .brush-shape-row { display: flex; gap: 4px; margin-top: 4px; }
 .brush-shape-btn {

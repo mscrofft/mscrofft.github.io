@@ -60,6 +60,24 @@
     <label><input type="checkbox" id="show-numbers" /> <span data-i18n="showNumbers">Mostrar números</span></label>
     <hr/>
     <button id="btn-clear" data-i18n="clear">Limpar</button>
+    <hr/>
+    <label data-i18n="presetLabel">Preset</label>
+    <select id="preset-select">
+      <option value="" data-i18n="presetNone">— escolher —</option>
+      <option value="randomUniform" data-i18n="presetRandomUniform">Aleatório uniforme</option>
+      <option value="randomWeighted" data-i18n="presetRandomWeighted">Aleatório ponderado</option>
+      <option value="stripesH" data-i18n="presetStripesH">Listras horizontais</option>
+      <option value="stripesV" data-i18n="presetStripesV">Listras verticais</option>
+      <option value="diagonalSlash" data-i18n="presetDiagSlash">Diagonais /</option>
+      <option value="diagonalBackslash" data-i18n="presetDiagBack">Diagonais \</option>
+      <option value="checker" data-i18n="presetChecker">Xadrez</option>
+      <option value="diamond" data-i18n="presetDiamond">Losango</option>
+      <option value="waves" data-i18n="presetWaves">Ondas</option>
+      <option value="gradientH" data-i18n="presetGradientH">Gradiente horizontal</option>
+      <option value="gradientV" data-i18n="presetGradientV">Gradiente vertical</option>
+    </select>
+    <div id="preset-params"></div>
+    <button id="btn-preset-apply" data-i18n="apply">Aplicar</button>
   </aside>
 
   <section class="canvas-area">
@@ -169,6 +187,7 @@
 <script src="js/tools.js" defer></script>
 <script src="js/image-import.js" defer></script>
 <script src="js/sequencer.js" defer></script>
+<script src="js/presets.js" defer></script>
 <script src="js/export.js" defer></script>
 <script src="js/app.js" defer></script>
 </body>
