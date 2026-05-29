@@ -64,26 +64,29 @@ const App = {
     });
 
     // Save cloud
+    const updateBtn = document.getElementById('btn-save-cloud-update');
+    const newBtn = document.getElementById('btn-save-cloud-new');
     document.getElementById('btn-cloud-save').addEventListener('click', () => {
-      document.getElementById('cloud-title').value = '';
+      // Mostra "Atualizar" só se já existe um padrão carregado da nuvem
+      const hasLoaded = !!this.currentCloudId;
+      updateBtn.style.display = hasLoaded ? '' : 'none';
+      document.getElementById('cloud-title').value = this.currentCloudTitle || '';
       document.getElementById('modal-save-cloud').classList.remove('hidden');
     });
     document.getElementById('btn-save-cloud-cancel').addEventListener('click', () => {
       document.getElementById('modal-save-cloud').classList.add('hidden');
     });
-    document.getElementById('btn-save-cloud-confirm').addEventListener('click', async () => {
+    const doSave = async (id) => {
       const title = document.getElementById('cloud-title').value.trim() || t('untitled');
       try {
-        const saved = await Cloud.savePattern({
-          id: this.currentCloudId,
-          title,
-          snapshot: Grid.snapshot(),
-          thumbnail: generateThumbnail()
-        });
+        const saved = await Cloud.savePattern({ id, title, snapshot: Grid.snapshot(), thumbnail: generateThumbnail() });
         this.currentCloudId = saved.id;
+        this.currentCloudTitle = saved.title;
         document.getElementById('modal-save-cloud').classList.add('hidden');
       } catch (err) { alert(err.message || String(err)); }
-    });
+    };
+    updateBtn.addEventListener('click', () => doSave(this.currentCloudId));
+    newBtn.addEventListener('click', () => doSave(null));
 
     // List patterns
     document.getElementById('btn-cloud-list').addEventListener('click', async () => {
@@ -112,6 +115,7 @@ const App = {
             History.reset(Grid.snapshot());
             document.getElementById('stitch-select').value = Grid.stitch;
             this.currentCloudId = p.id;
+            this.currentCloudTitle = p.title;
             modal.classList.add('hidden');
           });
           card.querySelector('.pc-del').addEventListener('click', async () => {
@@ -363,6 +367,8 @@ const App = {
       Grid.newPattern(st, w, h);
       document.getElementById('stitch-select').value = st;
       document.getElementById('modal-new').classList.add('hidden');
+      App.currentCloudId = null;
+      App.currentCloudTitle = null;
     });
 
     // Importar imagem (reabre com imagem em memória se houver)
@@ -424,6 +430,8 @@ const App = {
       if (importGrid) {
         ImageImport.apply(importGrid, Grid.stitch);
         document.getElementById('modal-import').classList.add('hidden');
+        App.currentCloudId = null;
+        App.currentCloudTitle = null;
       }
     });
 
@@ -462,6 +470,8 @@ const App = {
           Grid.restore(snap);
           History.reset(Grid.snapshot());
           document.getElementById('stitch-select').value = Grid.stitch;
+          App.currentCloudId = null;
+          App.currentCloudTitle = null;
         } catch (err) { alert('Invalid file'); }
       };
       reader.readAsText(f);
