@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="96" fill="#1f1f23"/>
+  <!-- Quatro miçangas estilizadas em formato Peyote -->
+  <g>
+    <rect x="96"  y="96"  width="96" height="128" rx="32" fill="#f7b955"/>
+    <rect x="224" y="160" width="96" height="128" rx="32" fill="#e23b7a"/>
+    <rect x="96"  y="288" width="96" height="128" rx="32" fill="#2e9e3e"/>
+    <rect x="224" y="352" width="96" height="64"  rx="32" fill="#1f3a8a"/>
+  </g>
+  <!-- Letra B sobreposta -->
+  <text x="368" y="340" font-family="-apple-system, Helvetica, Arial, sans-serif"
+        font-size="280" font-weight="900" fill="#f7b955" text-anchor="middle">B</text>
+</svg>

@@ -4,8 +4,16 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title data-i18n="appTitle">BEAD PATTERN GENERATOR</title>
+<link rel="manifest" href="./manifest.json" />
+<meta name="theme-color" content="#f7b955" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Beads" />
+<link rel="apple-touch-icon" href="./icons/icon-192.png" />
+<link rel="icon" type="image/png" href="./icons/icon-192.png" />
 <link rel="stylesheet" href="css/styles.css" />
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js" defer></script>
 </head>
 <body>
 <header class="topbar">
@@ -31,6 +39,11 @@
     <button id="btn-load-json" data-i18n="open">Abrir</button>
     <button id="btn-export-png" data-i18n="exportPng">PNG</button>
     <button id="btn-export-pdf" data-i18n="exportPdf">PDF A4</button>
+    <button id="btn-cloud-save" data-i18n="saveCloud" style="display:none">☁ Salvar</button>
+    <button id="btn-cloud-list" data-i18n="myPatterns" style="display:none">Meus padrões</button>
+    <button id="btn-cloud-login" data-i18n="login">Login</button>
+    <span id="cloud-user" style="display:none; font-size:12px; opacity:0.8"></span>
+    <button id="btn-cloud-logout" data-i18n="logout" style="display:none">Sair</button>
     <select id="lang-select" title="Language">
       <option value="pt">PT</option>
       <option value="en">EN</option>
@@ -178,6 +191,45 @@
   </div>
 </div>
 
+<!-- Modal: Login (magic link) -->
+<div class="modal hidden" id="modal-login">
+  <div class="modal-content">
+    <h3 data-i18n="login">Login</h3>
+    <p style="font-size:12px;opacity:0.8" data-i18n="loginHint">Digite seu e-mail e enviaremos um link mágico para entrar.</p>
+    <label data-i18n="enterEmail">E-mail:</label>
+    <input type="email" id="login-email" placeholder="voce@exemplo.com" />
+    <div id="login-status" style="font-size:12px;color:#f7b955;min-height:14px"></div>
+    <div class="modal-actions">
+      <button id="btn-login-cancel" data-i18n="cancel">Cancelar</button>
+      <button id="btn-login-send" data-i18n="sendLink">Enviar link</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Salvar na nuvem -->
+<div class="modal hidden" id="modal-save-cloud">
+  <div class="modal-content">
+    <h3 data-i18n="saveCloud">Salvar na nuvem</h3>
+    <label data-i18n="title">Título:</label>
+    <input type="text" id="cloud-title" placeholder="Meu padrão" />
+    <div class="modal-actions">
+      <button id="btn-save-cloud-cancel" data-i18n="cancel">Cancelar</button>
+      <button id="btn-save-cloud-confirm" data-i18n="save">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Meus padrões -->
+<div class="modal hidden" id="modal-patterns">
+  <div class="modal-content modal-wide">
+    <h3 data-i18n="myPatterns">Meus padrões</h3>
+    <div id="patterns-grid" class="patterns-grid"></div>
+    <div class="modal-actions">
+      <button id="btn-patterns-close" data-i18n="cancel">Fechar</button>
+    </div>
+  </div>
+</div>
+
 <input type="file" id="json-file-input" accept="application/json" style="display:none" />
 
 <script src="js/i18n.js" defer></script>
@@ -190,7 +242,14 @@
 <script src="js/image-import.js" defer></script>
 <script src="js/sequencer.js" defer></script>
 <script src="js/presets.js" defer></script>
+<script src="js/config.js" defer></script>
+<script src="js/cloud.js" defer></script>
 <script src="js/export.js" defer></script>
 <script src="js/app.js" defer></script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(console.error));
+  }
+</script>
 </body>
 </html>

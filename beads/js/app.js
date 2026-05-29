@@ -20,6 +20,113 @@ const App = {
     Tools.set('brush');
     this.bindEvents();
     this.autosaveLoop();
+    this.initCloud();
+  },
+
+  currentCloudId: null, // id do padrão atual se carregado/salvo da nuvem
+
+  initCloud() {
+    if (!Cloud.init()) return;
+    Cloud.onAuthChange(user => {
+      const loggedIn = !!user;
+      document.getElementById('btn-cloud-login').style.display = loggedIn ? 'none' : '';
+      document.getElementById('btn-cloud-logout').style.display = loggedIn ? '' : 'none';
+      document.getElementById('btn-cloud-save').style.display = loggedIn ? '' : 'none';
+      document.getElementById('btn-cloud-list').style.display = loggedIn ? '' : 'none';
+      const userEl = document.getElementById('cloud-user');
+      userEl.style.display = loggedIn ? '' : 'none';
+      userEl.textContent = loggedIn ? user.email : '';
+    });
+
+    // Login modal
+    document.getElementById('btn-cloud-login').addEventListener('click', () => {
+      document.getElementById('login-status').textContent = '';
+      document.getElementById('modal-login').classList.remove('hidden');
+    });
+    document.getElementById('btn-login-cancel').addEventListener('click', () => {
+      document.getElementById('modal-login').classList.add('hidden');
+    });
+    document.getElementById('btn-login-send').addEventListener('click', async () => {
+      const email = document.getElementById('login-email').value.trim();
+      if (!email) return;
+      const status = document.getElementById('login-status');
+      status.textContent = '...';
+      try {
+        await Cloud.signIn(email);
+        status.textContent = t('linkSent');
+      } catch (err) { status.textContent = err.message || String(err); }
+    });
+
+    // Logout
+    document.getElementById('btn-cloud-logout').addEventListener('click', async () => {
+      await Cloud.signOut();
+      this.currentCloudId = null;
+    });
+
+    // Save cloud
+    document.getElementById('btn-cloud-save').addEventListener('click', () => {
+      document.getElementById('cloud-title').value = '';
+      document.getElementById('modal-save-cloud').classList.remove('hidden');
+    });
+    document.getElementById('btn-save-cloud-cancel').addEventListener('click', () => {
+      document.getElementById('modal-save-cloud').classList.add('hidden');
+    });
+    document.getElementById('btn-save-cloud-confirm').addEventListener('click', async () => {
+      const title = document.getElementById('cloud-title').value.trim() || t('untitled');
+      try {
+        const saved = await Cloud.savePattern({
+          id: this.currentCloudId,
+          title,
+          snapshot: Grid.snapshot(),
+          thumbnail: generateThumbnail()
+        });
+        this.currentCloudId = saved.id;
+        document.getElementById('modal-save-cloud').classList.add('hidden');
+      } catch (err) { alert(err.message || String(err)); }
+    });
+
+    // List patterns
+    document.getElementById('btn-cloud-list').addEventListener('click', async () => {
+      const modal = document.getElementById('modal-patterns');
+      const grid = document.getElementById('patterns-grid');
+      grid.innerHTML = '...';
+      modal.classList.remove('hidden');
+      try {
+        const list = await Cloud.listPatterns();
+        if (!list.length) { grid.innerHTML = `<p style="opacity:0.6">${t('noPatterns')}</p>`; return; }
+        grid.innerHTML = '';
+        list.forEach(p => {
+          const card = document.createElement('div');
+          card.className = 'pattern-card';
+          card.innerHTML = `
+            <img src="${p.thumbnail || ''}" alt="" />
+            <div class="pc-title">${escapeHtml(p.title)}</div>
+            <div class="pc-meta">${p.cols}×${p.rows} · ${p.stitch}</div>
+            <div class="pc-actions">
+              <button class="pc-open">${t('open')}</button>
+              <button class="pc-del">×</button>
+            </div>`;
+          card.querySelector('.pc-open').addEventListener('click', async () => {
+            const snap = await Cloud.loadPattern(p.id);
+            Grid.restore(snap);
+            History.reset(Grid.snapshot());
+            document.getElementById('stitch-select').value = Grid.stitch;
+            this.currentCloudId = p.id;
+            modal.classList.add('hidden');
+          });
+          card.querySelector('.pc-del').addEventListener('click', async () => {
+            if (!confirm(t('confirmDelete'))) return;
+            await Cloud.deletePattern(p.id);
+            if (this.currentCloudId === p.id) this.currentCloudId = null;
+            card.remove();
+          });
+          grid.appendChild(card);
+        });
+      } catch (err) { grid.innerHTML = `<p style="color:#f88">${err.message || err}</p>`; }
+    });
+    document.getElementById('btn-patterns-close').addEventListener('click', () => {
+      document.getElementById('modal-patterns').classList.add('hidden');
+    });
   },
 
   bindEvents() {
@@ -369,5 +476,9 @@ const App = {
     }, 1500);
   }
 };
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
 
 window.addEventListener('DOMContentLoaded', () => App.init());
