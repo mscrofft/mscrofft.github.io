@@ -32,6 +32,13 @@ html, body { margin: 0; height: 100%; font-family: -apple-system, BlinkMacSystem
 }
 .tools-panel button.tool.active { background: #f7b955; color: #222; border-color: #f7b955; font-weight: 600; }
 .tools-panel hr, .palette-panel hr { border: none; border-top: 1px solid #3a3a42; margin: 12px 0; }
+.clipboard-ops { display: flex; gap: 4px; margin-top: 6px; }
+.clipboard-ops button {
+  flex: 1; padding: 6px; background: #3a3a42; color: #eee;
+  border: 1px solid #555; border-radius: 4px; cursor: pointer; font-size: 14px;
+}
+.clipboard-ops button:hover { background: #4a4a55; }
+.clipboard-ops button:disabled { opacity: 0.4; cursor: not-allowed; }
 .tools-panel input[type=range] { width: 100%; }
 #btn-clear { width: 100%; padding: 8px; background: #5a2a2a; color: #fff; border: none; border-radius: 4px; cursor: pointer; }
 
@@ -50,6 +57,20 @@ html, body { margin: 0; height: 100%; font-family: -apple-system, BlinkMacSystem
   border: 2px solid transparent; position: relative;
 }
 .swatch.selected { border-color: #f7b955; box-shadow: 0 0 0 1px #000; }
+.swatch.delete-mode { border-color: #d44; box-shadow: 0 0 0 1px #000; cursor: not-allowed; position: relative; }
+.swatch.delete-mode::after {
+  content: "×"; position: absolute; top: -4px; right: -4px;
+  background: #d44; color: #fff; width: 14px; height: 14px;
+  border-radius: 50%; font-size: 12px; line-height: 14px;
+  text-align: center; font-weight: 700;
+}
+.palette-delete-btn {
+  width: 100%; margin-top: 6px; padding: 6px; font-size: 11px;
+  background: #3a3a42; color: #eee; border: 1px solid #555; border-radius: 4px;
+  cursor: pointer; display: none;
+}
+.palette-delete-btn:hover { background: #4a4a55; }
+.palette-delete-btn.active { background: #d44; color: #fff; border-color: #d44; }
 .swatch:hover::after {
   content: attr(data-label); position: absolute; bottom: -22px; left: 50%;
   transform: translateX(-50%); background: #000; color: #fff; padding: 2px 6px;

@@ -153,6 +153,9 @@ const Grid = {
         }
       }
     }
+    // Overlay de seleção / clipboard paste preview
+    if (typeof Selection !== 'undefined') Selection.drawOverlay(ctx, this.cellPx);
+    if (typeof Clipboard !== 'undefined') Clipboard.drawPreview(ctx, this.cellPx);
     UsedColors.render();
   }
 };

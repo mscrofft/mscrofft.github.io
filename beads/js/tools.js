@@ -55,7 +55,35 @@ const Tools = {
 
   handleDown(row, col) {
     if (!row && row !== 0) return;
+    // Paste mode: clique commita
+    if (typeof Clipboard !== 'undefined' && Clipboard.pasteMode) {
+      Clipboard.setAnchor(row, col);
+      Clipboard.commitPaste();
+      this.isDrawing = false;
+      return;
+    }
     this.isDrawing = true;
+    // Tools de seleção
+    if (this.active === 'select-rect' || this.active === 'select-lasso') {
+      // Move dentro da seleção?
+      if (Selection.contains(row, col)) {
+        Selection.moveDrag = {
+          startR: row, startC: col,
+          mask: new Set(Selection.mask),
+          bounds: { ...Selection.bounds },
+          snapshot: Selection.mask.size > 0 ? captureCells(Selection.mask) : null
+        };
+        return;
+      }
+      if (this.active === 'select-rect') {
+        Selection.drag = { tool: 'select-rect', startR: row, startC: col, currentR: row, currentC: col };
+      } else {
+        const g = Stitches[Grid.stitch](row, col);
+        Selection.drag = { tool: 'select-lasso', lassoPoints: [[g.x + g.w/2, g.y + g.h/2]] };
+      }
+      Grid.render();
+      return;
+    }
     let changed = false;
     switch (this.active) {
       case 'brush': changed = this.paintBrush(row, col); break;
@@ -82,8 +110,36 @@ const Tools = {
   },
 
   handleMove(row, col) {
+    // Paste mode: atualiza preview seguindo cursor (sem precisar de drag)
+    if (typeof Clipboard !== 'undefined' && Clipboard.pasteMode) {
+      if (row !== null && row !== undefined) Clipboard.setAnchor(row, col);
+      return;
+    }
     if (!this.isDrawing) return;
     if (row === null || row === undefined) return;
+    // Seleção em construção
+    if (Selection.drag) {
+      if (Selection.drag.tool === 'select-rect') {
+        Selection.drag.currentR = row; Selection.drag.currentC = col;
+        Grid.render();
+      } else if (Selection.drag.tool === 'select-lasso') {
+        const g = Stitches[Grid.stitch](row, col);
+        const pt = [g.x + g.w/2, g.y + g.h/2];
+        const last = Selection.drag.lassoPoints[Selection.drag.lassoPoints.length - 1];
+        if (Math.hypot(pt[0]-last[0], pt[1]-last[1]) > 0.3) {
+          Selection.drag.lassoPoints.push(pt);
+          Grid.render();
+        }
+      }
+      return;
+    }
+    // Move da seleção
+    if (Selection.moveDrag) {
+      Selection.moveDrag.previewR = row;
+      Selection.moveDrag.previewC = col;
+      Grid.render();
+      return;
+    }
     if (this.active === 'brush') {
       if (this.paintBrush(row, col)) Grid.render();
     } else if (this.active === 'eraser') {
@@ -92,6 +148,49 @@ const Tools = {
   },
 
   handleUp(row, col) {
+    // Finaliza seleção em construção
+    if (Selection.drag) {
+      if (Selection.drag.tool === 'select-rect') {
+        const m = Selection.rectMask(Selection.drag.startR, Selection.drag.startC, row ?? Selection.drag.startR, col ?? Selection.drag.startC);
+        Selection.drag = null;
+        Selection.set(m);
+        Selection.startAnts();
+      } else if (Selection.drag.tool === 'select-lasso') {
+        const m = Selection.lassoMask(Selection.drag.lassoPoints);
+        Selection.drag = null;
+        Selection.set(m);
+        Selection.startAnts();
+      }
+      this.isDrawing = false;
+      return;
+    }
+    // Finaliza move da seleção
+    if (Selection.moveDrag) {
+      const mv = Selection.moveDrag;
+      Selection.moveDrag = null;
+      if (mv.previewR !== undefined && (mv.previewR !== mv.startR || mv.previewC !== mv.startC)) {
+        const dr = mv.previewR - mv.startR;
+        const dc = mv.previewC - mv.startC;
+        // Apaga origem
+        mv.mask.forEach(key => {
+          const [r, c] = key.split(',').map(Number);
+          Grid.erase(r, c);
+        });
+        // Pinta destino
+        const newMask = new Set();
+        mv.snapshot.forEach(({ r, c, v }) => {
+          const nr = r + dr, nc = c + dc;
+          if (nr >= 0 && nr < Grid.rows && nc >= 0 && nc < Grid.cols) {
+            if (v >= 0) Grid.paint(nr, nc, v);
+            newMask.add(`${nr},${nc}`);
+          }
+        });
+        Selection.set(newMask);
+        History.push(Grid.snapshot());
+      }
+      this.isDrawing = false;
+      return;
+    }
     if (!this.isDrawing) return;
     this.isDrawing = false;
     if (this.lineStart && (this.active === 'line' || this.active === 'rect')) {
@@ -125,5 +224,17 @@ const Tools = {
   cancel() {
     this.isDrawing = false;
     this.lineStart = null;
+    Selection.drag = null;
+    Selection.moveDrag = null;
   }
 };
+
+// Captura células de uma máscara para uso no move (snapshot pré-translação)
+function captureCells(mask) {
+  const out = [];
+  mask.forEach(key => {
+    const [r, c] = key.split(',').map(Number);
+    out.push({ r, c, v: Grid.cells[r][c] });
+  });
+  return out;
+}

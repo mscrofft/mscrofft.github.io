@@ -146,6 +146,7 @@ const App = {
 
     // Palette
     document.getElementById('palette-select').addEventListener('change', e => Palette.setActive(e.target.value));
+    document.getElementById('btn-palette-delete').addEventListener('click', () => Palette.toggleDeleteMode());
     document.getElementById('btn-prune-unused').addEventListener('click', () => Grid.removeUnusedSwatches());
     document.getElementById('btn-reduce-colors').addEventListener('click', () => {
       const cur = Grid.swatchMap.length;
@@ -348,9 +349,50 @@ const App = {
     document.getElementById('btn-undo').addEventListener('click', () => { const s = History.undo(); if (s) Grid.restore(s); });
     document.getElementById('btn-redo').addEventListener('click', () => { const s = History.redo(); if (s) Grid.restore(s); });
     window.addEventListener('keydown', e => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'z') { e.preventDefault(); const s = History.undo(); if (s) Grid.restore(s); }
-      if ((e.metaKey || e.ctrlKey) && (e.key === 'y' || (e.shiftKey && e.key === 'Z'))) { e.preventDefault(); const s = History.redo(); if (s) Grid.restore(s); }
+      // Ignora se foco está em input
+      const tag = (e.target.tagName || '').toLowerCase();
+      const isInput = tag === 'input' || tag === 'textarea' || e.target.isContentEditable;
+
+      if ((e.metaKey || e.ctrlKey) && e.key === 'z') { e.preventDefault(); const s = History.undo(); if (s) Grid.restore(s); return; }
+      if ((e.metaKey || e.ctrlKey) && (e.key === 'y' || (e.shiftKey && e.key === 'Z'))) { e.preventDefault(); const s = History.redo(); if (s) Grid.restore(s); return; }
+
+      if (isInput) return;
+
+      // Copy
+      if ((e.metaKey || e.ctrlKey) && e.key === 'c') {
+        if (Selection.active && Clipboard.copyFromSelection()) e.preventDefault();
+        return;
+      }
+      // Paste
+      if ((e.metaKey || e.ctrlKey) && e.key === 'v') {
+        if (!Clipboard.isEmpty()) { Clipboard.startPaste(); e.preventDefault(); }
+        return;
+      }
+      // Delete (apaga células dentro da seleção)
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        if (Selection.active && Selection.mask) {
+          Selection.mask.forEach(key => {
+            const [r, c] = key.split(',').map(Number);
+            Grid.erase(r, c);
+          });
+          History.push(Grid.snapshot());
+          Grid.render();
+          e.preventDefault();
+        }
+        return;
+      }
+      // Esc — cascade: paste mode → palette delete mode → selection
+      if (e.key === 'Escape') {
+        if (Clipboard.pasteMode) { Clipboard.cancelPaste(); return; }
+        if (Palette.deleteMode) { Palette.exitDeleteMode(); return; }
+        if (Selection.active) { Selection.clear(); return; }
+      }
     });
+
+    // Transformações do clipboard
+    document.getElementById('btn-flip-h').addEventListener('click', () => { Clipboard.flipH(); Grid.render(); });
+    document.getElementById('btn-flip-v').addEventListener('click', () => { Clipboard.flipV(); Grid.render(); });
+    document.getElementById('btn-rotate').addEventListener('click', () => { Clipboard.rotateCW(); Grid.render(); });
 
     // Novo
     document.getElementById('btn-new').addEventListener('click', () => {

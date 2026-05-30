@@ -1,6 +1,22 @@
 const Palette = {
   active: 'custom',
   selectedIndex: 0,
+  deleteMode: false,
+
+  toggleDeleteMode() {
+    if (this.active !== 'custom') { this.deleteMode = false; return; }
+    this.deleteMode = !this.deleteMode;
+    const btn = document.getElementById('btn-palette-delete');
+    if (btn) btn.classList.toggle('active', this.deleteMode);
+    this.render();
+  },
+  exitDeleteMode() {
+    if (!this.deleteMode) return;
+    this.deleteMode = false;
+    const btn = document.getElementById('btn-palette-delete');
+    if (btn) btn.classList.remove('active');
+    this.render();
+  },
 
   // Substitui a paleta custom por uma nova lista de hex (ex: cores quantizadas da imagem)
   replaceCustom(hexList) {
@@ -25,6 +41,12 @@ const Palette = {
   setActive(name) {
     this.active = name;
     this.selectedIndex = 0;
+    if (name !== 'custom') this.deleteMode = false;
+    const btn = document.getElementById('btn-palette-delete');
+    if (btn) {
+      btn.style.display = (name === 'custom') ? '' : 'none';
+      btn.classList.toggle('active', this.deleteMode);
+    }
     this.render();
   },
 
@@ -36,15 +58,28 @@ const Palette = {
   render() {
     const el = document.getElementById('palette-list');
     el.innerHTML = '';
+    const btn = document.getElementById('btn-palette-delete');
+    if (btn) btn.style.display = (this.active === 'custom') ? '' : 'none';
+    const inDelete = this.deleteMode && this.active === 'custom';
     this.list().forEach((c, i) => {
       const sw = document.createElement('div');
-      sw.className = 'swatch' + (i === this.selectedIndex ? ' selected' : '');
+      sw.className = 'swatch'
+        + (i === this.selectedIndex && !inDelete ? ' selected' : '')
+        + (inDelete ? ' delete-mode' : '');
       sw.style.background = c.hex;
       sw.dataset.label = `${c.code} ${c.name}`;
-      sw.title = `${c.code} — ${c.name}`;
+      sw.title = inDelete ? `Excluir ${c.code}` : `${c.code} — ${c.name}`;
       sw.addEventListener('click', () => {
-        this.selectedIndex = i;
-        this.render();
+        if (inDelete) {
+          PALETTES.custom.splice(i, 1);
+          if (this.selectedIndex >= PALETTES.custom.length) {
+            this.selectedIndex = Math.max(0, PALETTES.custom.length - 1);
+          }
+          this.render();
+        } else {
+          this.selectedIndex = i;
+          this.render();
+        }
       });
       el.appendChild(sw);
     });

@@ -60,6 +60,13 @@
     <button class="tool" data-tool="picker" data-i18n="picker">Conta-gotas</button>
     <button class="tool" data-tool="line" data-i18n="line">Linha</button>
     <button class="tool" data-tool="rect" data-i18n="rect">Retângulo</button>
+    <button class="tool" data-tool="select-rect" data-i18n="selectRect">Seleção □</button>
+    <button class="tool" data-tool="select-lasso" data-i18n="selectLasso">Laço</button>
+    <div class="clipboard-ops">
+      <button id="btn-flip-h" title="↔ Espelhar H">↔</button>
+      <button id="btn-flip-v" title="↕ Espelhar V">↕</button>
+      <button id="btn-rotate" title="↻ Girar 90°">↻</button>
+    </div>
     <hr/>
     <label data-i18n="brushSize">Tamanho do pincel</label>
     <input type="range" id="brush-size" min="1" max="9" step="2" value="1" />
@@ -107,6 +114,7 @@
       <option value="toho" data-i18n="toho">Toho Round</option>
     </select>
     <div id="palette-list" class="palette-list"></div>
+    <button id="btn-palette-delete" class="palette-delete-btn" data-i18n="deleteColors">Deletar cores</button>
     <hr/>
     <h4 data-i18n="usedColors">Cores usadas</h4>
     <div id="used-colors"></div>
@@ -239,6 +247,7 @@
 <script src="js/history.js" defer></script>
 <script src="js/stitches.js" defer></script>
 <script src="js/grid.js" defer></script>
+<script src="js/selection.js" defer></script>
 <script src="js/tools.js" defer></script>
 <script src="js/image-import.js" defer></script>
 <script src="js/sequencer.js" defer></script>
