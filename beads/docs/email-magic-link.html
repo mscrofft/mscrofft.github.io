@@ -1,0 +1,133 @@
+<!--
+  ============================================================================
+  Template do email Magic Link — BEAD PATTERN GENERATOR
+  ============================================================================
+
+  Como usar:
+    1. Acesse o dashboard do Supabase: https://app.supabase.com
+    2. Vá em Authentication → Email Templates → Magic Link
+    3. Copie TUDO abaixo (a partir de <!DOCTYPE html>) e cole no campo
+       "Message body (HTML)".
+    4. Subject sugerido: 🪡 Entre no Bead Pattern Generator
+    5. Clique em "Save".
+
+  Variáveis disponíveis (sintaxe Go template):
+    {{ .ConfirmationURL }}  - O link mágico (OBRIGATÓRIO — sem ele não funciona)
+    {{ .Email }}            - Email do destinatário
+    {{ .SiteURL }}          - URL do site (Authentication → URL Configuration)
+    {{ .Token }}            - Código OTP de 6 dígitos (caso queira mostrar tb)
+    {{ .RedirectTo }}       - URL de redirect
+
+  Preview:
+    Abra este arquivo no navegador para ver como o email vai aparecer.
+    Onde está "URL_DO_LINK_AQUI" (no preview), no email real vai ser o link.
+============================================================================
+-->
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Entre no Bead Pattern Generator</title>
+</head>
+<body style="margin:0; padding:0; background:#1f1f23; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#1f1f23; padding:40px 16px;">
+    <tr>
+      <td align="center">
+
+        <!-- Card principal -->
+        <table role="presentation" width="520" cellpadding="0" cellspacing="0" border="0" style="max-width:520px; width:100%; background:#25252b; border-radius:14px; overflow:hidden;">
+
+          <!-- Cabeçalho branded -->
+          <tr>
+            <td align="center" style="padding:36px 32px 16px;">
+              <div style="font-size:13px; letter-spacing:6px; color:#f7b955; font-weight:700;">BEAD PATTERN</div>
+              <div style="font-size:24px; letter-spacing:2px; color:#f7b955; font-weight:900; margin-top:4px;">GENERATOR</div>
+            </td>
+          </tr>
+
+          <!-- Decoração: linha de "miçangas" coloridas -->
+          <tr>
+            <td align="center" style="padding:0 32px 24px;">
+              <table role="presentation" cellpadding="0" cellspacing="3" border="0">
+                <tr>
+                  <td style="width:16px; height:16px; background:#f7b955; border-radius:4px;">&nbsp;</td>
+                  <td style="width:16px; height:16px; background:#e23b7a; border-radius:4px;">&nbsp;</td>
+                  <td style="width:16px; height:16px; background:#2e9e3e; border-radius:4px;">&nbsp;</td>
+                  <td style="width:16px; height:16px; background:#1f3a8a; border-radius:4px;">&nbsp;</td>
+                  <td style="width:16px; height:16px; background:#7a3a9e; border-radius:4px;">&nbsp;</td>
+                  <td style="width:16px; height:16px; background:#ef7a1e; border-radius:4px;">&nbsp;</td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Mensagem -->
+          <tr>
+            <td style="padding:0 36px 24px; color:#eee; font-size:16px; line-height:1.55;">
+              <p style="margin:0 0 16px;">Olá! 👋</p>
+              <p style="margin:0 0 16px;">
+                Clique no botão abaixo para entrar no app e acessar seus padrões salvos:
+              </p>
+            </td>
+          </tr>
+
+          <!-- Botão CTA -->
+          <tr>
+            <td align="center" style="padding:0 32px 32px;">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td style="background:#f7b955; border-radius:10px;">
+                    <a href="{{ .ConfirmationURL }}"
+                       style="display:inline-block; padding:14px 36px; color:#1f1f23; font-size:16px; font-weight:700; text-decoration:none; font-family:inherit;">
+                      Entrar no app →
+                    </a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Separador -->
+          <tr>
+            <td style="padding:0 36px;">
+              <div style="height:1px; background:#3a3a42;"></div>
+            </td>
+          </tr>
+
+          <!-- Notas de validade/segurança -->
+          <tr>
+            <td style="padding:20px 36px 8px; color:#aaa; font-size:12px; line-height:1.55;">
+              <p style="margin:0 0 8px;">
+                Este link expira em <strong>1 hora</strong> e só pode ser usado <strong>uma vez</strong>.
+              </p>
+              <p style="margin:0;">
+                Se você não pediu este email, pode ignorá-lo com segurança — ninguém vai conseguir entrar na sua conta sem o link acima.
+              </p>
+            </td>
+          </tr>
+
+          <!-- Fallback de URL pra copy-paste -->
+          <tr>
+            <td style="padding:16px 36px 32px; color:#777; font-size:11px; line-height:1.55; word-break:break-all;">
+              <p style="margin:0 0 4px; color:#888;">Não consegue clicar no botão? Copie e cole este endereço no seu navegador:</p>
+              <p style="margin:0; color:#666; font-family:'Courier New', monospace;">{{ .ConfirmationURL }}</p>
+            </td>
+          </tr>
+
+        </table>
+
+        <!-- Rodapé fora do card -->
+        <table role="presentation" width="520" cellpadding="0" cellspacing="0" border="0" style="max-width:520px; width:100%; margin-top:16px;">
+          <tr>
+            <td align="center" style="color:#555; font-size:11px; line-height:1.5; padding:8px 16px;">
+              Bead Pattern Generator · Receitas de padrões de miçangas
+            </td>
+          </tr>
+        </table>
+
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

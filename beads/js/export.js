@@ -32,34 +32,54 @@ const Export = {
     doc.setFontSize(9);
     doc.text(`${t(Grid.stitch)} — ${Grid.cols} × ${Grid.rows}`, pageW - margin, margin + 4, { align: 'right' });
 
-    // Chart: usa o canvas atual via toDataURL para fidelidade
-    const dataUrl = Grid.canvas.toDataURL('image/png');
-    const maxW = pageW - margin * 2;
-    const maxH = pageH - margin * 2 - 20;
-    const ratio = Grid.canvas.width / Grid.canvas.height;
-    let w = maxW, h = maxW / ratio;
-    if (h > maxH) { h = maxH; w = h * ratio; }
-    doc.addImage(dataUrl, 'PNG', margin + (maxW - w) / 2, margin + 16, w, h);
+    // ===== Layout da página 1: chart + legenda juntos =====
+    const counts = countByColor();
+    const usedSwatches = Grid.swatchMap
+      .map((s, idx) => ({ s, idx, n: counts.get(idx) || 0 }))
+      .filter(e => e.n > 0);
 
-    // Legenda
-    if (legend && Grid.swatchMap.length) {
-      doc.addPage();
-      doc.setFontSize(14);
-      doc.text(t('colorLegend'), margin, margin + 4);
-      const counts = countByColor();
-      let y = margin + 14;
-      doc.setFontSize(10);
-      Grid.swatchMap.forEach((s, idx) => {
-        const n = counts.get(idx) || 0;
-        if (n === 0) return;
-        const rgb = hexToRgb(s.hex);
+    // Calcula altura da legenda (se for incluir)
+    const wantLegend = legend && usedSwatches.length > 0;
+    const legendCols = usedSwatches.length <= 16 ? 2 : 3;
+    const legendRowH = 5.5;       // mm por linha
+    const legendHeaderH = 10;     // mm pro título "Legenda de cores"
+    const legendRows = Math.ceil(usedSwatches.length / legendCols);
+    const legendH = wantLegend ? (legendHeaderH + legendRows * legendRowH + 4) : 0;
+
+    // Área de chart (reserva legendH no fim da página)
+    const chartTop = margin + 16;
+    const chartMaxW = pageW - margin * 2;
+    const chartMaxH = pageH - margin - chartTop - legendH - 4;
+
+    const dataUrl = Grid.canvas.toDataURL('image/png');
+    const ratio = Grid.canvas.width / Grid.canvas.height;
+    let w = chartMaxW, h = chartMaxW / ratio;
+    if (h > chartMaxH) { h = chartMaxH; w = h * ratio; }
+    doc.addImage(dataUrl, 'PNG', margin + (chartMaxW - w) / 2, chartTop, w, h);
+
+    // Legenda na mesma página, abaixo do chart
+    if (wantLegend) {
+      const legendTop = pageH - margin - legendH + legendHeaderH;
+      doc.setFontSize(12);
+      doc.text(t('colorLegend'), margin, pageH - margin - legendH + 6);
+      doc.setFontSize(9);
+      const colW = (pageW - margin * 2) / legendCols;
+      usedSwatches.forEach((e, i) => {
+        const col = i % legendCols;
+        const rowIdx = Math.floor(i / legendCols);
+        const x = margin + col * colW;
+        const y = legendTop + rowIdx * legendRowH;
+        const rgb = hexToRgb(e.s.hex);
         doc.setFillColor(rgb.r, rgb.g, rgb.b);
-        doc.rect(margin, y - 4, 6, 6, 'F');
+        doc.rect(x, y - 3, 4, 4, 'F');
         doc.setTextColor(0);
-        doc.text(swatchLabel(idx), margin + 9, y);
-        doc.text(`${n} ${t('beads')}`, pageW - margin, y, { align: 'right' });
-        y += 7;
-        if (y > pageH - margin) { doc.addPage(); y = margin + 10; }
+        const label = swatchLabel(e.idx);
+        const countStr = `${e.n}`;
+        // Trunca rótulo pra caber: espaço total colW - 6 (swatch+gap) - 8 (count à direita)
+        const maxTextW = colW - 14;
+        const truncated = truncateText(doc, label, maxTextW);
+        doc.text(truncated, x + 6, y);
+        doc.text(countStr, x + colW - 2, y, { align: 'right' });
       });
     }
 
@@ -85,6 +105,18 @@ const Export = {
     doc.save(`beads-${Date.now()}.pdf`);
   }
 };
+
+// Trunca texto se exceder largura, adicionando "…"
+function truncateText(doc, text, maxW) {
+  if (doc.getTextWidth(text) <= maxW) return text;
+  let lo = 0, hi = text.length;
+  while (lo < hi) {
+    const mid = (lo + hi + 1) >> 1;
+    if (doc.getTextWidth(text.slice(0, mid) + '…') <= maxW) lo = mid;
+    else hi = mid - 1;
+  }
+  return text.slice(0, lo) + '…';
+}
 
 function countByColor() {
   const m = new Map();
