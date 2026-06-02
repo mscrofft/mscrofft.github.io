@@ -74,6 +74,13 @@
       <button class="brush-shape-btn active" data-shape="square" title="Quadrado">□</button>
       <button class="brush-shape-btn" data-shape="circle" title="Círculo">○</button>
     </div>
+    <label data-i18n="symmetry" style="margin-top:8px;display:block">Simetria</label>
+    <div class="sym-row">
+      <button class="sym-btn active" data-sym="off">Off</button>
+      <button class="sym-btn" data-sym="h">H</button>
+      <button class="sym-btn" data-sym="v">V</button>
+      <button class="sym-btn" data-sym="both">Both</button>
+    </div>
     <hr/>
     <label data-i18n="zoom">Zoom</label>
     <input type="range" id="zoom" min="6" max="40" value="18" />
@@ -84,8 +91,6 @@
     <label data-i18n="presetLabel">Preset</label>
     <select id="preset-select">
       <option value="" data-i18n="presetNone">— escolher —</option>
-      <option value="randomUniform" data-i18n="presetRandomUniform">Aleatório uniforme</option>
-      <option value="randomWeighted" data-i18n="presetRandomWeighted">Aleatório ponderado</option>
       <option value="stripesH" data-i18n="presetStripesH">Listras horizontais</option>
       <option value="stripesV" data-i18n="presetStripesV">Listras verticais</option>
       <option value="diagonalSlash" data-i18n="presetDiagSlash">Diagonais /</option>

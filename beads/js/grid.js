@@ -153,6 +153,23 @@ const Grid = {
         }
       }
     }
+    // Guia visual de simetria
+    if (typeof Tools !== 'undefined' && Tools.symmetry && Tools.symmetry !== 'off') {
+      const bounds = stitchBounds(this.stitch, this.cols, this.rows);
+      ctx.save();
+      ctx.strokeStyle = 'rgba(247, 185, 85, 0.6)';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([4, 4]);
+      if (Tools.symmetry === 'h' || Tools.symmetry === 'both') {
+        const x = bounds.w * this.cellPx / 2;
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, bounds.h * this.cellPx); ctx.stroke();
+      }
+      if (Tools.symmetry === 'v' || Tools.symmetry === 'both') {
+        const y = bounds.h * this.cellPx / 2;
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(bounds.w * this.cellPx, y); ctx.stroke();
+      }
+      ctx.restore();
+    }
     // Overlay de seleção / clipboard paste preview
     if (typeof Selection !== 'undefined') Selection.drawOverlay(ctx, this.cellPx);
     if (typeof Clipboard !== 'undefined') Clipboard.drawPreview(ctx, this.cellPx);

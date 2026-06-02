@@ -151,6 +151,19 @@ html, body { margin: 0; height: 100%; font-family: -apple-system, BlinkMacSystem
 }
 .brush-shape-btn.active { background: #f7b955; color: #222; border-color: #f7b955; }
 
+/* Segmented control de simetria */
+.sym-row {
+  display: flex; gap: 2px; background: #1f1f23;
+  padding: 2px; border-radius: 999px; margin-top: 4px;
+}
+.sym-btn {
+  flex: 1; padding: 6px 4px; background: transparent; color: #aaa;
+  border: none; border-radius: 999px; cursor: pointer;
+  font-size: 11px; font-weight: 600; transition: background 0.15s, color 0.15s;
+}
+.sym-btn:hover { color: #eee; }
+.sym-btn.active { background: #3a3a42; color: #f7b955; }
+
 /* Canvas: desabilita scroll/zoom nativo durante interação */
 #grid-canvas { touch-action: none; }
 

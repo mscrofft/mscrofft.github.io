@@ -271,6 +271,9 @@ const App = {
     document.querySelectorAll('.brush-shape-btn').forEach(b => {
       b.addEventListener('click', () => Tools.setBrushShape(b.dataset.shape));
     });
+    document.querySelectorAll('.sym-btn').forEach(b => {
+      b.addEventListener('click', () => Tools.setSymmetry(b.dataset.sym));
+    });
 
     // Presets
     const presetSelect = document.getElementById('preset-select');

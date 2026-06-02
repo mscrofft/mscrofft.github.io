@@ -3,43 +3,6 @@
 // `colors` = array de índices em Grid.swatchMap a usar.
 
 const Presets = {
-  randomUniform(cols, rows, colors) {
-    const out = [];
-    for (let r = 0; r < rows; r++) {
-      const row = [];
-      for (let c = 0; c < cols; c++) row.push(colors[Math.floor(Math.random() * colors.length)]);
-      out.push(row);
-    }
-    return out;
-  },
-
-  randomWeighted(cols, rows, colors, params = {}) {
-    // params.weights = [int...] proporcionais a colors. Se ausente, conta uso atual.
-    let weights = params.weights;
-    if (!weights || weights.length !== colors.length) {
-      weights = colors.map(idx => {
-        let n = 0;
-        Grid.cells.forEach(row => row.forEach(v => { if (v === idx) n++; }));
-        return Math.max(1, n);
-      });
-    }
-    const total = weights.reduce((a, b) => a + b, 0);
-    const cum = []; let acc = 0;
-    weights.forEach(w => { acc += w / total; cum.push(acc); });
-    const pick = () => {
-      const r = Math.random();
-      for (let i = 0; i < cum.length; i++) if (r < cum[i]) return colors[i];
-      return colors[colors.length - 1];
-    };
-    const out = [];
-    for (let r = 0; r < rows; r++) {
-      const row = [];
-      for (let c = 0; c < cols; c++) row.push(pick());
-      out.push(row);
-    }
-    return out;
-  },
-
   stripesH(cols, rows, colors, { width = 1 } = {}) {
     const out = [];
     for (let r = 0; r < rows; r++) {

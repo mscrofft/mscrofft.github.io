@@ -4,6 +4,25 @@ const Tools = {
   lineStart: null,
   brushSize: 1,             // diâmetro em células (ímpar: 1,3,5,7,9)
   brushShape: 'square',     // 'square' | 'circle'
+  symmetry: 'off',          // 'off' | 'h' | 'v' | 'both'
+
+  setSymmetry(mode) {
+    this.symmetry = mode;
+    document.querySelectorAll('.sym-btn').forEach(b => b.classList.toggle('active', b.dataset.sym === mode));
+    if (typeof Grid !== 'undefined' && Grid.canvas) Grid.render();
+  },
+
+  // Retorna lista de [r,c] com a célula original + espelhamentos (deduplicados)
+  symmetryCells(r, c) {
+    if (this.symmetry === 'off') return [[r, c]];
+    const out = new Set();
+    const add = (rr, cc) => out.add(`${rr},${cc}`);
+    add(r, c);
+    if (this.symmetry === 'h' || this.symmetry === 'both') add(r, Grid.cols - 1 - c);
+    if (this.symmetry === 'v' || this.symmetry === 'both') add(Grid.rows - 1 - r, c);
+    if (this.symmetry === 'both') add(Grid.rows - 1 - r, Grid.cols - 1 - c);
+    return Array.from(out).map(k => k.split(',').map(Number));
+  },
 
   set(name) {
     this.active = name;
@@ -39,16 +58,20 @@ const Tools = {
   paintBrush(row, col) {
     const sw = this.currentSwatch();
     let changed = false;
-    for (const [r, c] of this.brushCells(row, col)) {
-      if (Grid.paint(r, c, sw)) changed = true;
+    for (const [sr, sc] of this.symmetryCells(row, col)) {
+      for (const [r, c] of this.brushCells(sr, sc)) {
+        if (Grid.paint(r, c, sw)) changed = true;
+      }
     }
     return changed;
   },
 
   eraseBrush(row, col) {
     let changed = false;
-    for (const [r, c] of this.brushCells(row, col)) {
-      if (Grid.erase(r, c)) changed = true;
+    for (const [sr, sc] of this.symmetryCells(row, col)) {
+      for (const [r, c] of this.brushCells(sr, sc)) {
+        if (Grid.erase(r, c)) changed = true;
+      }
     }
     return changed;
   },
