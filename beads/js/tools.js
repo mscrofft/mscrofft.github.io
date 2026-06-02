@@ -12,15 +12,46 @@ const Tools = {
     if (typeof Grid !== 'undefined' && Grid.canvas) Grid.render();
   },
 
-  // Retorna lista de [r,c] com a célula original + espelhamentos (deduplicados)
+  // Retorna lista de [r,c] com a célula original + espelhamentos (deduplicados).
+  // Compensa o offset do peyote: quando o espelho horizontal vira paridade de coluna
+  // (cols par), desloca a linha do espelho em +1 para colunas pares originais para
+  // que a forma espelhada fique visualmente alinhada (sem zigzag invertido).
   symmetryCells(r, c) {
     if (this.symmetry === 'off') return [[r, c]];
+    const isPeyote = Grid.stitch && Grid.stitch.startsWith('peyote');
     const out = new Set();
-    const add = (rr, cc) => out.add(`${rr},${cc}`);
+    const add = (rr, cc) => {
+      if (rr < 0 || rr >= Grid.rows || cc < 0 || cc >= Grid.cols) return;
+      out.add(`${rr},${cc}`);
+    };
+    // H mirror — devolve [r', c'] com compensação de paridade pra peyote.
+    const hMirror = (r0, c0) => {
+      const cM = Grid.cols - 1 - c0;
+      let rM = r0;
+      if (isPeyote && (c0 % 2) !== (cM % 2)) {
+        // Paridade flipou: shift consistente pra alinhar fileira física de beads
+        rM = (c0 % 2 === 0) ? r0 + 1 : r0;
+      }
+      return [rM, cM];
+    };
+    // V mirror — sem compensação por enquanto (peyote tem offset por coluna, não por linha)
+    const vMirror = (r0, c0) => [Grid.rows - 1 - r0, c0];
+
     add(r, c);
-    if (this.symmetry === 'h' || this.symmetry === 'both') add(r, Grid.cols - 1 - c);
-    if (this.symmetry === 'v' || this.symmetry === 'both') add(Grid.rows - 1 - r, c);
-    if (this.symmetry === 'both') add(Grid.rows - 1 - r, Grid.cols - 1 - c);
+    if (this.symmetry === 'h' || this.symmetry === 'both') {
+      const [hr, hc] = hMirror(r, c);
+      add(hr, hc);
+    }
+    if (this.symmetry === 'v' || this.symmetry === 'both') {
+      const [vr, vc] = vMirror(r, c);
+      add(vr, vc);
+    }
+    if (this.symmetry === 'both') {
+      // Diagonal: aplica H depois V (ou V depois H — resultado equivalente pro espelho)
+      const [vr, vc] = vMirror(r, c);
+      const [dr, dc] = hMirror(vr, vc);
+      add(dr, dc);
+    }
     return Array.from(out).map(k => k.split(',').map(Number));
   },
 
