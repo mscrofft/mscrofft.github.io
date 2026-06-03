@@ -5,17 +5,36 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Manuel Scrofft</title>
   <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Bebas+Neue&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="shared/ui-theme.css" />
   <style>
+    /* ── Design tokens ──────────────────────────────────────── */
     :root {
-      --bg: #0a0a0a;
-      --fg: #f0ece3;
+      --bg:     #0a0a0a;
+      --fg:     #f0ece3;
       --accent: #ffffff;
-      --muted: #2a2a2a;
+      --muted:  #2a2a2a;
       --border: #222;
     }
 
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body[data-theme="light"] {
+      --bg:     #f0ece3;
+      --fg:     #0a0a0a;
+      --accent: #000000;
+      --muted:  #ccc8c0;
+      --border: #d0ccc4;
+      background: var(--bg);
+      color: var(--fg);
+    }
 
+    /* Light theme — overlay flips */
+    body[data-theme="light"] #preview-overlay {
+      background: linear-gradient(to top, rgba(240,236,227,0.92) 0%, rgba(240,236,227,0.3) 55%, transparent 100%);
+    }
+    body[data-theme="light"] .preview-layer {
+      filter: brightness(1.15) saturate(0.6);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html { scroll-behavior: smooth; }
 
     body {
@@ -25,27 +44,24 @@
       min-height: 100vh;
       overflow-x: hidden;
       cursor: none;
+      transition: background 0.4s ease, color 0.4s ease;
     }
 
-    /* Custom cursor */
+    /* ── Cursor ─────────────────────────────────────────────── */
     .cursor {
       position: fixed;
-      width: 12px;
-      height: 12px;
+      width: 12px; height: 12px;
       background: var(--accent);
       border-radius: 50%;
       pointer-events: none;
       z-index: 9999;
       transform: translate(-50%, -50%);
-      transition: transform 0.1s ease, width 0.2s ease, height 0.2s ease;
+      transition: width 0.2s ease, height 0.2s ease;
       mix-blend-mode: difference;
     }
-    .cursor.hover {
-      width: 40px;
-      height: 40px;
-    }
+    .cursor.hover { width: 40px; height: 40px; }
 
-    /* Grain overlay */
+    /* ── Grain overlay ──────────────────────────────────────── */
     body::before {
       content: '';
       position: fixed;
@@ -56,14 +72,46 @@
       opacity: 0.5;
     }
 
-    /* Header */
+    /* ── Preview layers (cross-fade) ────────────────────────── */
+    .preview-layer {
+      position: fixed;
+      inset: 0;
+      z-index: -2;
+      background-size: cover;
+      background-position: center;
+      opacity: 0;
+      transform: scale(1.05);
+      transition: opacity 0.55s ease, transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      will-change: opacity, transform;
+    }
+    .preview-layer.active {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    /* Readability gradient on top of preview */
+    #preview-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      background: linear-gradient(to top,
+        rgba(0,0,0,0.88) 0%,
+        rgba(0,0,0,0.4)  45%,
+        transparent       100%);
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.5s ease;
+    }
+    #preview-overlay.active { opacity: 1; }
+
+    /* ── Header ─────────────────────────────────────────────── */
     header {
-      padding: 48px 60px 0;
+      padding: 48px 60px 32px;
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
-      border-bottom: 1px solid var(--border);
-      padding-bottom: 32px;
+      position: relative;
+      z-index: 2;
     }
 
     .logo {
@@ -73,10 +121,16 @@
       line-height: 1;
       color: var(--fg);
       text-decoration: none;
+      transition: color 0.4s ease;
     }
+    .logo span { color: var(--accent); transition: color 0.4s ease; }
 
-    .logo span {
-      color: var(--accent);
+    .header-right {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 12px;
+      padding-top: 6px;
     }
 
     .header-meta {
@@ -86,28 +140,37 @@
       text-transform: uppercase;
       opacity: 0.4;
       line-height: 1.8;
-      padding-top: 8px;
     }
 
-    /* Hero label */
+    /* Invert button override — adapts to page fonts */
+    #btn-invert {
+      font-family: 'Space Mono', monospace;
+      font-size: 9px;
+      /* colors come from ui-theme.css .ui-invert-btn using --ui-fg / --ui-bg */
+    }
+
+    /* ── Section label ──────────────────────────────────────── */
     .section-label {
       padding: 20px 60px;
       font-size: 10px;
       letter-spacing: 0.3em;
       text-transform: uppercase;
       opacity: 0.3;
-      border-bottom: 1px solid var(--border);
       display: flex;
       justify-content: space-between;
+      position: relative;
+      z-index: 2;
     }
 
-    /* List */
+    /* ── List ───────────────────────────────────────────────── */
     .list {
       display: flex;
       flex-direction: column;
+      position: relative;
+      z-index: 2;
     }
 
-    /* Row */
+    /* ── Row ────────────────────────────────────────────────── */
     .row {
       position: relative;
       display: grid;
@@ -115,11 +178,9 @@
       align-items: center;
       gap: 32px;
       padding: 28px 60px;
-      border-bottom: 1px solid var(--border);
       text-decoration: none;
       color: var(--fg);
       overflow: hidden;
-      transition: background 0.3s ease;
     }
 
     .row::before {
@@ -131,27 +192,15 @@
       transition: transform 0.5s cubic-bezier(0.76, 0, 0.24, 1);
       z-index: 0;
     }
-
-    .row:hover::before {
-      transform: translateX(0);
-    }
+    .row:hover::before { transform: translateX(0); }
 
     .row:hover .row-number,
     .row:hover .row-title,
     .row:hover .row-tag,
-    .row:hover .row-arrow {
-      color: var(--bg);
-    }
+    .row:hover .row-arrow { color: var(--bg); }
 
-    .row:hover .row-tag {
-      border-color: var(--bg);
-      opacity: 1;
-    }
-
-    .row:hover .row-arrow {
-      opacity: 1;
-      transform: translate(4px, -4px);
-    }
+    .row:hover .row-tag { border-color: var(--bg); opacity: 1; }
+    .row:hover .row-arrow { opacity: 1; transform: translate(4px, -4px); }
 
     .row-number {
       font-size: 11px;
@@ -161,7 +210,6 @@
       z-index: 1;
       transition: color 0.3s ease, opacity 0.3s ease;
     }
-
     .row:hover .row-number { opacity: 0.5; }
 
     .row-title {
@@ -187,6 +235,9 @@
       z-index: 1;
       transition: color 0.3s ease, border-color 0.3s ease, opacity 0.3s ease;
     }
+    body[data-theme="light"] .row-tag {
+      border-color: rgba(10, 10, 10, 0.2);
+    }
 
     .row-arrow {
       font-size: 22px;
@@ -196,53 +247,9 @@
       transition: color 0.3s ease, opacity 0.3s ease, transform 0.3s ease;
     }
 
-    @media (max-width: 900px) {
-      header { padding: 32px 28px 24px; }
-      .section-label { padding: 16px 28px; }
-      .row {
-        padding: 22px 28px;
-        gap: 20px;
-      }
-    }
-
-    @media (max-width: 560px) {
-      .row {
-        grid-template-columns: auto 1fr auto;
-        padding: 20px 22px;
-        gap: 16px;
-      }
-      .row-tag { display: none; }
-    }
-
-    /* Ticker */
-    .ticker-wrap {
-      overflow: hidden;
-      border-top: 1px solid var(--border);
-      border-bottom: 1px solid var(--border);
-      padding: 12px 0;
-      white-space: nowrap;
-    }
-
-    .ticker {
-      display: inline-block;
-      animation: ticker 18s linear infinite;
-      font-size: 11px;
-      letter-spacing: 0.25em;
-      text-transform: uppercase;
-      opacity: 0.2;
-    }
-
-    .ticker span { margin: 0 40px; }
-
-    @keyframes ticker {
-      0% { transform: translateX(0); }
-      100% { transform: translateX(-50%); }
-    }
-
-    /* Footer */
+    /* ── Footer ─────────────────────────────────────────────── */
     footer {
       padding: 32px 60px;
-      border-top: 1px solid var(--border);
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -250,13 +257,24 @@
       letter-spacing: 0.15em;
       text-transform: uppercase;
       opacity: 0.25;
+      position: relative;
+      z-index: 2;
     }
 
+    /* ── Responsive ─────────────────────────────────────────── */
+    @media (max-width: 900px) {
+      header { padding: 32px 28px 24px; }
+      .section-label { padding: 16px 28px; }
+      .row { padding: 22px 28px; gap: 20px; }
+      footer { padding: 24px 28px; }
+    }
     @media (max-width: 560px) {
-      footer { padding: 24px 22px; }
+      .row { grid-template-columns: auto 1fr auto; padding: 20px 22px; gap: 16px; }
+      .row-tag { display: none; }
+      footer { padding: 20px 22px; }
     }
 
-    /* Entrance animation */
+    /* ── Entrance animation ─────────────────────────────────── */
     .row {
       opacity: 0;
       transform: translateY(20px);
@@ -281,11 +299,20 @@
 
   <div class="cursor" id="cursor"></div>
 
+  <!-- Preview background layers (cross-fade) -->
+  <div class="preview-layer" id="preview-a"></div>
+  <div class="preview-layer" id="preview-b"></div>
+  <div id="preview-overlay" aria-hidden="true"></div>
+
   <header>
     <a class="logo" href="#">MS<span>.</span></a>
-    <div class="header-meta">
-      JS Experiments<br>
-          </div>
+    <div class="header-right">
+      <button id="btn-invert" class="ui-invert-btn" type="button" title="Inverter cores">
+        <svg viewBox="0 0 16 16"><path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm0 12.5A5.5 5.5 0 0 1 8 2.5v11a5.5 5.5 0 0 1 0-11z"/></svg>
+        Inverter
+      </button>
+      <div class="header-meta">JS Experiments</div>
+    </div>
   </header>
 
   <div class="section-label">
@@ -295,63 +322,81 @@
 
   <main class="list">
 
-    <a class="row" href="Dither_halftone/index.html">
+    <a class="row" href="Dither_halftone/index.html"
+       data-preview="previews/01.jpg"
+       data-color="linear-gradient(135deg, #1a1a1a 0%, #3d3d3d 100%)">
       <span class="row-number">01</span>
       <span class="row-title">Dither Halftone</span>
       <span class="row-tag">Imagem · Filtro</span>
       <span class="row-arrow">↗</span>
     </a>
 
-    <a class="row" href="Grid_painter/index.html">
+    <a class="row" href="Grid_painter/index.html"
+       data-preview="previews/02.jpg"
+       data-color="linear-gradient(135deg, #0d1117 0%, #1f2937 100%)">
       <span class="row-number">02</span>
       <span class="row-title">Grid Painter</span>
       <span class="row-tag">Canvas · Interativo</span>
       <span class="row-arrow">↗</span>
     </a>
 
-    <a class="row" href="emoji_gravity/index.html">
+    <a class="row" href="emoji_gravity/index.html"
+       data-preview="previews/03.jpg"
+       data-color="linear-gradient(135deg, #111111 0%, #282820 100%)">
       <span class="row-number">03</span>
       <span class="row-title">Emoji Particles</span>
       <span class="row-tag">Particle system</span>
       <span class="row-arrow">↗</span>
     </a>
 
-    <a class="row" href="TypeExtrude3D/index.html">
+    <a class="row" href="TypeExtrude3D/index.html"
+       data-preview="previews/04.jpg"
+       data-color="linear-gradient(135deg, #0a0a12 0%, #1e1e30 100%)">
       <span class="row-number">04</span>
       <span class="row-title">Type Extrude 3D</span>
       <span class="row-tag">3D · Tipografia</span>
       <span class="row-arrow">↗</span>
     </a>
 
-    <a class="row" href="Card_Studio_3d/index.html">
+    <a class="row" href="Card_Studio_3d/index.html"
+       data-preview="previews/05.jpg"
+       data-color="linear-gradient(135deg, #12080a 0%, #2d1010 100%)">
       <span class="row-number">05</span>
       <span class="row-title">Card Studio 3D</span>
       <span class="row-tag">3D</span>
       <span class="row-arrow">↗</span>
     </a>
 
-    <a class="row" href="visuals_app/index.html">
+    <a class="row" href="visuals_app/index.html"
+       data-preview="previews/06.jpg"
+       data-color="linear-gradient(135deg, #080f0a 0%, #101f14 100%)">
       <span class="row-number">06</span>
       <span class="row-title">Visuals App</span>
       <span class="row-tag">Visual · App</span>
       <span class="row-arrow">↗</span>
     </a>
 
-    <a class="row" href="carrossel/index.html">
+    <a class="row" href="carrossel/index.html"
+       data-preview="previews/07.jpg"
+       data-color="linear-gradient(135deg, #0d0a12 0%, #1a152d 100%)">
       <span class="row-number">07</span>
       <span class="row-title">Carrossel</span>
       <span class="row-tag">Words</span>
       <span class="row-arrow">↗</span>
     </a>
 
-    <a class="row" href="iris_p5/index.html">
+    <a class="row" href="iris_p5/index.html"
+       data-preview="previews/08.jpg"
+       data-color="linear-gradient(135deg, #080d12 0%, #10192a 100%)">
       <span class="row-number">08</span>
       <span class="row-title">Iris</span>
-      <span class="row-tag">Lines· P5</span>
+      <span class="row-tag">Lines · P5</span>
       <span class="row-arrow">↗</span>
     </a>
 
-    <a class="row" href="relogio/index.html">
+    <a class="row" href="relogio/index.html"
+       data-preview="previews/09.jpg"
+       data-color="linear-gradient(135deg, #12100a 0%, #2a240a 100%)">
       <span class="row-number">09</span>
       <span class="row-title">Relógio</span>
       <span class="row-tag">JS</span>
@@ -365,15 +410,104 @@
     <span>© 2025</span>
   </footer>
 
+  <!-- Shared theme toggle (dark ↔ light, persists in localStorage) -->
+  <script src="shared/ui-theme-lite.js"></script>
+
   <script>
+    /* ── Cursor ─────────────────────────────────────────────── */
     const cursor = document.getElementById('cursor');
     document.addEventListener('mousemove', e => {
       cursor.style.left = e.clientX + 'px';
-      cursor.style.top = e.clientY + 'px';
+      cursor.style.top  = e.clientY + 'px';
     });
-    document.querySelectorAll('a').forEach(el => {
+    document.querySelectorAll('a, button').forEach(el => {
       el.addEventListener('mouseenter', () => cursor.classList.add('hover'));
       el.addEventListener('mouseleave', () => cursor.classList.remove('hover'));
+    });
+
+    /* ── Invert button ──────────────────────────────────────── */
+    document.getElementById('btn-invert').addEventListener('click', UITheme.toggleTheme);
+
+    /* ── Preview cross-fade ─────────────────────────────────── */
+    const layerA  = document.getElementById('preview-a');
+    const layerB  = document.getElementById('preview-b');
+    const overlay = document.getElementById('preview-overlay');
+    const rows    = document.querySelectorAll('.row');
+
+    let front    = layerA;   // currently visible layer
+    let back     = layerB;   // hidden layer (will be shown next)
+    let isActive = false;
+    let imgCache = {};       // { src: true } — tracks loaded images
+
+    function applyVisual(layer, color, src) {
+      layer.style.background = color;
+      layer.style.backgroundSize  = 'cover';
+      layer.style.backgroundPosition = 'center';
+
+      if (src && !imgCache[src]) {
+        const img = new Image();
+        img.onload = () => {
+          imgCache[src] = true;
+          // Apply only if this layer is still the front one
+          if (layer === front) {
+            layer.style.backgroundImage = `url(${src})`;
+          }
+        };
+        img.src = src;
+      } else if (src && imgCache[src]) {
+        layer.style.backgroundImage = `url(${src})`;
+      } else {
+        layer.style.backgroundImage = 'none';
+      }
+    }
+
+    rows.forEach(row => {
+      row.addEventListener('mouseenter', () => {
+        const color = row.dataset.color || '#1a1a1a';
+        const src   = row.dataset.preview || '';
+
+        if (!isActive) {
+          // First hover: bring front layer in
+          applyVisual(front, color, src);
+          front.classList.add('active');
+          overlay.classList.add('active');
+          isActive = true;
+        } else {
+          // Already active: cross-fade to back layer
+          // 1. Instantly snap back layer to initial state (no transition)
+          back.style.transition = 'none';
+          back.style.transform  = 'scale(1.05)';
+          back.style.opacity    = '0';
+          void back.getBoundingClientRect(); // commit inline values
+
+          // 2. Clear inline overrides so CSS class can take control, re-enable transition
+          back.style.transition = '';
+          back.style.opacity    = '';   // CSS default: opacity:0
+          back.style.transform  = '';   // CSS default: scale(1.05)
+          void back.getBoundingClientRect(); // commit CSS-default state
+
+          // 3. Set content and animate in
+          applyVisual(back, color, src);
+          back.classList.add('active');    // CSS transition: opacity:0→1, scale:1.05→1
+          front.classList.remove('active');
+
+          // Swap roles
+          [front, back] = [back, front];
+        }
+      });
+
+      row.addEventListener('mouseleave', () => {
+        // Small delay so moving between rows doesn't flicker
+        setTimeout(() => {
+          const hovered = document.querySelector('.row:hover');
+          if (!hovered) {
+            front.classList.remove('active');
+            back.classList.remove('active');
+            overlay.classList.remove('active');
+            isActive = false;
+          }
+        }, 60);
+      });
     });
   </script>
 
