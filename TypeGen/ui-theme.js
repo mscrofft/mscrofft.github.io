@@ -8,14 +8,14 @@
   const KEY = 'ui-theme';
 
   function setTheme(name) {
-    if (name !== 'dark' && name !== 'light') name = 'dark';
+    if (name !== 'dark' && name !== 'light') name = 'light';
     document.body.setAttribute('data-theme', name);
     try { localStorage.setItem(KEY, name); } catch (e) {}
     document.dispatchEvent(new CustomEvent('ui-theme-change', { detail: { theme: name } }));
   }
 
   function getTheme() {
-    return document.body.getAttribute('data-theme') || 'dark';
+    return document.body.getAttribute('data-theme') || 'light';
   }
 
   function toggleTheme() {
@@ -52,7 +52,7 @@
   function initFromStorage() {
     let stored = null;
     try { stored = localStorage.getItem(KEY); } catch (e) {}
-    setTheme(stored === 'light' ? 'light' : 'dark');
+    setTheme(stored === 'dark' ? 'dark' : 'light');
   }
 
   // auto-init
