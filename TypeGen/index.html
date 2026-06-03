@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+<meta charset="utf-8" />
+<title>TypeGen — Editor de Fontes</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="stylesheet" href="../shared/ui-theme.css" />
+<style>
+  html, body { margin: 0; padding: 0; height: 100%; font-family: 'IBM Plex Mono', ui-monospace, monospace; background: var(--ui-bg, #111); color: var(--ui-fg, #eee); }
+  body[data-theme="light"] { background: #f4f4f4; color: #111; }
+  .app { display: grid; grid-template-columns: 280px 1fr 240px; grid-template-rows: 48px 1fr 130px 56px; height: 100vh; gap: 1px; background: var(--ui-border, #333); }
+  header, footer { background: var(--ui-bg, #111); display: flex; align-items: center; padding: 0 16px; gap: 12px; }
+  header { grid-column: 1 / 4; font-size: 13px; }
+  footer { grid-column: 1 / 4; justify-content: flex-end; }
+  .strip { grid-column: 1 / 4; background: var(--ui-bg, #111); display: flex; flex-direction: column; padding: 8px 16px; gap: 6px; }
+  body[data-theme="light"] .strip { background: #fff; }
+  .strip-head { display: flex; align-items: center; gap: 10px; font-size: 11px; opacity: .75; }
+  .strip-head input { flex: 1; background: transparent; color: inherit; border: 1px solid var(--ui-border, #333); padding: 4px 8px; font: inherit; font-size: 13px; }
+  .strip-canvas { flex: 1; min-height: 0; position: relative; }
+  .strip-canvas canvas { display: block; }
+  aside.left, aside.right { background: var(--ui-bg, #111); overflow-y: auto; padding: 12px; font-size: 12px; }
+  main.preview { background: var(--ui-bg, #111); display: flex; align-items: center; justify-content: center; overflow: hidden; }
+  body[data-theme="light"] .app > * { background: #fff; }
+  body[data-theme="light"] .app { background: #ddd; }
+  h2 { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; margin: 14px 0 6px; opacity: .7; }
+  h2:first-child { margin-top: 0; }
+  .row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 4px 0; }
+  .row label { flex: 1; opacity: .8; }
+  .row input[type="range"] { flex: 1; }
+  .row input[type="number"] { width: 56px; background: transparent; color: inherit; border: 1px solid var(--ui-border, #333); padding: 2px 4px; font-family: inherit; font-size: 11px; }
+  .row select, .row button { background: transparent; color: inherit; border: 1px solid var(--ui-border, #333); padding: 4px 8px; font-family: inherit; font-size: 11px; cursor: pointer; }
+  .row button:hover { background: var(--ui-border, #333); }
+  .glyph-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
+  .glyph-cell { position: relative; aspect-ratio: 1; border: 1px solid var(--ui-border, #333); display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 16px; user-select: none; }
+  .glyph-cell--edited::after { content: ''; position: absolute; right: 3px; bottom: 3px; width: 4px; height: 4px; border-radius: 50%; background: var(--ui-accent, #fff); }
+  .glyph-cell.active.glyph-cell--edited::after { background: var(--ui-bg, #111); }
+  .glyph-cell.active { background: var(--ui-fg, #eee); color: var(--ui-bg, #111); }
+  .glyph-cell:hover { border-color: var(--ui-fg, #eee); }
+  .tabs { display: flex; gap: 0; margin: -12px -12px 12px; border-bottom: 1px solid var(--ui-border, #333); position: sticky; top: -12px; background: var(--ui-bg, #111); z-index: 2; }
+  body[data-theme="light"] .tabs { background: #fff; }
+  .tab { flex: 1; padding: 10px 8px; background: transparent; color: inherit; border: none; border-right: 1px solid var(--ui-border, #333); font: inherit; font-size: 11px; cursor: pointer; text-transform: uppercase; letter-spacing: .06em; opacity: .55; }
+  .tab:last-child { border-right: none; }
+  .tab:hover { opacity: .85; }
+  .tab--active { opacity: 1; background: var(--ui-border, #2a2a2a); }
+  body[data-theme="light"] .tab--active { background: #eee; }
+  section[data-mode] { display: block; }
+  section[data-mode].hidden { display: none; }
+  .src-info { font-size: 11px; line-height: 1.5; opacity: .75; padding: 8px 0; }
+  .src-info b { font-weight: 700; }
+  .spacer { flex: 1; }
+  .ui-invert-btn { background: transparent; color: inherit; border: 1px solid var(--ui-border, #333); padding: 4px 10px; font-family: inherit; font-size: 11px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+  .ui-invert-btn svg { width: 12px; height: 12px; fill: currentColor; }
+</style>
+</head>
+<body data-theme="dark">
+<div class="app">
+  <header>
+    <strong>TypeGen</strong>
+    <span style="opacity:.6">esqueleto + efeitos vetoriais</span>
+    <div class="spacer"></div>
+    <span id="preset-label" style="opacity:.7"></span>
+    <span id="source-label" style="opacity:.6"></span>
+    <input type="file" id="font-file" accept=".ttf,.otf,application/font-sfnt" style="display:none" />
+    <button id="reset-btn" type="button">Reset</button>
+    <span id="theme-slot"></span>
+  </header>
+
+  <aside class="left">
+    <nav class="tabs">
+      <button class="tab" data-tab="effects" type="button">Efeitos</button>
+      <button class="tab" data-tab="skeleton" type="button">Esqueleto</button>
+      <button class="tab" data-tab="import" type="button">Importar</button>
+    </nav>
+
+    <!-- ============ EFEITOS ============ -->
+    <section data-mode="effects">
+      <h2>Modo</h2>
+      <div class="row">
+        <label for="mode-sel">Mode</label>
+        <select id="mode-sel"><option value="stroke">Stroke</option><option value="path">Path</option></select>
+      </div>
+
+      <h2>Stroke</h2>
+      <div class="row"><label for="stroke-w">Espessura</label><input type="range" id="stroke-w" min="2" max="120" step="1" value="40" /><input type="number" id="stroke-w-n" min="2" max="120" step="1" value="40" /></div>
+      <div class="row"><label for="stroke-cap">Cap</label><select id="stroke-cap"><option>butt</option><option selected>round</option><option>square</option></select></div>
+      <div class="row"><label for="stroke-join">Join</label><select id="stroke-join"><option>miter</option><option selected>round</option><option>bevel</option></select></div>
+
+      <h2>Efeito</h2>
+      <div class="row"><label for="fx-sel">Tipo</label><select id="fx-sel"><option value="halftone" selected>Halftone</option><option value="hatching">Hatching</option><option value="halftone+halftone-cross">Cross halftone</option></select></div>
+
+      <h2>Halftone</h2>
+      <div class="row"><label for="ht-shape">Shape</label><select id="ht-shape"><option value="dots" selected>dots</option><option value="lines">lines</option></select></div>
+      <div class="row"><label for="ht-spacing">Spacing</label><input type="range" id="ht-spacing" min="6" max="120" step="1" value="32" /><input type="number" id="ht-spacing-n" min="6" max="120" step="1" value="32" /></div>
+      <div class="row"><label for="ht-angle">Angle°</label><input type="range" id="ht-angle" min="0" max="180" step="1" value="45" /><input type="number" id="ht-angle-n" min="0" max="180" step="1" value="45" /></div>
+      <div class="row"><label for="ht-size">Dot/Line size</label><input type="range" id="ht-size" min="2" max="100" step="1" value="22" /><input type="number" id="ht-size-n" min="2" max="100" step="1" value="22" /></div>
+      <div class="row"><label for="ht-gamma">Gamma</label><input type="range" id="ht-gamma" min="0.2" max="3" step="0.05" value="1" /><input type="number" id="ht-gamma-n" min="0.2" max="3" step="0.05" value="1" /></div>
+
+      <h2>Presets</h2>
+      <div class="row">
+        <select id="preset-sel" style="flex:1"></select>
+      </div>
+      <div class="row">
+        <input type="text" id="preset-name" placeholder="nome do preset" style="flex:1; background:transparent; color:inherit; border:1px solid var(--ui-border,#333); padding:4px 6px; font:inherit; font-size:11px;" />
+        <button id="preset-save" type="button">Save</button>
+      </div>
+      <div class="row">
+        <button id="preset-export" type="button">Export JSON</button>
+        <button id="preset-import" type="button">Import JSON</button>
+      </div>
+    </section>
+
+    <!-- ============ ESQUELETO ============ -->
+    <section data-mode="skeleton">
+      <h2>Edição</h2>
+      <div class="row"><label for="show-skel">Show skeleton</label><input type="checkbox" id="show-skel" /></div>
+      <div class="row"><label for="edit-skel">Editar glyph</label><input type="checkbox" id="edit-skel" /></div>
+      <div class="row"><label for="tool-sel">Ferramenta</label><select id="tool-sel"><option value="line" selected>Linha</option><option value="arc">Arc (3 pts)</option><option value="bezier">Bézier</option></select></div>
+      <div class="row"><label for="snap-sel">Snap</label><select id="snap-sel"><option value="0.25">0.25</option><option value="0.5" selected>0.5</option><option value="1">1</option></select></div>
+      <div class="row">
+        <button id="glyph-reset" type="button">Reset glyph</button>
+        <button id="glyph-clear" type="button">Limpar</button>
+      </div>
+      <div class="row">
+        <button id="glyph-mirror-h" type="button">Espelhar H</button>
+        <button id="glyph-mirror-v" type="button">Espelhar V</button>
+      </div>
+      <h2>Métrica do glyph</h2>
+      <div class="row"><label for="adv-w">Advance</label><input type="range" id="adv-w" min="200" max="1500" step="10" value="760" /><input type="number" id="adv-w-n" min="200" max="1500" step="10" value="760" /></div>
+      <div class="row"><button id="adv-reset" type="button">Reset advance</button></div>
+      <div class="row" style="opacity:.6;font-size:10px;line-height:1.4;display:block;">
+        Linha: arraste em área vazia. Arc: 3 cliques (início, meio, fim). ESC cancela/desseleciona. Clique numa primitiva para selecionar; Delete/Backspace remove. Shift+clique apaga direto. Arraste handles para mover. Espelhar H/V duplica primitivas pelo eixo central.
+      </div>
+    </section>
+
+    <!-- ============ IMPORTAR ============ -->
+    <section data-mode="import">
+      <h2>Fonte</h2>
+      <div class="row">
+        <button id="load-font-btn" type="button" style="flex:1">Carregar .ttf/.otf</button>
+      </div>
+      <div class="row">
+        <button id="use-builtin-btn" type="button" style="flex:1">Voltar ao built-in</button>
+      </div>
+      <div class="src-info" id="src-info">Usando o esqueleto built-in.</div>
+
+      <h2>Edição de âncoras</h2>
+      <div class="row"><label for="show-skel-import">Show outline</label><input type="checkbox" id="show-skel-import" /></div>
+      <div class="row"><label for="edit-skel-import">Editar âncoras</label><input type="checkbox" id="edit-skel-import" /></div>
+      <div class="row">
+        <button id="glyph-reset-import" type="button">Reset glyph</button>
+      </div>
+      <div class="row" style="opacity:.6;font-size:10px;line-height:1.4;display:block;">
+        Arraste âncoras (quadrados) e control points (círculos). Reset volta ao contorno original da fonte.
+      </div>
+
+      <h2>Esqueleto (.tgsk.json)</h2>
+      <div class="row">
+        <button id="tgsk-export" type="button" style="flex:1">Exportar esqueleto</button>
+      </div>
+      <div class="row">
+        <button id="tgsk-import" type="button" style="flex:1">Importar esqueleto</button>
+        <input type="file" id="tgsk-file" accept=".json,application/json" style="display:none" />
+      </div>
+      <div class="row" style="opacity:.6;font-size:10px;line-height:1.4;display:block;">
+        Salva/carrega todo o desenho do esqueleto (e opcionalmente presets) como JSON.
+      </div>
+
+      <h2>SVG (Illustrator/Inkscape)</h2>
+      <div class="row">
+        <button id="svg-import" type="button" style="flex:1">Importar SVG…</button>
+        <input type="file" id="svg-file" accept=".svg,image/svg+xml" multiple style="display:none" />
+      </div>
+      <div class="row" style="opacity:.6;font-size:10px;line-height:1.4;display:block;">
+        Selecione 1 ou mais SVGs (1 por glyph). O nome do arquivo define o caractere — ex.: <code>A.svg</code>, <code>Glyph_period.svg</code>, <code>aacute.svg</code>. Veja <code>templates/README.md</code>.
+      </div>
+    </section>
+  </aside>
+
+  <main class="preview" id="preview"></main>
+
+  <aside class="right">
+    <h2>Glyphs</h2>
+    <div class="glyph-grid" id="glyph-grid"></div>
+  </aside>
+
+  <div class="strip">
+    <div class="strip-head">
+      <label for="strip-text">Preview:</label>
+      <input type="text" id="strip-text" value="Halftone TypeGen" maxlength="120" />
+    </div>
+    <div class="strip-canvas" id="strip-canvas"></div>
+  </div>
+
+  <footer>
+    <button id="export-svg" type="button">Export SVG (glyph)</button>
+    <button id="export-font" type="button">Export Font (.otf)</button>
+  </footer>
+</div>
+
+<script src="lib/opentype.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/p5@1.9.4/lib/p5.min.js"></script>
+<script src="ui-theme.js"></script>
+<script src="src/skeleton/grid.js"></script>
+<script src="src/skeleton/primitives.js"></script>
+<script src="src/skeleton/accents.js"></script>
+<script src="src/skeleton/agl.js"></script>
+<script src="src/skeleton/alphabet.js"></script>
+<script src="src/font/fontSource.js"></script>
+<script src="src/skeleton/overrides.js"></script>
+<script src="src/skeleton/svgImport.js"></script>
+<script src="src/skeleton/skeletonIO.js"></script>
+<script src="src/stroke/strokeToShape.js"></script>
+<script src="src/stroke/sampleAlongPath.js"></script>
+<script src="src/effects/index.js"></script>
+<script src="src/effects/halftone.js"></script>
+<script src="src/effects/hatching.js"></script>
+<script src="src/presets.js"></script>
+<script src="src/exportSVG.js"></script>
+<script src="src/exportFont.js"></script>
+<script src="sketch.js"></script>
+</body>
+</html>
