@@ -18,16 +18,17 @@
   .strip-head input { flex: 1; background: transparent; color: inherit; border: 1px solid var(--ui-border, #333); padding: 4px 8px; font: inherit; font-size: 13px; }
   .strip-canvas { flex: 1; min-height: 0; position: relative; }
   .strip-canvas canvas { display: block; }
-  aside.left, aside.right { background: var(--ui-bg, #111); overflow-y: auto; padding: 12px; font-size: 12px; }
+  aside.left, aside.right { background: var(--ui-bg, #111); overflow-y: auto; overflow-x: hidden; padding: 12px; font-size: 12px; }
   main.preview { background: var(--ui-bg, #111); display: flex; align-items: center; justify-content: center; overflow: hidden; }
   body[data-theme="light"] .app > * { background: #fff; }
   body[data-theme="light"] .app { background: #ddd; }
   h2 { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; margin: 14px 0 6px; opacity: .7; }
   h2:first-child { margin-top: 0; }
-  .row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 4px 0; }
-  .row label { flex: 1; opacity: .8; }
-  .row input[type="range"] { flex: 1; }
-  .row input[type="number"] { width: 56px; background: transparent; color: inherit; border: 1px solid var(--ui-border, #333); padding: 2px 4px; font-family: inherit; font-size: 11px; }
+  .row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 4px 0; min-width: 0; }
+  .row > * { min-width: 0; }
+  .row label { flex: 1 1 0; opacity: .8; overflow: hidden; text-overflow: ellipsis; }
+  .row input[type="range"] { flex: 1 1 0; min-width: 0; }
+  .row input[type="number"] { width: 50px; flex: 0 0 50px; background: transparent; color: inherit; border: 1px solid var(--ui-border, #333); padding: 2px 4px; font-family: inherit; font-size: 11px; }
   .row select, .row button { background: transparent; color: inherit; border: 1px solid var(--ui-border, #333); padding: 4px 8px; font-family: inherit; font-size: 11px; cursor: pointer; }
   .row button:hover { background: var(--ui-border, #333); }
   .glyph-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
@@ -52,7 +53,7 @@
   .ui-invert-btn svg { width: 12px; height: 12px; fill: currentColor; }
 </style>
 </head>
-<body data-theme="dark">
+<body data-theme="light">
 <div class="app">
   <header>
     <strong>TypeGen</strong>
