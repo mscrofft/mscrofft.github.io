@@ -591,32 +591,87 @@ const App = {
       document.getElementById('modal-crop-resize').classList.add('hidden');
     });
 
-    // ===== Drag/resize da imagem (modo edit) e do crop rect =====
-    let drag = null; // { kind: 'move'|'resize-image'|'crop-move'|'crop-resize', handle?, startX, startY, orig }
+    // ===== Drag/resize/pinch da imagem (modo edit) e do crop rect =====
+    const pointers = new Map(); // pointerId → { clientX, clientY }
+    let drag = null;   // single-pointer: { kind, handle?, startX, startY, orig }
+    let pinch = null;  // two-pointer: { startDist, startMid, startTransform, anchorLocal }
+
+    const distance = (a, b) => Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+    const midpoint = (a, b) => ({ x: (a.clientX + b.clientX) / 2, y: (a.clientY + b.clientY) / 2 });
+
+    const startPinch = () => {
+      const [p1, p2] = Array.from(pointers.values());
+      const mid = midpoint(p1, p2);
+      const containerRect = container.getBoundingClientRect();
+      pinch = {
+        startDist: distance(p1, p2),
+        startMid: mid,
+        startTransform: { ...Overlay.transform },
+        // posição (0..1) do ponto de pinça relativo à imagem — fica fixo durante o pinch
+        anchorLocal: {
+          fx: (mid.x - containerRect.left) / containerRect.width,
+          fy: (mid.y - containerRect.top) / containerRect.height
+        }
+      };
+    };
 
     const onDown = e => {
       if (!Overlay.image) return;
+      // Registra pointer
+      pointers.set(e.pointerId, { clientX: e.clientX, clientY: e.clientY });
+
+      // 2+ pointers → entra em pinch (cancela drag em andamento)
+      if (pointers.size >= 2) {
+        drag = null;
+        startPinch();
+        e.preventDefault();
+        e.stopPropagation();
+        return;
+      }
+
       const inCropMode = Overlay.mode === 'crop';
       const target = e.target;
-      // Handles do crop rect (verificar ANTES porque é child do container)
       if (inCropMode && target.classList.contains('crop-handle')) {
         drag = { kind: 'crop-resize', handle: target.dataset.h, startX: e.clientX, startY: e.clientY, orig: { ...Overlay.cropRect } };
       } else if (inCropMode && (target === cropEl || cropEl.contains(target))) {
         drag = { kind: 'crop-move', startX: e.clientX, startY: e.clientY, orig: { ...Overlay.cropRect } };
-      }
-      // Handles da imagem (resize)
-      else if (Overlay.mode === 'edit' && target.classList.contains('overlay-handle') && !target.classList.contains('crop-handle')) {
+      } else if (Overlay.mode === 'edit' && target.classList.contains('overlay-handle') && !target.classList.contains('crop-handle')) {
         drag = { kind: 'resize-image', handle: target.dataset.h, startX: e.clientX, startY: e.clientY, orig: { ...Overlay.transform } };
-      }
-      // Imagem (move) — só no modo edit
-      else if (Overlay.mode === 'edit' && (target === imgEl)) {
+      } else if (Overlay.mode === 'edit' && target === imgEl) {
         drag = { kind: 'move', startX: e.clientX, startY: e.clientY, orig: { ...Overlay.transform } };
-      } else return;
+      } else {
+        pointers.delete(e.pointerId);
+        return;
+      }
       e.preventDefault();
       e.stopPropagation();
     };
 
     const onMove = e => {
+      if (!pointers.has(e.pointerId)) return;
+      pointers.set(e.pointerId, { clientX: e.clientX, clientY: e.clientY });
+
+      // Pinch: prioridade quando há 2+ pointers
+      if (pinch && pointers.size >= 2) {
+        const ptrs = Array.from(pointers.values()).slice(0, 2);
+        const newDist = distance(ptrs[0], ptrs[1]);
+        const newMid = midpoint(ptrs[0], ptrs[1]);
+        const scale = Math.max(0.1, Math.min(8, newDist / pinch.startDist));
+        const newW = Math.max(30, pinch.startTransform.width * scale);
+        const newH = Math.max(30, pinch.startTransform.height * scale);
+        // Mantém o ponto de pinça (anchorLocal) fixo sob os dedos
+        const newX = newMid.x - newW * pinch.anchorLocal.fx - container.parentNode.getBoundingClientRect().left;
+        const newY = newMid.y - newH * pinch.anchorLocal.fy - container.parentNode.getBoundingClientRect().top;
+        // Ajuste considerando scroll da canvas-area
+        const area = container.parentNode;
+        Overlay.transform.x = newX + area.scrollLeft;
+        Overlay.transform.y = newY + area.scrollTop;
+        Overlay.transform.width = newW;
+        Overlay.transform.height = newH;
+        Overlay.applyTransform();
+        return;
+      }
+
       if (!drag) return;
       const dx = e.clientX - drag.startX;
       const dy = e.clientY - drag.startY;
@@ -625,22 +680,18 @@ const App = {
         Overlay.transform.y = drag.orig.y + dy;
         Overlay.applyTransform();
       } else if (drag.kind === 'resize-image') {
-        const aspect = drag.orig.width / drag.orig.height;
         let w = drag.orig.width, h = drag.orig.height;
         let x = drag.orig.x, y = drag.orig.y;
         const h_ = drag.handle;
-        // Mantém proporção: usa o dx ou dy maior em magnitude relativa
         if (h_.includes('e')) w = drag.orig.width + dx;
-        if (h_.includes('w')) { w = drag.orig.width - dx; }
+        if (h_.includes('w')) w = drag.orig.width - dx;
         if (h_.includes('s')) h = drag.orig.height + dy;
-        if (h_.includes('n')) { h = drag.orig.height - dy; }
-        // Lock aspect: ajusta o eixo menor pra bater
+        if (h_.includes('n')) h = drag.orig.height - dy;
         const wRatio = w / drag.orig.width;
         const hRatio = h / drag.orig.height;
         const ratio = Math.max(wRatio, hRatio);
         w = Math.max(30, drag.orig.width * ratio);
         h = Math.max(30, drag.orig.height * ratio);
-        // Reposiciona âncora se arrastar do nw/sw/ne
         if (h_.includes('w')) x = drag.orig.x + drag.orig.width - w;
         if (h_.includes('n')) y = drag.orig.y + drag.orig.height - h;
         Overlay.transform = { x, y, width: w, height: h };
@@ -665,7 +716,11 @@ const App = {
       }
     };
 
-    const onUp = () => { drag = null; };
+    const onUp = e => {
+      pointers.delete(e.pointerId);
+      if (pointers.size < 2) pinch = null;
+      if (pointers.size === 0) drag = null;
+    };
 
     container.addEventListener('pointerdown', onDown);
     window.addEventListener('pointermove', onMove);
