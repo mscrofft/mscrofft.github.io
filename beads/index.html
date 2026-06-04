@@ -88,6 +88,22 @@
     <hr/>
     <button id="btn-clear" data-i18n="clear">Limpar</button>
     <hr/>
+    <label data-i18n="reference">Imagem de referência</label>
+    <button id="btn-overlay-import">Importar imagem...</button>
+    <div id="overlay-controls" class="hidden">
+      <label data-i18n="opacity" style="margin-top:6px">Opacidade</label>
+      <input type="range" id="overlay-opacity" min="0" max="100" value="50" />
+      <div class="overlay-actions">
+        <button id="btn-overlay-edit" title="Editar">📐</button>
+        <button id="btn-overlay-crop" title="Crop">✂️</button>
+        <button id="btn-overlay-remove" title="Remover">✕</button>
+      </div>
+      <div id="overlay-crop-actions" class="hidden">
+        <button id="btn-crop-apply" data-i18n="applyCrop">Aplicar</button>
+        <button id="btn-crop-cancel" data-i18n="cancel">Cancelar</button>
+      </div>
+    </div>
+    <hr/>
     <label data-i18n="presetLabel">Preset</label>
     <select id="preset-select">
       <option value="" data-i18n="presetNone">— escolher —</option>
@@ -109,6 +125,19 @@
 
   <section class="canvas-area">
     <canvas id="grid-canvas"></canvas>
+    <div id="overlay-container" class="overlay-hidden">
+      <img id="overlay-img" alt="" draggable="false" />
+      <div class="overlay-handle" data-h="nw"></div>
+      <div class="overlay-handle" data-h="ne"></div>
+      <div class="overlay-handle" data-h="se"></div>
+      <div class="overlay-handle" data-h="sw"></div>
+      <div id="overlay-crop-rect" class="hidden">
+        <div class="overlay-handle crop-handle" data-h="nw"></div>
+        <div class="overlay-handle crop-handle" data-h="ne"></div>
+        <div class="overlay-handle crop-handle" data-h="se"></div>
+        <div class="overlay-handle crop-handle" data-h="sw"></div>
+      </div>
+    </div>
   </section>
 
   <aside class="palette-panel">
@@ -245,6 +274,22 @@
 </div>
 
 <input type="file" id="json-file-input" accept="application/json" style="display:none" />
+<input type="file" id="overlay-file-input" accept="image/*" style="display:none" />
+
+<!-- Modal: adapta grid ao crop -->
+<div class="modal hidden" id="modal-crop-resize">
+  <div class="modal-content">
+    <h3 data-i18n="cropResizeTitle">Adaptar grid à imagem cortada</h3>
+    <label data-i18n="width">Largura (miçangas):</label>
+    <input type="number" id="crop-resize-width" min="2" max="300" />
+    <label data-i18n="height">Altura (linhas):</label>
+    <input type="number" id="crop-resize-height" min="2" max="500" />
+    <div class="modal-actions">
+      <button id="btn-crop-resize-cancel" data-i18n="cancel">Cancelar</button>
+      <button id="btn-crop-resize-apply" data-i18n="apply">Aplicar</button>
+    </div>
+  </div>
+</div>
 
 <script src="js/i18n.js" defer></script>
 <script src="data/palettes.js" defer></script>
@@ -256,6 +301,7 @@
 <script src="js/tools.js" defer></script>
 <script src="js/image-import.js" defer></script>
 <script src="js/sequencer.js" defer></script>
+<script src="js/overlay.js" defer></script>
 <script src="js/presets.js" defer></script>
 <script src="js/config.js" defer></script>
 <script src="js/cloud.js" defer></script>

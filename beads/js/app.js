@@ -327,6 +327,9 @@ const App = {
       Grid.applyPreset(name, params);
     });
 
+    // ============ Overlay de imagem de referência ============
+    this.bindOverlay();
+
     // Drawers mobile
     const backdrop = document.getElementById('drawer-backdrop');
     const toolsPanel = document.querySelector('.tools-panel');
@@ -521,6 +524,153 @@ const App = {
       };
       reader.readAsText(f);
     });
+  },
+
+  bindOverlay() {
+    const fileIn = document.getElementById('overlay-file-input');
+    const importBtn = document.getElementById('btn-overlay-import');
+    const container = document.getElementById('overlay-container');
+    const imgEl = document.getElementById('overlay-img');
+    const cropEl = document.getElementById('overlay-crop-rect');
+
+    importBtn.addEventListener('click', () => fileIn.click());
+    fileIn.addEventListener('change', e => {
+      const f = e.target.files[0]; if (!f) return;
+      Overlay.load(f);
+      fileIn.value = ''; // permite re-importar o mesmo arquivo
+    });
+
+    document.getElementById('overlay-opacity').addEventListener('input', e => {
+      Overlay.setOpacity(e.target.value / 100);
+    });
+
+    document.getElementById('btn-overlay-edit').addEventListener('click', () => {
+      Overlay.setMode(Overlay.mode === 'edit' ? 'view' : 'edit');
+    });
+    document.getElementById('btn-overlay-crop').addEventListener('click', () => {
+      if (Overlay.mode === 'crop') Overlay.cancelCrop();
+      else Overlay.startCrop();
+    });
+    document.getElementById('btn-overlay-remove').addEventListener('click', () => {
+      if (confirm('Remover imagem de referência?')) Overlay.clear();
+    });
+
+    document.getElementById('btn-crop-cancel').addEventListener('click', () => Overlay.cancelCrop());
+    document.getElementById('btn-crop-apply').addEventListener('click', async () => {
+      const result = await Overlay.applyCrop();
+      if (!result) return;
+      // Sugere novas dimensões com base na proporção do crop
+      const cellW = Stitches[Grid.stitch](0, 0).w;
+      const cellH = Stitches[Grid.stitch](0, 0).h;
+      const cellAspect = cellW / cellH;
+      const targetRatio = result.aspect / cellAspect;
+      const newCols = Grid.cols;
+      const newRows = Math.max(2, Math.round(newCols / targetRatio));
+      document.getElementById('crop-resize-width').value = newCols;
+      document.getElementById('crop-resize-height').value = newRows;
+      document.getElementById('modal-crop-resize').classList.remove('hidden');
+    });
+    document.getElementById('btn-crop-resize-cancel').addEventListener('click', () => {
+      document.getElementById('modal-crop-resize').classList.add('hidden');
+    });
+    document.getElementById('btn-crop-resize-apply').addEventListener('click', () => {
+      const w = parseInt(document.getElementById('crop-resize-width').value, 10);
+      const h = parseInt(document.getElementById('crop-resize-height').value, 10);
+      if (w >= 2 && h >= 2) {
+        Grid.newPattern(Grid.stitch, w, h);
+        // Reposiciona overlay encostado no grid
+        const area = document.querySelector('.canvas-area');
+        Overlay.transform.x = area.scrollLeft + 20;
+        Overlay.transform.y = area.scrollTop + 20;
+        // Tamanho proporcional ao grid renderizado (deixar a imagem cobrindo o grid)
+        const gridCanvas = document.getElementById('grid-canvas');
+        Overlay.transform.width = gridCanvas.width;
+        Overlay.transform.height = gridCanvas.height;
+        Overlay.applyTransform();
+      }
+      document.getElementById('modal-crop-resize').classList.add('hidden');
+    });
+
+    // ===== Drag/resize da imagem (modo edit) e do crop rect =====
+    let drag = null; // { kind: 'move'|'resize-image'|'crop-move'|'crop-resize', handle?, startX, startY, orig }
+
+    const onDown = e => {
+      if (!Overlay.image) return;
+      const inCropMode = Overlay.mode === 'crop';
+      const target = e.target;
+      // Handles do crop rect (verificar ANTES porque é child do container)
+      if (inCropMode && target.classList.contains('crop-handle')) {
+        drag = { kind: 'crop-resize', handle: target.dataset.h, startX: e.clientX, startY: e.clientY, orig: { ...Overlay.cropRect } };
+      } else if (inCropMode && (target === cropEl || cropEl.contains(target))) {
+        drag = { kind: 'crop-move', startX: e.clientX, startY: e.clientY, orig: { ...Overlay.cropRect } };
+      }
+      // Handles da imagem (resize)
+      else if (Overlay.mode === 'edit' && target.classList.contains('overlay-handle') && !target.classList.contains('crop-handle')) {
+        drag = { kind: 'resize-image', handle: target.dataset.h, startX: e.clientX, startY: e.clientY, orig: { ...Overlay.transform } };
+      }
+      // Imagem (move) — só no modo edit
+      else if (Overlay.mode === 'edit' && (target === imgEl)) {
+        drag = { kind: 'move', startX: e.clientX, startY: e.clientY, orig: { ...Overlay.transform } };
+      } else return;
+      e.preventDefault();
+      e.stopPropagation();
+    };
+
+    const onMove = e => {
+      if (!drag) return;
+      const dx = e.clientX - drag.startX;
+      const dy = e.clientY - drag.startY;
+      if (drag.kind === 'move') {
+        Overlay.transform.x = drag.orig.x + dx;
+        Overlay.transform.y = drag.orig.y + dy;
+        Overlay.applyTransform();
+      } else if (drag.kind === 'resize-image') {
+        const aspect = drag.orig.width / drag.orig.height;
+        let w = drag.orig.width, h = drag.orig.height;
+        let x = drag.orig.x, y = drag.orig.y;
+        const h_ = drag.handle;
+        // Mantém proporção: usa o dx ou dy maior em magnitude relativa
+        if (h_.includes('e')) w = drag.orig.width + dx;
+        if (h_.includes('w')) { w = drag.orig.width - dx; }
+        if (h_.includes('s')) h = drag.orig.height + dy;
+        if (h_.includes('n')) { h = drag.orig.height - dy; }
+        // Lock aspect: ajusta o eixo menor pra bater
+        const wRatio = w / drag.orig.width;
+        const hRatio = h / drag.orig.height;
+        const ratio = Math.max(wRatio, hRatio);
+        w = Math.max(30, drag.orig.width * ratio);
+        h = Math.max(30, drag.orig.height * ratio);
+        // Reposiciona âncora se arrastar do nw/sw/ne
+        if (h_.includes('w')) x = drag.orig.x + drag.orig.width - w;
+        if (h_.includes('n')) y = drag.orig.y + drag.orig.height - h;
+        Overlay.transform = { x, y, width: w, height: h };
+        Overlay.applyTransform();
+      } else if (drag.kind === 'crop-move') {
+        const newX = Math.max(0, Math.min(Overlay.transform.width - drag.orig.w, drag.orig.x + dx));
+        const newY = Math.max(0, Math.min(Overlay.transform.height - drag.orig.h, drag.orig.y + dy));
+        Overlay.cropRect = { x: newX, y: newY, w: drag.orig.w, h: drag.orig.h };
+        Overlay.renderCropRect();
+      } else if (drag.kind === 'crop-resize') {
+        let { x, y, w, h } = drag.orig;
+        const h_ = drag.handle;
+        if (h_.includes('e')) w = drag.orig.w + dx;
+        if (h_.includes('w')) { x = drag.orig.x + dx; w = drag.orig.w - dx; }
+        if (h_.includes('s')) h = drag.orig.h + dy;
+        if (h_.includes('n')) { y = drag.orig.y + dy; h = drag.orig.h - dy; }
+        w = Math.max(20, Math.min(Overlay.transform.width - x, w));
+        h = Math.max(20, Math.min(Overlay.transform.height - y, h));
+        x = Math.max(0, x); y = Math.max(0, y);
+        Overlay.cropRect = { x, y, w, h };
+        Overlay.renderCropRect();
+      }
+    };
+
+    const onUp = () => { drag = null; };
+
+    container.addEventListener('pointerdown', onDown);
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+    window.addEventListener('pointercancel', onUp);
   },
 
   autosaveLoop() {

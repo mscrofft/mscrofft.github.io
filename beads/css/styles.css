@@ -44,8 +44,55 @@ html, body { margin: 0; height: 100%; font-family: -apple-system, BlinkMacSystem
 
 .canvas-area {
   background: #15151a; overflow: auto; display: flex; align-items: flex-start; justify-content: flex-start;
-  padding: 20px;
+  padding: 20px; position: relative;
 }
+
+/* Overlay de imagem de referência */
+#overlay-container {
+  position: absolute; top: 0; left: 0;
+  pointer-events: none; z-index: 5;
+  box-sizing: border-box;
+}
+#overlay-img {
+  display: block; user-select: none;
+  width: 100%; height: 100%;
+  -webkit-user-drag: none;
+}
+#overlay-container.editing { pointer-events: auto; outline: 1px dashed #f7b955; }
+#overlay-container.editing #overlay-img { cursor: move; }
+#overlay-container.cropping { pointer-events: auto; outline: 1px dashed #f7b955; }
+.overlay-handle {
+  position: absolute; width: 14px; height: 14px;
+  background: #f7b955; border: 2px solid #000; box-sizing: border-box;
+  display: none; z-index: 10;
+}
+#overlay-container.editing > .overlay-handle { display: block; }
+#overlay-container > .overlay-handle[data-h="nw"] { top: -8px; left: -8px; cursor: nwse-resize; }
+#overlay-container > .overlay-handle[data-h="ne"] { top: -8px; right: -8px; cursor: nesw-resize; }
+#overlay-container > .overlay-handle[data-h="se"] { bottom: -8px; right: -8px; cursor: nwse-resize; }
+#overlay-container > .overlay-handle[data-h="sw"] { bottom: -8px; left: -8px; cursor: nesw-resize; }
+
+#overlay-crop-rect {
+  position: absolute; border: 2px dashed #f7b955;
+  background: rgba(247, 185, 85, 0.1); cursor: move; box-sizing: border-box;
+}
+#overlay-crop-rect.hidden { display: none; }
+#overlay-crop-rect .crop-handle { display: block; }
+#overlay-crop-rect .crop-handle[data-h="nw"] { top: -8px; left: -8px; cursor: nwse-resize; }
+#overlay-crop-rect .crop-handle[data-h="ne"] { top: -8px; right: -8px; cursor: nesw-resize; }
+#overlay-crop-rect .crop-handle[data-h="se"] { bottom: -8px; right: -8px; cursor: nwse-resize; }
+#overlay-crop-rect .crop-handle[data-h="sw"] { bottom: -8px; left: -8px; cursor: nesw-resize; }
+
+.overlay-hidden { display: none; }
+.overlay-actions, #overlay-crop-actions { display: flex; gap: 4px; margin-top: 4px; }
+.overlay-actions button, #overlay-crop-actions button {
+  flex: 1; padding: 6px 4px; background: #3a3a42; color: #eee;
+  border: 1px solid #555; border-radius: 4px; font-size: 13px; cursor: pointer;
+}
+.overlay-actions button:hover, #overlay-crop-actions button:hover { background: #4a4a55; }
+.overlay-actions button.active { background: #f7b955; color: #222; border-color: #f7b955; }
+#btn-overlay-import { width: 100%; padding: 6px; background: #3a3a42; color: #eee; border: 1px solid #555; border-radius: 4px; cursor: pointer; font-size: 12px; }
+#btn-overlay-import:hover { background: #4a4a55; }
 #grid-canvas { background: #fff; cursor: crosshair; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
 
 .palette-list {
