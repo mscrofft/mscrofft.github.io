@@ -327,6 +327,9 @@ const App = {
       Grid.applyPreset(name, params);
     });
 
+    // ============ Texto (tipografia) ============
+    this.bindTextTool();
+
     // ============ Overlay de imagem de referência ============
     this.bindOverlay();
 
@@ -389,6 +392,7 @@ const App = {
       }
       // Esc — cascade: paste mode → palette delete mode → selection
       if (e.key === 'Escape') {
+        if (TextTool.placeMode) { TextTool.cancelPlace(); return; }
         if (Clipboard.pasteMode) { Clipboard.cancelPaste(); return; }
         if (Palette.deleteMode) { Palette.exitDeleteMode(); return; }
         if (Selection.active) { Selection.clear(); return; }
@@ -523,6 +527,61 @@ const App = {
         } catch (err) { alert('Invalid file'); }
       };
       reader.readAsText(f);
+    });
+  },
+
+  bindTextTool() {
+    const modal = document.getElementById('modal-text');
+    const inputText = document.getElementById('text-input');
+    const fontSel = document.getElementById('text-font');
+    const heightIn = document.getElementById('text-height');
+    const heightVal = document.getElementById('text-height-val');
+    const bgToggle = document.getElementById('text-bg-toggle');
+    const preview = document.getElementById('text-preview');
+
+    const syncState = () => {
+      TextTool.state.text = inputText.value;
+      TextTool.state.fontFamily = fontSel.value;
+      TextTool.state.heightBeads = parseInt(heightIn.value, 10);
+      TextTool.state.bgEnabled = bgToggle.checked;
+      heightVal.textContent = heightIn.value;
+      TextTool.rasterize();
+      // Atualiza preview
+      const tc = TextTool.textCanvas;
+      if (tc) {
+        const maxW = 380;
+        const scale = Math.min(1, maxW / tc.width);
+        preview.width = Math.round(tc.width * scale);
+        preview.height = Math.round(tc.height * scale);
+        const pctx = preview.getContext('2d');
+        pctx.fillStyle = '#fff';
+        pctx.fillRect(0, 0, preview.width, preview.height);
+        pctx.imageSmoothingEnabled = false;
+        pctx.drawImage(tc, 0, 0, preview.width, preview.height);
+      } else {
+        preview.width = 1; preview.height = 1;
+      }
+    };
+
+    [inputText, fontSel, heightIn, bgToggle].forEach(el =>
+      el.addEventListener('input', syncState));
+
+    document.getElementById('btn-text-tool').addEventListener('click', () => {
+      modal.classList.remove('hidden');
+      // Aguarda font carregar antes de renderizar preview
+      if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(syncState);
+      }
+      syncState();
+    });
+    document.getElementById('btn-text-cancel').addEventListener('click', () => {
+      modal.classList.add('hidden');
+    });
+    document.getElementById('btn-text-place').addEventListener('click', () => {
+      syncState();
+      if (!TextTool.textCanvas) return;
+      modal.classList.add('hidden');
+      TextTool.startPlaceMode();
     });
   },
 

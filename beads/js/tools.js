@@ -116,6 +116,12 @@ const Tools = {
       this.isDrawing = false;
       return;
     }
+    if (typeof TextTool !== 'undefined' && TextTool.placeMode) {
+      TextTool.setAnchor(row, col);
+      TextTool.commitPlace();
+      this.isDrawing = false;
+      return;
+    }
     this.isDrawing = true;
     // Tools de seleção
     if (this.active === 'select-rect' || this.active === 'select-lasso') {
@@ -167,6 +173,10 @@ const Tools = {
     // Paste mode: atualiza preview seguindo cursor (sem precisar de drag)
     if (typeof Clipboard !== 'undefined' && Clipboard.pasteMode) {
       if (row !== null && row !== undefined) Clipboard.setAnchor(row, col);
+      return;
+    }
+    if (typeof TextTool !== 'undefined' && TextTool.placeMode) {
+      if (row !== null && row !== undefined) TextTool.setAnchor(row, col);
       return;
     }
     if (!this.isDrawing) return;
