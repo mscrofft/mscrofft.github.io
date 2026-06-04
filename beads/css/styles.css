@@ -58,9 +58,12 @@ html, body { margin: 0; height: 100%; font-family: -apple-system, BlinkMacSystem
   width: 100%; height: 100%;
   -webkit-user-drag: none;
 }
-#overlay-container.editing { pointer-events: auto; outline: 1px dashed #f7b955; }
+#overlay-container.editing { pointer-events: auto; outline: 1px dashed #f7b955; touch-action: none; }
 #overlay-container.editing #overlay-img { cursor: move; }
-#overlay-container.cropping { pointer-events: auto; outline: 1px dashed #f7b955; }
+#overlay-container.cropping { pointer-events: auto; outline: 1px dashed #f7b955; touch-action: none; }
+#overlay-container.editing #overlay-img,
+#overlay-container.cropping #overlay-img,
+#overlay-crop-rect { touch-action: none; }
 .overlay-handle {
   position: absolute; width: 14px; height: 14px;
   background: #f7b955; border: 2px solid #000; box-sizing: border-box;
@@ -82,6 +85,19 @@ html, body { margin: 0; height: 100%; font-family: -apple-system, BlinkMacSystem
 #overlay-crop-rect .crop-handle[data-h="ne"] { top: -8px; right: -8px; cursor: nesw-resize; }
 #overlay-crop-rect .crop-handle[data-h="se"] { bottom: -8px; right: -8px; cursor: nwse-resize; }
 #overlay-crop-rect .crop-handle[data-h="sw"] { bottom: -8px; left: -8px; cursor: nesw-resize; }
+
+/* Em telas touch/menores, handles maiores pra dedo */
+@media (hover: none) and (pointer: coarse), (max-width: 900px) {
+  .overlay-handle { width: 22px; height: 22px; border-width: 3px; }
+  #overlay-container > .overlay-handle[data-h="nw"] { top: -12px; left: -12px; }
+  #overlay-container > .overlay-handle[data-h="ne"] { top: -12px; right: -12px; }
+  #overlay-container > .overlay-handle[data-h="se"] { bottom: -12px; right: -12px; }
+  #overlay-container > .overlay-handle[data-h="sw"] { bottom: -12px; left: -12px; }
+  #overlay-crop-rect .crop-handle[data-h="nw"] { top: -12px; left: -12px; }
+  #overlay-crop-rect .crop-handle[data-h="ne"] { top: -12px; right: -12px; }
+  #overlay-crop-rect .crop-handle[data-h="se"] { bottom: -12px; right: -12px; }
+  #overlay-crop-rect .crop-handle[data-h="sw"] { bottom: -12px; left: -12px; }
+}
 
 .overlay-hidden { display: none; }
 .overlay-actions, #overlay-crop-actions { display: flex; gap: 4px; margin-top: 4px; }
