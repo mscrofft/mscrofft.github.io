@@ -107,6 +107,8 @@ html, body { margin: 0; height: 100%; font-family: -apple-system, BlinkMacSystem
 }
 .overlay-actions button:hover, #overlay-crop-actions button:hover { background: #4a4a55; }
 .overlay-actions button.active { background: #f7b955; color: #222; border-color: #f7b955; }
+#btn-text-tool { display: block; width: 100%; margin: 4px 0; padding: 8px; background: #3a3a42; color: #eee; border: 1px solid #555; border-radius: 4px; cursor: pointer; text-align: left; font-size: 13px; }
+#btn-text-tool:hover { background: #4a4a55; }
 #btn-overlay-import { width: 100%; padding: 6px; background: #3a3a42; color: #eee; border: 1px solid #555; border-radius: 4px; cursor: pointer; font-size: 12px; }
 #btn-overlay-import:hover { background: #4a4a55; }
 #grid-canvas { background: #fff; cursor: crosshair; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
