@@ -1087,8 +1087,9 @@ pre {
               <option>viagem</option><option>geral</option>
             </select>
           </div>
-          <div class="field" style="margin:0; display:flex; align-items:flex-end;">
-            <button class="btn btn-accent" style="width:100%;" onclick="toggleVocabForm()">+ Añadir palabra</button>
+          <div class="field" style="margin:0; display:flex; align-items:flex-end; gap:6px;">
+            <button class="btn btn-accent" style="flex:1;" onclick="toggleVocabForm()">+ Añadir palabra</button>
+            <button class="btn" title="Importar varias palabras desde CSV" onclick="abrirCsvModal('vocabulario')">⬇️ CSV</button>
           </div>
         </div>
       </div>
@@ -1182,8 +1183,9 @@ pre {
               <option>tiempo</option><option>emociones</option><option>viaje</option><option>general</option>
             </select>
           </div>
-          <div class="field" style="margin:0; display:flex; align-items:flex-end;">
-            <button class="btn btn-accent" style="width:100%;" onclick="toggleFraseForm()">+ Añadir frase</button>
+          <div class="field" style="margin:0; display:flex; align-items:flex-end; gap:6px;">
+            <button class="btn btn-accent" style="flex:1;" onclick="toggleFraseForm()">+ Añadir frase</button>
+            <button class="btn" title="Importar varias frases desde CSV" onclick="abrirCsvModal('frases')">⬇️ CSV</button>
           </div>
         </div>
       </div>
@@ -1453,6 +1455,8 @@ pre {
         </div>
       </div>
       <div id="progresso-wrap"><div class="loading"><div class="spinner"></div>Cargando...</div></div>
+      <!-- Vista de relatório por aluno (substitui progresso-wrap quando ativa) -->
+      <div id="relatorio-aluno-wrap" style="display:none;"></div>
     </div>
 
     <!-- ===== CONFIG ===== -->
@@ -1680,6 +1684,28 @@ CREATE POLICY "escrita autenticada frases" ON frases FOR ALL USING (true);</pre>
     </div>
 
   </main>
+</div>
+
+<!-- CSV Import Modal -->
+<div id="csv-modal" style="display:none; position:fixed; inset:0; background:rgba(31,27,22,0.55); backdrop-filter:blur(4px); z-index:9999; align-items:center; justify-content:center; padding:1rem;">
+  <div style="background:var(--surface); border-radius:var(--r-xl); padding:1.5rem; max-width:640px; width:100%; max-height:90vh; overflow:auto; box-shadow:var(--shadow-lg);">
+    <h3 style="margin:0 0 8px 0; font-size:18px; font-weight:800;">⬇️ Importar CSV</h3>
+    <div style="font-size:13px; color:var(--ink3); margin-bottom:10px; line-height:1.6;">
+      Una entrada por línea. Separador <code>;</code> o <code>,</code> (auto-detectado).<br>
+      <strong id="csv-formato">Formato: español;portugués;categoría</strong>
+    </div>
+    <textarea id="csv-input" rows="10" style="width:100%; font-family:'Courier New',monospace; font-size:13px; padding:10px; border:1.5px solid var(--border); border-radius:var(--r); background:var(--surface2); color:var(--ink); resize:vertical;"
+              placeholder="hola;olá;saludos&#10;gracias;obrigado;saludos&#10;buenos días;bom dia;saludos"
+              oninput="csvPreview()"></textarea>
+    <div id="csv-preview-wrap" style="margin-top:10px; max-height:200px; overflow:auto; font-size:12px; display:none;">
+      <div style="font-weight:700; color:var(--ink2); margin-bottom:6px;" id="csv-preview-title">Vista previa:</div>
+      <table style="width:100%; border-collapse:collapse;" id="csv-preview-table"></table>
+    </div>
+    <div class="btn-row" style="margin-top:14px; display:flex; gap:8px; justify-content:flex-end;">
+      <button class="btn" onclick="document.getElementById('csv-modal').style.display='none'">Cancelar</button>
+      <button class="btn btn-green" id="csv-import-btn" onclick="csvImportar()">Importar</button>
+    </div>
+  </div>
 </div>
 
 <!-- Toast -->
@@ -2292,6 +2318,8 @@ function renderAulasList() {
       </div>
       <button class="btn btn-sm" title="Pre-generar audios de esta lección"
               onclick="event.stopPropagation(); pregerarAudiosAula(${a.id})">🔊</button>
+      <button class="btn btn-sm" title="Duplicar lección"
+              onclick="event.stopPropagation(); duplicarAula(${a.id})">📋</button>
       <button class="btn btn-red btn-sm" onclick="event.stopPropagation(); deletarAula(${a.id})">✕</button>
     </div>`).join('');
 }
@@ -2517,6 +2545,42 @@ async function deletarAula(id) {
   loadAulas();
 }
 
+// Duplica uma aula: copia título (com sufixo), vocab, frases e exercícios.
+// Usa o próximo `numero` livre (max + 1).
+async function duplicarAula(id) {
+  if (!sb) return;
+  if (!confirm('¿Duplicar esta lección (con vocabulario, frases y ejercicios)?')) return;
+
+  const { data: orig, error: e1 } = await sb.from('aulas').select('*').eq('id', id).single();
+  if (e1 || !orig) { toast('Lección no encontrada.', 'err'); return; }
+
+  const proxNum = (aulasList.length
+    ? Math.max(...aulasList.map(a => Number(a.numero)))
+    : -1) + 1;
+  const { id: _ignore, criado_em: _ignore2, ...payload } = orig;
+  payload.numero = proxNum;
+  payload.titulo = orig.titulo + ' (copia)';
+
+  const { data: nova, error: e2 } = await sb.from('aulas').insert(payload).select().single();
+  if (e2) { toast('Error: ' + e2.message, 'err'); return; }
+
+  // Clonar vocab, frases, exercicios
+  for (const tabela of ['vocabulario', 'frases', 'exercicios']) {
+    const { data: rows } = await sb.from(tabela).select('*').eq('aula_id', id);
+    if (rows?.length) {
+      const copias = rows.map(r => {
+        const { id: _i, criado_em: _c, ...rest } = r;
+        return { ...rest, aula_id: nova.id };
+      });
+      const { error: e3 } = await sb.from(tabela).insert(copias);
+      if (e3) console.warn(`[duplicar] erro em ${tabela}: ${e3.message}`);
+    }
+  }
+
+  toast(`¡Lección ${proxNum} creada como copia! ✓`, 'ok');
+  await loadAulas();
+}
+
 function deletarAulaAtual() {
   if (aulaContext) deletarAula(aulaContext.id);
 }
@@ -2541,6 +2605,82 @@ function populateAulaSelects() {
     el.innerHTML = (isFilter ? '<option value="">Todas</option>' : '') +
       aulasList.map(a => `<option value="${a.id}">Aula ${a.numero} — ${a.titulo}</option>`).join('');
   });
+}
+
+// ============================================================
+// CSV IMPORTER — vocabulário e frases em lote
+// ============================================================
+let _csvAlvo = null;  // 'vocabulario' ou 'frases'
+
+function abrirCsvModal(alvo) {
+  if (!aulaContext) { toast('Abre una lección primero.', 'err'); return; }
+  _csvAlvo = alvo;
+  document.getElementById('csv-formato').textContent = alvo === 'vocabulario'
+    ? 'Formato: español ; portugués ; categoría (opcional)'
+    : 'Formato: español ; portugués ; categoría';
+  document.getElementById('csv-input').value = '';
+  document.getElementById('csv-preview-wrap').style.display = 'none';
+  document.getElementById('csv-modal').style.display = 'flex';
+}
+
+function csvParse(texto) {
+  const linha0 = (texto.split('\n')[0] || '');
+  const sep = linha0.includes(';') ? ';' : ',';
+  return texto.split('\n')
+    .map(l => l.trim()).filter(Boolean)
+    .map(l => l.split(sep).map(c => c.trim()));
+}
+
+function csvPreview() {
+  const texto = document.getElementById('csv-input').value;
+  const wrap = document.getElementById('csv-preview-wrap');
+  const tbl = document.getElementById('csv-preview-table');
+  if (!texto.trim()) { wrap.style.display = 'none'; return; }
+  const linhas = csvParse(texto);
+  const validas = linhas.filter(c => c[0] && c[1]);
+  document.getElementById('csv-preview-title').textContent =
+    `Vista previa (${validas.length} válida${validas.length === 1 ? '' : 's'} de ${linhas.length} línea${linhas.length === 1 ? '' : 's'}):`;
+  const cabec = `<thead><tr style="background:var(--surface2);">
+    <th style="text-align:left; padding:6px; border-bottom:1px solid var(--border);">Español</th>
+    <th style="text-align:left; padding:6px; border-bottom:1px solid var(--border);">Portugués</th>
+    <th style="text-align:left; padding:6px; border-bottom:1px solid var(--border);">Categoría</th>
+  </tr></thead>`;
+  const rows = linhas.slice(0, 12).map(c => {
+    const ok = !!(c[0] && c[1]);
+    return `<tr style="${ok ? '' : 'opacity:0.4;'}">
+      <td style="padding:5px 6px; border-bottom:1px solid var(--border);">${c[0] || '—'}</td>
+      <td style="padding:5px 6px; border-bottom:1px solid var(--border);">${c[1] || '—'}</td>
+      <td style="padding:5px 6px; border-bottom:1px solid var(--border); color:var(--ink3);">${c[2] || 'general'}</td>
+    </tr>`;
+  }).join('');
+  const maisLinhas = linhas.length > 12
+    ? `<tr><td colspan="3" style="padding:6px; color:var(--ink3); text-align:center;">… +${linhas.length - 12} líneas más</td></tr>` : '';
+  tbl.innerHTML = cabec + `<tbody>${rows}${maisLinhas}</tbody>`;
+  wrap.style.display = '';
+}
+
+async function csvImportar() {
+  if (!sb || !aulaContext) { toast('Sin contexto de lección.', 'err'); return; }
+  const linhas = csvParse(document.getElementById('csv-input').value);
+  if (!linhas.length) { toast('Pega contenido primero.', 'err'); return; }
+
+  const rows = linhas
+    .map(c => ({
+      aula_id: aulaContext.id,
+      espanhol: c[0] || '',
+      portugues: c[1] || '',
+      categoria: c[2] || 'general',
+    }))
+    .filter(r => r.espanhol && r.portugues);
+
+  if (!rows.length) { toast('Ninguna línea válida (necesitas español y portugués).', 'err'); return; }
+
+  const { error } = await sb.from(_csvAlvo).insert(rows);
+  if (error) { toast('Error: ' + error.message, 'err'); return; }
+
+  toast(`✓ ${rows.length} ${_csvAlvo === 'vocabulario' ? 'palabras' : 'frases'} importadas`, 'ok');
+  document.getElementById('csv-modal').style.display = 'none';
+  if (_csvAlvo === 'vocabulario') loadVocab(); else loadFrases();
 }
 
 async function loadVocab() {
@@ -3398,9 +3538,154 @@ async function populateAlunoFilter() {
     alunosList.map(a => `<option value="${a.id}">${a.nome}</option>`).join('');
 }
 
+// ============================================================
+// RELATÓRIO POR ALUNO — drill-in nas tentativas
+// ============================================================
+function voltarProgresso() {
+  document.getElementById('progresso-wrap').style.display = '';
+  document.getElementById('relatorio-aluno-wrap').style.display = 'none';
+  document.getElementById('relatorio-aluno-wrap').innerHTML = '';
+}
+
+function _formatarRespostaDada(tipo, raw) {
+  if (raw === null || raw === undefined || raw === '') return '<em style="color:var(--ink3);">(vacío)</em>';
+  if (tipo === 'pares' || tipo === 'pares_audio') {
+    try {
+      const arr = JSON.parse(raw);
+      return `${arr.length} par${arr.length === 1 ? '' : 'es'} formado${arr.length === 1 ? '' : 's'}`;
+    } catch { return raw; }
+  }
+  if (tipo === 'classificar') {
+    try {
+      const arr = JSON.parse(raw);
+      return arr.map(e => `${e.item}→${e.escolha || '?'}`).join(', ');
+    } catch { return raw; }
+  }
+  if (tipo === 'lacuna_banco') {
+    try { return JSON.parse(raw).filter(Boolean).join(' / '); }
+    catch { return raw; }
+  }
+  return String(raw);
+}
+
+async function verRelatorioAluno(alunoId) {
+  if (!sb) return;
+  const wrapProg = document.getElementById('progresso-wrap');
+  const wrapRel = document.getElementById('relatorio-aluno-wrap');
+  wrapProg.style.display = 'none';
+  wrapRel.style.display = '';
+  wrapRel.innerHTML = '<div class="loading"><div class="spinner"></div>Cargando relatório...</div>';
+
+  const [{ data: aluno }, { data: tentativas }] = await Promise.all([
+    sb.from('alunos').select('id,nome,email,codigo').eq('id', alunoId).single(),
+    sb.from('tentativas_exercicios')
+      .select('*, exercicios(*, aulas(numero, titulo))')
+      .eq('aluno_id', alunoId)
+      .order('criado_em', { ascending: false }),
+  ]);
+
+  if (!aluno) { wrapRel.innerHTML = '<div class="empty">Alumno no encontrado.</div>'; return; }
+
+  const totalTent = (tentativas || []).length;
+  const acertos = (tentativas || []).filter(t => t.correto).length;
+  const pctGeral = totalTent ? Math.round(acertos / totalTent * 100) : 0;
+
+  const headerHtml = `
+    <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
+      <button class="btn btn-sm" onclick="voltarProgresso()">← Volver</button>
+      <div style="flex:1;">
+        <div style="font-size:18px; font-weight:800; color:var(--ink);">📊 ${aluno.nome}</div>
+        <div style="font-size:12px; color:var(--ink3);">${aluno.email}</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:22px; font-weight:800; color:${pctGeral>=80?'var(--green)':pctGeral>=60?'var(--gold)':'var(--coral)'};">${pctGeral}%</div>
+        <div style="font-size:11px; color:var(--ink3);">${acertos}/${totalTent} respuestas</div>
+      </div>
+    </div>`;
+
+  if (!totalTent) {
+    wrapRel.innerHTML = headerHtml + `
+      <div class="empty" style="text-align:center; padding:2rem;">
+        <div style="font-size:32px; margin-bottom:8px;">📭</div>
+        <div style="font-weight:600;">Aún no hay datos detallados.</div>
+        <div style="font-size:13px; color:var(--ink3); margin-top:6px;">
+          Los registros empiezan después de aplicar la migration 15 y de que el alumno haga ejercicios.
+        </div>
+      </div>`;
+    return;
+  }
+
+  // Agrupar por aula → exercicio
+  const porAula = {};
+  (tentativas || []).forEach(t => {
+    const aula = t.exercicios?.aulas;
+    if (!aula) return;
+    const k = aula.numero;
+    if (!porAula[k]) porAula[k] = { aula, exercicios: {} };
+    const exId = t.exercicio_id;
+    if (!porAula[k].exercicios[exId]) {
+      porAula[k].exercicios[exId] = { ex: t.exercicios, tentativas: [] };
+    }
+    porAula[k].exercicios[exId].tentativas.push(t);
+  });
+
+  const blocosHtml = Object.values(porAula)
+    .sort((a, b) => Number(a.aula.numero) - Number(b.aula.numero))
+    .map(grp => {
+      const items = Object.values(grp.exercicios);
+      // Último tentativo de cada exercício (já ordenado desc por criado_em)
+      const certos = items.filter(i => i.tentativas[0]?.correto).length;
+      const pct = Math.round(certos / items.length * 100);
+      const corPct = pct >= 80 ? 'var(--green)' : pct >= 60 ? 'var(--gold)' : 'var(--coral)';
+
+      const rows = items.map(i => {
+        const ult = i.tentativas[0];
+        const tentN = i.tentativas.length;
+        const fraseShort = (i.ex.frase || '').length > 60 ? (i.ex.frase || '').slice(0, 60) + '…' : (i.ex.frase || '—');
+        const certa = i.ex.tipo === 'pares' || i.ex.tipo === 'pares_audio' ? '(combinar pares)' : (i.ex.resposta || '—');
+        const dada = _formatarRespostaDada(i.ex.tipo, ult.resposta_dada);
+        return `<tr style="${ult.correto ? '' : 'background:rgba(232,98,42,0.06);'}">
+          <td style="padding:6px 8px; border-bottom:1px solid var(--border); font-size:12px; color:var(--ink3);">${i.ex.tipo}</td>
+          <td style="padding:6px 8px; border-bottom:1px solid var(--border); font-size:13px;">${fraseShort}</td>
+          <td style="padding:6px 8px; border-bottom:1px solid var(--border); font-size:13px; color:var(--green); font-weight:600;">${certa}</td>
+          <td style="padding:6px 8px; border-bottom:1px solid var(--border); font-size:13px; color:${ult.correto?'var(--green)':'var(--coral)'};">${dada}</td>
+          <td style="padding:6px 8px; border-bottom:1px solid var(--border); font-size:12px; text-align:center;">${tentN}</td>
+          <td style="padding:6px 8px; border-bottom:1px solid var(--border); font-size:16px; text-align:center;">${ult.correto ? '✓' : '✗'}</td>
+        </tr>`;
+      }).join('');
+
+      return `<details class="card" style="margin-bottom:10px; padding:0;">
+        <summary style="cursor:pointer; padding:12px 16px; font-weight:600; display:flex; align-items:center; gap:12px;">
+          <span style="flex:1;">Lección ${grp.aula.numero} — ${grp.aula.titulo}</span>
+          <span style="font-size:13px; color:${corPct}; font-weight:700;">${pct}%</span>
+          <span style="font-size:12px; color:var(--ink3);">${certos}/${items.length} ejercicios</span>
+        </summary>
+        <div style="padding:0 16px 16px; overflow-x:auto;">
+          <table style="width:100%; border-collapse:collapse;">
+            <thead><tr style="background:var(--surface2);">
+              <th style="text-align:left; padding:6px 8px; border-bottom:1px solid var(--border); font-size:12px;">Tipo</th>
+              <th style="text-align:left; padding:6px 8px; border-bottom:1px solid var(--border); font-size:12px;">Frase</th>
+              <th style="text-align:left; padding:6px 8px; border-bottom:1px solid var(--border); font-size:12px;">Correcta</th>
+              <th style="text-align:left; padding:6px 8px; border-bottom:1px solid var(--border); font-size:12px;">Respuesta del alumno</th>
+              <th style="text-align:center; padding:6px 8px; border-bottom:1px solid var(--border); font-size:12px;">Intentos</th>
+              <th style="text-align:center; padding:6px 8px; border-bottom:1px solid var(--border); font-size:12px;">Último</th>
+            </tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+      </details>`;
+    }).join('');
+
+  wrapRel.innerHTML = headerHtml + blocosHtml;
+}
+
 async function loadProgresso() {
   if (!sb) return;
+  // Esconde view de relatório (caso esteja aberta de outra navegação)
+  const wrapRel = document.getElementById('relatorio-aluno-wrap');
+  if (wrapRel) { wrapRel.style.display = 'none'; wrapRel.innerHTML = ''; }
   const wrap = document.getElementById('progresso-wrap');
+  wrap.style.display = '';
   wrap.innerHTML = '<div class="loading"><div class="spinner"></div>Cargando...</div>';
   const alunoFilter = document.getElementById('prog-aluno-filter')?.value;
 
@@ -3438,6 +3723,7 @@ async function loadProgresso() {
           <div style="font-size:20px; font-weight:800; color:var(--ink);">${pct}%</div>
           <div style="font-size:11px; color:var(--ink3);">${concluidas}/${total} lecciones</div>
         </div>
+        <button class="btn btn-sm" title="Ver detalle de respuestas" onclick="verRelatorioAluno(${aluno.id})">📊 Detalle</button>
       </div>
       <div style="background:var(--surface2); border-radius:99px; height:6px; margin-bottom:12px;">
         <div style="background:${pct===100?'var(--green)':'var(--accent)'}; height:6px; border-radius:99px; width:${pct}%; transition:width 0.5s;"></div>

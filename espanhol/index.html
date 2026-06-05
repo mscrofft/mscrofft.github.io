@@ -1885,6 +1885,7 @@ let fcIdx = 0, fcFlipped = false, fcCatFilter = '';
 let quizPool = [], quizIdx = 0, quizScore = 0, quizAnswered = false;
 let quizBestScore = 0;
 const MIN_SCORE = 70;
+const MIN_EX_SCORE = 80;  // % mínimo de acerto nos exercícios pra concluir aula
 // Exercises state
 let exerciciosData = [], exIdx = 0, exScore = 0, exTotal = 0;
 let exAnswered = false, exDone = false;
@@ -2306,7 +2307,10 @@ async function loadAula(id) {
   exIdx = 0; exScore = 0; exTotal = exerciciosData.length;
   exAnswered = false; quizPassed = false;
   try {
-    exDone = localStorage.getItem(`ev_exDone_${currentAula.id}`) === '1';
+    // exDone só é true se já passou de 80% em alguma tentativa
+    const pctSalvo = parseInt(localStorage.getItem(`ev_exPct_${currentAula.id}`) || '0');
+    const flagAntiga = localStorage.getItem(`ev_exDone_${currentAula.id}`) === '1';
+    exDone = pctSalvo >= MIN_EX_SCORE || flagAntiga;
   } catch { exDone = false; }
   // Se a aula já foi concluída, exercícios obviamente estavam ok
   if (progressoMap[String(currentAula.id)]?.concluida) exDone = true;
@@ -2356,7 +2360,7 @@ function updateQuizProgressBar() {
   } else {
     document.getElementById('av-quiz-prog-label').textContent =
       hasEx
-        ? `Completa el cuestionario (${MIN_SCORE}%+) y los ejercicios para terminar esta lección`
+        ? `Completa el cuestionario (${MIN_SCORE}%+) y los ejercicios (${MIN_EX_SCORE}%+) para terminar esta lección`
         : `Completa el cuestionario con ${MIN_SCORE}% o más para terminar esta lección`;
   }
 }
@@ -2741,15 +2745,27 @@ function renderExercicio() {
     return;
   }
   if (exIdx >= exerciciosData.length) {
-    exDone = true;
-    if (currentAula) {
-      try { localStorage.setItem(`ev_exDone_${currentAula.id}`, '1'); } catch {}
-    }
     const pct = Math.round(exScore / exerciciosData.length * 100);
+    const passou = pct >= MIN_EX_SCORE;
+    exDone = passou;
+    if (currentAula) {
+      try {
+        if (passou) localStorage.setItem(`ev_exDone_${currentAula.id}`, '1');
+        // Guarda o melhor pct alcançado pra restaurar entre sessões
+        const pctPrev = parseInt(localStorage.getItem(`ev_exPct_${currentAula.id}`) || '0');
+        if (pct > pctPrev) localStorage.setItem(`ev_exPct_${currentAula.id}`, String(pct));
+      } catch {}
+    }
+    const titulo = passou
+      ? (pct >= 95 ? '🌟 ¡Excelente!' : '👍 ¡Buen trabajo!')
+      : '💪 ¡Sigue practicando!';
+    const sub = passou
+      ? `${pct}% en los ejercicios · ¡Listo para concluir!`
+      : `${pct}% en los ejercicios · Necesitas ${MIN_EX_SCORE}%+ para concluir`;
     area.innerHTML = `<div style="text-align:center; padding:2rem 0;">
       <div style="font-size:56px; font-weight:800; color:var(--ink); letter-spacing:-2px;">${exScore}/${exerciciosData.length}</div>
-      <div style="font-size:18px; color:var(--ink2); margin-top:6px; font-weight:500;">${pct>=80?'🌟 ¡Excelente!':pct>=60?'👍 ¡Buen trabajo!':'💪 ¡Sigue practicando!'}</div>
-      <div style="font-size:14px; color:var(--ink3); margin-top:4px;">${pct}% en los ejercicios</div>
+      <div style="font-size:18px; color:var(--ink2); margin-top:6px; font-weight:500;">${titulo}</div>
+      <div style="font-size:14px; color:${passou?'var(--green)':'var(--coral)'}; margin-top:4px; font-weight:600;">${sub}</div>
       <button class="btn btn-coral" style="margin-top:1.5rem;" onclick="initExercicios()">Rehacer ejercicios</button>
     </div>`;
     checkConcludeEligibility();
@@ -3311,6 +3327,33 @@ function checkExercicio() {
 
   exAnswered = true;
   if (correct) exScore++;
+
+  // Tracking — registra tentativa no banco (fire-and-forget, não bloqueia UI)
+  try {
+    let respostaDada = '';
+    if (ex.tipo === 'pares' || ex.tipo === 'pares_audio') {
+      respostaDada = JSON.stringify([..._paresState.matched]);
+    } else if (ex.tipo === 'classificar') {
+      respostaDada = JSON.stringify(_classifState.items.map(it => ({ item: it.txt, escolha: it.atribuida })));
+    } else if (ex.tipo === 'lacuna_banco') {
+      respostaDada = JSON.stringify(_exBancoSelections);
+    } else if (ex.tipo === 'multipla_escolha' || ex.tipo === 'lacuna_escolha') {
+      respostaDada = String(_exSelected || '');
+    } else if (ex.tipo === 'escrita_audio') {
+      respostaDada = String(document.getElementById('ex-input')?.value || '');
+    } else if (ex.tipo === 'corrigir_frase') {
+      respostaDada = String(document.getElementById('corrigir-input')?.value || '');
+    } else if (ex.tipo === 'conjugar_verbo') {
+      respostaDada = Array.from(document.querySelectorAll('[id^="conj-input-"]')).map(i => i.value).join(' | ');
+    }
+    if (sb && aluno?.id && ex.id) {
+      sb.from('tentativas_exercicios').insert({
+        aluno_id: aluno.id, exercicio_id: ex.id,
+        resposta_dada: respostaDada, correto: correct,
+      }).then(() => {}, () => {});
+    }
+  } catch {}
+
   if (ex.tipo === 'pares' || ex.tipo === 'pares_audio') {
     fb.textContent = correct ? `✓ ¡Todos los ${_paresState.total} pares correctos!` : '✗ Algo salió mal.';
   } else if (ex.tipo === 'classificar') {
@@ -3324,12 +3367,17 @@ function checkExercicio() {
   const nb=document.getElementById('ex-next-btn');
   if(nb){nb.style.display='';nb.textContent=exIdx+1>=exerciciosData.length?'Ver resultado →':'Siguiente →';}
 
-  // Se este foi o último exercício, marca como concluído já agora
-  // (sem precisar clicar "Ver resultado →") e persiste no localStorage
-  // pra sobreviver a recargas da página.
+  // Se este foi o último exercício, calcula pct final agora (sem esperar "Ver resultado →")
+  // e marca exDone somente se atingiu MIN_EX_SCORE (80%). Persiste no localStorage.
   if (exIdx + 1 >= exerciciosData.length && currentAula) {
-    exDone = true;
-    try { localStorage.setItem(`ev_exDone_${currentAula.id}`, '1'); } catch {}
+    const pctFinal = Math.round(exScore / exerciciosData.length * 100);
+    const passou = pctFinal >= MIN_EX_SCORE;
+    exDone = passou;
+    try {
+      if (passou) localStorage.setItem(`ev_exDone_${currentAula.id}`, '1');
+      const pctPrev = parseInt(localStorage.getItem(`ev_exPct_${currentAula.id}`) || '0');
+      if (pctFinal > pctPrev) localStorage.setItem(`ev_exPct_${currentAula.id}`, String(pctFinal));
+    } catch {}
     updateQuizProgressBar();
     checkConcludeEligibility();
   }
