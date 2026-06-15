@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <title>Raquete 🎾</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+  <style>
+    * { box-sizing: border-box; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
+    html, body { margin: 0; height: 100%; overflow: hidden;
+      font-family: 'IBM Plex Mono', ui-monospace, monospace;
+      background: #0a1622; color: #f0ece3; }
+    #app { height: 100%; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; padding: 24px; text-align: center; gap: 18px; }
+
+    h1 { margin: 0; font-size: 20px; letter-spacing: 0.08em; }
+    .sub { font-size: 12px; opacity: 0.55; line-height: 1.6; max-width: 280px; }
+
+    #start {
+      font-family: inherit; font-size: 17px; font-weight: 700; letter-spacing: 0.04em;
+      color: #0a1622; background: #d4b87a; border: none; border-radius: 14px;
+      padding: 20px 34px; cursor: pointer; box-shadow: 0 12px 30px rgba(0,0,0,0.4);
+    }
+    #start:active { transform: scale(0.97); }
+
+    .code-row { display: flex; gap: 8px; align-items: center; }
+    #codeIn {
+      font-family: inherit; font-size: 22px; letter-spacing: 0.3em; text-transform: uppercase;
+      text-align: center; width: 180px; padding: 12px; border-radius: 10px;
+      border: 1px solid rgba(240,236,227,0.3); background: rgba(0,0,0,0.25); color: #f0ece3;
+    }
+    .status { font-size: 13px; opacity: 0.8; min-height: 18px; }
+    .status.ok { color: #7fe0a0; opacity: 1; }
+    .status.err { color: #e8806b; opacity: 1; }
+
+    /* Tela "jogando" */
+    #play { display: none; height: 100%; width: 100%;
+      flex-direction: column; align-items: center; justify-content: center; gap: 22px; }
+    #play.on { display: flex; }
+    #meter { width: 70vw; max-width: 320px; height: 14px; border-radius: 8px;
+      background: rgba(255,255,255,0.12); overflow: hidden; }
+    #meterFill { height: 100%; width: 50%; background: #d4b87a; transition: width 0.06s linear; }
+    #swingFx { font-size: 64px; opacity: 0; transition: opacity 0.1s ease; }
+    #swingFx.hit { opacity: 1; }
+    .tip { font-size: 12px; opacity: 0.5; max-width: 260px; line-height: 1.6; }
+    .big { font-size: 26px; letter-spacing: 0.06em; }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div id="setup">
+      <h1>🎾 Sua Raquete</h1>
+      <div class="sub">Segure o celular como uma raquete. Incline para mover e dê uma <b>raquetada</b> no ar para rebater.</div>
+      <div class="code-row">
+        <input id="codeIn" maxlength="6" placeholder="CÓDIGO" autocomplete="off" autocapitalize="characters" />
+      </div>
+      <button id="start">Conectar e ativar sensores</button>
+      <div class="status" id="status">digite o código que aparece no computador (ou escaneie o QR)</div>
+    </div>
+
+    <div id="play">
+      <div class="big">📱 raquete ativa</div>
+      <div id="swingFx">🎾</div>
+      <div id="meter"><div id="meterFill"></div></div>
+      <div class="tip">Incline ⟵ ⟶ para mover a raquete.<br/>Balance o braço rápido para rebater a bola.</div>
+      <div class="status ok" id="status2">conectado</div>
+    </div>
+  </div>
+
+  <script src="control.js"></script>
+</body>
+</html>
