@@ -61,6 +61,31 @@
     }
     #conn.hidden { display: none; }
 
+    /* ── HUD (overlay sobre o canvas WEBGL) ──────────────────── */
+    #hud {
+      position: fixed; inset: 0; z-index: 20; pointer-events: none;
+      font-family: 'IBM Plex Mono', ui-monospace, monospace; color: #f0ece3;
+      text-shadow: 0 1px 4px rgba(0,0,0,0.5);
+    }
+    #hud-top {
+      position: absolute; top: 20px; left: 20px;
+      font-size: 12px; letter-spacing: 0.06em; opacity: 0.85;
+    }
+    #hud-score {
+      position: absolute; top: 56px; left: 50%; transform: translateX(-50%);
+      display: flex; align-items: center; gap: 18px; font-size: 34px; font-weight: 700;
+    }
+    #hud-score #hud-hp { color: #d4b87a; }
+    #hud-score #hud-hc { color: #e86b5a; }
+    #hud-score span { font-size: 20px; opacity: 0.5; }
+    #hud-msg {
+      position: absolute; top: 28%; left: 50%; transform: translateX(-50%);
+      font-size: 22px; letter-spacing: 0.04em; text-align: center; white-space: nowrap;
+    }
+    #hud-hint {
+      position: absolute; bottom: 16px; left: 20px; font-size: 11px; opacity: 0.7;
+    }
+
     /* ── Botão engrenagem ────────────────────────────────────── */
     #calib-gear {
       position: fixed; top: 16px; right: 20px; z-index: 45;
@@ -129,6 +154,13 @@
   </div>
 
   <div id="flash">📱 celular conectado</div>
+
+  <div id="hud">
+    <div id="hud-top"><span id="hud-mode">PARTIDA</span> · latência <span id="hud-lat">—</span></div>
+    <div id="hud-score"><b id="hud-hp">0</b><span>—</span><b id="hud-hc">0</b></div>
+    <div id="hud-msg"></div>
+    <div id="hud-hint">mouse move · ESPAÇO/clique rebate · [C] calibrar</div>
+  </div>
 
   <button id="calib-gear" title="Calibração (C)">⚙</button>
 
