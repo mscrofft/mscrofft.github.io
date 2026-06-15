@@ -307,14 +307,14 @@ function drawFPRacket() {
   let rz = -0.3 + playerX * 0.25;
   if (swinging) rz += Math.sin((swingT / 200) * Math.PI) * -1.4;
   rotateZ(rz);
-  // cabo
+  // cabo (sai de baixo, da mão)
   fill(30, 24, 18);
-  push(); translate(0, 0.34, 0); cylinder(0.022, 0.46); pop();
-  // aro
+  push(); translate(0, -0.34, 0); cylinder(0.022, 0.46); pop();
+  // aro (em cima)
   fill(swinging ? color(255, 216, 107) : color(212, 184, 122));
-  push(); translate(0, -0.02, 0); torus(0.2, 0.022); pop();
+  push(); translate(0, 0.14, 0); torus(0.2, 0.022); pop();
   // cordas (disco translúcido)
-  push(); translate(0, -0.02, 0); rotateX(HALF_PI);
+  push(); translate(0, 0.14, 0); rotateX(HALF_PI);
   fill(255, 255, 255, 45); noStroke(); ellipse(0, 0, 0.36, 0.36); pop();
   pop();
 }
