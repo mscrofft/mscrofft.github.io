@@ -22,13 +22,13 @@
       transform: translate(-50%, -50%);
       z-index: 50;
       background: rgba(8, 16, 26, 0.92);
-      border: 1px solid var(--ui-accent, #d4b87a);
+      border: 1px solid #d4b87a;
       border-radius: 14px;
       padding: 28px 30px 26px;
       width: min(86vw, 360px);
       text-align: center;
       font-family: 'IBM Plex Mono', ui-monospace, monospace;
-      color: var(--ui-fg, #f0ece3);
+      color: #f0ece3;
       box-shadow: 0 24px 80px rgba(0,0,0,0.6);
     }
     #conn h2 {
@@ -51,7 +51,7 @@
     #code {
       font-size: 26px; letter-spacing: 0.32em;
       font-weight: 700; margin: 4px 0 14px;
-      color: var(--ui-accent, #d4b87a);
+      color: #d4b87a;
     }
     #status { font-size: 11px; opacity: 0.7; min-height: 16px; }
     #status.err { color: #e8806b; opacity: 1; }
@@ -91,18 +91,18 @@
       position: fixed; top: 16px; right: 20px; z-index: 45;
       width: 40px; height: 40px; border-radius: 50%;
       background: rgba(8,16,26,0.8); border: 1px solid rgba(240,236,227,0.25);
-      color: var(--ui-fg, #f0ece3); font-size: 18px; cursor: pointer;
+      color: #f0ece3; font-size: 18px; cursor: pointer;
       display: flex; align-items: center; justify-content: center;
     }
-    #calib-gear:hover { border-color: var(--ui-accent, #d4b87a); }
+    #calib-gear:hover { border-color: #d4b87a; }
 
     /* ── Painel de calibração ────────────────────────────────── */
     #calib {
       position: fixed; top: 64px; right: 20px; z-index: 46;
       width: min(90vw, 320px);
       background: rgba(8,16,26,0.95);
-      border: 1px solid var(--ui-accent, #d4b87a); border-radius: 12px;
-      padding: 16px 18px; color: var(--ui-fg, #f0ece3);
+      border: 1px solid #d4b87a; border-radius: 12px;
+      padding: 16px 18px; color: #f0ece3;
       font-family: 'IBM Plex Mono', ui-monospace, monospace;
       box-shadow: 0 20px 60px rgba(0,0,0,0.5);
     }
@@ -112,23 +112,23 @@
     .calib-mode button {
       flex: 1; font-family: inherit; font-size: 12px; padding: 8px;
       border-radius: 8px; cursor: pointer;
-      background: transparent; color: var(--ui-fg, #f0ece3);
+      background: transparent; color: #f0ece3;
       border: 1px solid rgba(240,236,227,0.25);
     }
-    .calib-mode button.on { background: var(--ui-accent, #d4b87a); color: #0a1622; border-color: transparent; }
+    .calib-mode button.on { background: #d4b87a; color: #0a1622; border-color: transparent; }
     .calib-row { margin-bottom: 12px; }
     .calib-row label { display: flex; justify-content: space-between; font-size: 10px; opacity: 0.7; margin-bottom: 4px; }
-    .calib-val { opacity: 1; color: var(--ui-accent, #d4b87a); font-weight: 600; }
-    .calib-row input[type=range] { width: 100%; accent-color: var(--ui-accent, #d4b87a); }
+    .calib-val { opacity: 1; color: #d4b87a; font-weight: 600; }
+    .calib-row input[type=range] { width: 100%; accent-color: #d4b87a; }
     .calib-check { display: flex; align-items: center; gap: 8px; font-size: 11px; opacity: 0.8; margin: 6px 0 14px; cursor: pointer; }
     .calib-actions { display: flex; gap: 8px; }
     .calib-actions button {
       flex: 1; font-family: inherit; font-size: 11px; padding: 9px;
       border-radius: 8px; cursor: pointer;
-      background: transparent; color: var(--ui-fg, #f0ece3);
+      background: transparent; color: #f0ece3;
       border: 1px solid rgba(240,236,227,0.25);
     }
-    .calib-actions button:hover { border-color: var(--ui-accent, #d4b87a); }
+    .calib-actions button:hover { border-color: #d4b87a; }
 
     /* Aviso "conectado" rápido */
     #flash {
