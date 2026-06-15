@@ -11,6 +11,7 @@
     gamma: 0,          // inclinação esquerda/direita (-90..90)
     beta: 0,           // inclinação frente/trás
     swing: null,       // {power, dir, t} quando chega uma raquetada; o jogo consome
+    latency: null,     // RTT medido em ms (ping/pong), null sem conexão
   };
 
   const $ = (id) => document.getElementById(id);
@@ -66,8 +67,29 @@
       Phone.beta = d.beta || 0;
     } else if (d.type === 'swing') {
       Phone.swing = { power: d.power || 1, dir: d.dir || 0, t: performance.now() };
+    } else if (d.type === 'pong') {
+      Phone.latency = performance.now() - d.t; // RTT
     }
   }
+
+  function safeSend(obj) {
+    if (conn && conn.open) { try { conn.send(obj); } catch (e) {} }
+  }
+
+  // Envia os limiares/taxa atuais (window.cfg) para o celular.
+  global.NetSendConfig = function () {
+    const c = global.cfg || {};
+    safeSend({ type: 'config', swingThreshold: c.swingThreshold, rotThreshold: c.rotThreshold, sendRate: c.sendRate });
+  };
+  // Pede ao celular para zerar o centro (gamma neutra).
+  global.NetRecenter = function () { safeSend({ type: 'center' }); };
+
+  let pingTimer = null;
+  function startPing() {
+    stopPing();
+    pingTimer = setInterval(() => safeSend({ type: 'ping', t: performance.now() }), 1000);
+  }
+  function stopPing() { if (pingTimer) { clearInterval(pingTimer); pingTimer = null; } Phone.latency = null; }
 
   let peer = null;
   let conn = null;
@@ -93,10 +115,13 @@
         setStatus('conectado!');
         hidePanel();
         flash();
+        global.NetSendConfig();  // manda os limiares/taxa atuais
+        startPing();             // começa a medir latência
       });
       c.on('data', handleData);
       c.on('close', () => {
         Phone.connected = false;
+        stopPing();
         setStatus('celular desconectou', true);
         showPanel();
       });

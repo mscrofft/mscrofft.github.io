@@ -1,91 +1,100 @@
 /* ============================================================
-   game.js — Jogo de tênis em perspectiva pseudo-3D (p5.js).
-   Você (base inferior) joga contra a CPU (base superior).
-   Controle: celular como raquete (objeto global `Phone` em net.js)
-   ou, sem celular, MOUSE move e ESPAÇO dá a raquetada.
+   game.js — Tênis em PRIMEIRA PESSOA (p5.js, canvas 2D).
+   Você está atrás da linha de base olhando para a rede e a CPU.
+   A raquete fica em primeiro plano (base da tela) e segue o celular
+   (objeto global `Phone` em net.js) ou, sem celular, o MOUSE move e
+   ESPAÇO/clique dá a raquetada.
 
-   Sistema de coordenadas de "mundo":
-     cx : -1 (esquerda) .. +1 (direita)   — largura da quadra
-     cy :  0 (base do jogador) .. 1 (base da CPU)   — rede em 0.5
-     z  :  0 (chão) para cima              — altura da bola
+   Mundo:  cx ∈ [-1,1] largura · cy ∈ [0,1] (0=você, 1=CPU, rede=0.5)
+           z ≥ 0 altura.   Câmera pinhole atrás da base do jogador.
+   Ajustes do jogador ficam em window.cfg (ver calib.js).
    ============================================================ */
 
+// ── Câmera em primeira pessoa ─────────────────────────────
+const COURT_HALF_W = 5.4;   // cx=1  -> 5.4 unidades de mundo
+const COURT_LEN    = 19;    // comprimento (profundidade) da quadra
+const CAM_CY       = -0.16; // câmera um pouco atrás da base do jogador
+const CAM_H        = 1.55;  // altura do olho (unidades)
+const Z_UNIT       = 2.6;   // z do jogo -> unidades de altura
+const FOV          = 0.92;  // foco: f = width * FOV
+function focal()    { return width * FOV; }
+function horizonY() { return height * 0.42; }
+
+function project(cx, cy, z) {
+  const depth = (cy - CAM_CY) * COURT_LEN;
+  const vis = depth > 0.35;
+  const scale = vis ? focal() / depth : 0;
+  return {
+    x: width / 2 + (cx * COURT_HALF_W) * scale,
+    y: horizonY() - (z * Z_UNIT - CAM_H) * scale,
+    scale, depth, vis,
+  };
+}
+
 // ── Ajustes de jogabilidade ───────────────────────────────
-const NET_CY        = 0.5;    // posição da rede
-const NET_H         = 0.32;   // altura da rede (mundo)
-const GRAV          = 5.2;    // gravidade (unidades/s²)
-const RESTITUTION   = 0.62;   // quique no chão
-const PLAYER_LINE   = 0.12;   // linha onde o jogador rebate
-const AI_LINE       = 0.88;   // linha onde a CPU rebate
-const RACKET_REACH  = 0.30;   // alcance lateral da raquete do jogador
-const SWING_WINDOW  = 260;    // ms — janela da raquetada para conectar
+const NET_CY        = 0.5;
+const NET_H         = 0.32;
+const GRAV          = 5.2;
+const RESTITUTION   = 0.62;
+const PLAYER_LINE   = 0.12;
+const AI_LINE       = 0.88;
+const SWING_WINDOW  = 260;   // ms — janela da raquetada
 const WIN_SCORE     = 11;
 
-// Dificuldade da CPU
-const AI_SPEED      = 1.6;    // velocidade de deslocamento (cx/s)
-const AI_REACH      = 0.34;   // alcance da CPU
-const AI_MISS       = 0.12;   // chance de errar mesmo no alcance
+const AI_SPEED      = 1.6;
+const AI_REACH      = 0.34;
+const AI_MISS       = 0.12;
 
-// ── Projeção perspectiva ──────────────────────────────────
-function depthScale(cy) { return 1 / (1 + cy * 2.1); }
-const DS1 = 1 / (1 + 2.1); // depthScale(1)
-
-function projX(cx, cy) { return width * 0.5 + cx * (width * 0.46) * depthScale(cy); }
-function projY(cy) {
-  const nearY = height * 0.90, farY = height * 0.17;
-  const t = (1 - depthScale(cy)) / (1 - DS1);
-  return nearY + (farY - nearY) * t;
-}
-function projH(z, cy) { return z * height * 0.30 * depthScale(cy); }
+// Config do jogador (sensibilidade/latência). calib.js cria window.cfg;
+// aqui garantimos um default caso calib.js não tenha carregado.
+window.cfg = window.cfg || {
+  sensitivity: 38, smoothing: 0.35, reach: 0.30, invertX: false,
+  swingThreshold: 14, rotThreshold: 320, sendRate: 60,
+};
 
 // ── Estado ────────────────────────────────────────────────
 let ball;
-let playerX = 0, aiX = 0;           // posição lateral das raquetes (cx)
-let swing = { t: -9999, power: 1 }; // última raquetada do jogador
+let playerX = 0, aiX = 0;
+let swing = { t: -9999, power: 1 };
 let scoreP = 0, scoreC = 0;
-let state = 'serve';                // 'serve' | 'rally' | 'over'
+let state = 'serve';            // 'serve' | 'rally' | 'over'
+let mode = 'match';            // 'match' | 'training'
 let serveAt = 0;
 let msg = '';
 let lastSwingFx = -9999;
 
 function newBall() {
   return {
-    cx: 0, cy: 0.5, z: 0.5,
-    vx: 0, vy: 0, vz: 0,
-    bounces: 0, bounceSide: 0, // -1 lado jogador, +1 lado CPU
-    attemptP: false, attemptC: false,
-    alive: true, trail: [],
+    cx: 0, cy: 0.5, z: 0.5, vx: 0, vy: 0, vz: 0,
+    bounces: 0, bounceSide: 0, attemptP: false, attemptC: false, trail: [],
   };
 }
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
   ball = newBall();
-  startServe('cpu'); // a CPU sempre saca para o jogador
+  startServe('cpu');
 }
 function windowResized() { resizeCanvas(windowWidth, windowHeight); }
 
-// ── Saque ─────────────────────────────────────────────────
+// ── Saque / alimentação ───────────────────────────────────
 function startServe(by) {
   state = 'serve';
   ball = newBall();
-  if (by === 'cpu') { ball.cx = random(-0.4, 0.4); ball.cy = 0.95; ball.z = 0.6; }
-  else { ball.cx = random(-0.4, 0.4); ball.cy = 0.05; ball.z = 0.6; }
+  if (by === 'cpu') { ball.cx = random(-0.45, 0.45); ball.cy = 0.95; ball.z = 0.6; }
+  else { ball.cx = random(-0.45, 0.45); ball.cy = 0.05; ball.z = 0.6; }
   ball._serveBy = by;
-  serveAt = millis() + 1100;
-  msg = by === 'cpu' ? 'CPU vai sacar…' : 'seu saque…';
+  serveAt = millis() + (mode === 'training' ? 700 : 1100);
+  msg = mode === 'training' ? 'treino — calibre e rebata' : (by === 'cpu' ? 'CPU vai sacar…' : 'seu saque…');
 }
 
 function launchServe() {
   const by = ball._serveBy;
   const target = random(-0.5, 0.5);
-  if (by === 'cpu') {
-    ball.vy = -1.05; ball.vx = (target - ball.cx) * 0.9; ball.vz = 1.7;
-  } else {
-    ball.vy = 1.05; ball.vx = (target - ball.cx) * 0.9; ball.vz = 1.7;
-  }
+  if (by === 'cpu') { ball.vy = -1.05; ball.vx = (target - ball.cx) * 0.9; ball.vz = 1.7; }
+  else { ball.vy = 1.05; ball.vx = (target - ball.cx) * 0.9; ball.vz = 1.7; }
   state = 'rally';
-  msg = '';
+  if (mode !== 'training') msg = '';
 }
 
 // ── Raquetada do jogador ──────────────────────────────────
@@ -103,7 +112,7 @@ function playerReturn() {
   ball.vz = 1.5 + 0.35 * pw;
   ball.bounces = 0; ball.bounceSide = 0;
   ball.attemptC = false;
-  ball.cy = PLAYER_LINE; // garante que saiu da zona
+  ball.cy = PLAYER_LINE;
 }
 
 function aiReturn() {
@@ -117,6 +126,7 @@ function aiReturn() {
 }
 
 function awardPoint(winner) {
+  if (mode === 'training') { startServe('cpu'); return; } // só re-alimenta
   if (winner === 'p') scoreP++; else scoreC++;
   if (scoreP >= WIN_SCORE || scoreC >= WIN_SCORE) {
     state = 'over';
@@ -124,16 +134,12 @@ function awardPoint(winner) {
                           : 'CPU venceu.  (ENTER joga de novo)';
     return;
   }
-  // quem perdeu o ponto recebe o próximo saque do adversário
   startServe('cpu');
 }
 
 // ── Física ────────────────────────────────────────────────
 function updatePhysics(dt) {
-  if (state === 'serve') {
-    if (millis() >= serveAt) launchServe();
-    return;
-  }
+  if (state === 'serve') { if (millis() >= serveAt) launchServe(); return; }
   if (state !== 'rally') return;
 
   ball.vz -= GRAV * dt;
@@ -141,11 +147,9 @@ function updatePhysics(dt) {
   ball.cy += ball.vy * dt;
   ball.z  += ball.vz * dt;
 
-  // rastro
   ball.trail.push({ cx: ball.cx, cy: ball.cy, z: ball.z });
   if (ball.trail.length > 12) ball.trail.shift();
 
-  // quique no chão
   if (ball.z <= 0 && ball.vz < 0) {
     ball.z = 0;
     ball.vz = -ball.vz * RESTITUTION;
@@ -153,62 +157,35 @@ function updatePhysics(dt) {
     const side = ball.cy < NET_CY ? -1 : 1;
     if (side === ball.bounceSide) ball.bounces++;
     else { ball.bounceSide = side; ball.bounces = 1; }
-    // dois quiques do mesmo lado = ponto do adversário
-    if (ball.bounces >= 2) {
-      awardPoint(side === -1 ? 'c' : 'p');
-      return;
-    }
+    if (ball.bounces >= 2) { awardPoint(side === -1 ? 'c' : 'p'); return; }
   }
 
-  // colisão com a rede
-  if (crossedNet(dt)) {
-    const netY = projY(NET_CY);
-    if (ball.z < NET_H) {
-      // bateu na rede — ponto de quem rebateu por último vai para o outro
-      awardPoint(ball.vy > 0 ? 'c' : 'p');
-      return;
-    }
-  }
+  if (crossedNet() && ball.z < NET_H) { awardPoint(ball.vy > 0 ? 'c' : 'p'); return; }
+  if (abs(ball.cx) > 1.15) { awardPoint(ball.vy > 0 ? 'c' : 'p'); return; }
 
-  // saída lateral (fora)
-  if (abs(ball.cx) > 1.15) {
-    awardPoint(ball.vy > 0 ? 'c' : 'p');
-    return;
-  }
-
-  // zona de rebatida do jogador (bola vindo, perto da base inferior)
   if (ball.vy < 0 && ball.cy <= PLAYER_LINE && !ball.attemptP) {
     ball.attemptP = true;
     const inTime = millis() - swing.t < SWING_WINDOW;
-    const inReach = abs(ball.cx - playerX) < RACKET_REACH;
-    const goodH = ball.z < 1.05;
-    if (inTime && inReach && goodH) playerReturn();
+    const inReach = abs(ball.cx - playerX) < window.cfg.reach;
+    if (inTime && inReach && ball.z < 1.05) playerReturn();
   }
-  if (ball.cy < -0.06) { awardPoint('c'); return; } // passou da base do jogador
+  if (ball.cy < -0.06) { awardPoint('c'); return; }
 
-  // zona de rebatida da CPU
   if (ball.vy > 0 && ball.cy >= AI_LINE && !ball.attemptC) {
     ball.attemptC = true;
-    const inReach = abs(ball.cx - aiX) < AI_REACH;
-    const lucky = random() > AI_MISS;
-    if (inReach && lucky && ball.z < 1.1) aiReturn();
+    if (abs(ball.cx - aiX) < AI_REACH && random() > AI_MISS && ball.z < 1.1) aiReturn();
   }
-  if (ball.cy > 1.06) { awardPoint('p'); return; } // passou da base da CPU
+  if (ball.cy > 1.06) { awardPoint('p'); return; }
 }
 
 let _prevCy = 0.5;
-function crossedNet(dt) {
-  const was = _prevCy, now = ball.cy;
-  _prevCy = now;
+function crossedNet() {
+  const was = _prevCy, now = ball.cy; _prevCy = now;
   return (was < NET_CY && now >= NET_CY) || (was > NET_CY && now <= NET_CY);
 }
 
-// ── IA: movimentação ──────────────────────────────────────
 function updateAI(dt) {
-  // segue a bola quando ela está indo para o lado da CPU
-  let target = 0;
-  if (ball.vy > 0) target = ball.cx;
-  else target = ball.cx * 0.3; // descansa perto do centro
+  let target = ball.vy > 0 ? ball.cx : ball.cx * 0.3;
   target = constrain(target, -1, 1);
   const step = AI_SPEED * dt;
   aiX += constrain(target - aiX, -step, step);
@@ -216,29 +193,33 @@ function updateAI(dt) {
 
 // ── Controle do jogador ───────────────────────────────────
 function updatePlayer() {
+  const c = window.cfg;
   let target;
   if (window.Phone && Phone.connected) {
-    target = constrain(Phone.gamma / 38, -1, 1); // gamma ~ ±38° -> ±1
-    if (Phone.swing) {
-      doSwing(Phone.swing.power);
-      Phone.swing = null;
-    }
+    let g = Phone.gamma; if (c.invertX) g = -g;
+    target = g / c.sensitivity;
+    if (Phone.swing) { doSwing(Phone.swing.power); Phone.swing = null; }
   } else {
     target = map(mouseX, 0, width, -1, 1, true);
+    if (c.invertX) target = -target;
   }
-  playerX = lerp(playerX, constrain(target, -1, 1), 0.28);
+  playerX = lerp(playerX, constrain(target, -1, 1), c.smoothing);
 }
 
 function keyPressed() {
   if (key === ' ') doSwing(1.2);
-  if (keyCode === ENTER) {
-    if (state === 'over') { scoreP = 0; scoreC = 0; startServe('cpu'); }
-  }
+  if (keyCode === ENTER && state === 'over') { scoreP = 0; scoreC = 0; startServe('cpu'); }
 }
 function mousePressed() {
-  // clique também conta como raquetada (útil no desktop)
   if (mouseY > 0 && state === 'rally') doSwing(1.1);
 }
+
+// Alterna partida/treino (chamado pelo painel de calibração).
+window.setMode = function (m) {
+  mode = m;
+  scoreP = 0; scoreC = 0;
+  startServe('cpu');
+};
 
 // ── Desenho ───────────────────────────────────────────────
 function draw() {
@@ -249,170 +230,178 @@ function draw() {
 
   drawBackground();
   drawCourt();
-  drawNetBack();
+  drawCPU();
+  drawNet();
   drawShadow();
-  drawAIRacket();
-  drawNetFront();
   drawBall();
-  drawPlayerRacket();
+  drawForegroundRacket();
   drawHUD();
 }
 
 function drawBackground() {
-  background(8, 22, 36);
+  const hy = horizonY();
   noStroke();
-  // arquibancada/horizonte
-  fill(13, 30, 48);
-  rect(0, 0, width, projY(1) - 6);
+  // céu
+  fill(126, 178, 214); rect(0, 0, width, hy);
+  // arquibancada / parede ao fundo
+  fill(74, 92, 96); rect(0, hy * 0.5, width, hy * 0.5);
+  fill(60, 76, 80); rect(0, hy * 0.78, width, hy * 0.22);
+  // piso de entorno (surround) abaixo do horizonte
+  fill(36, 104, 78); rect(0, hy, width, height - hy);
 }
 
 function drawCourt() {
-  // piso da quadra (trapézio)
-  const TL = [projX(-1, 1), projY(1)];
-  const TR = [projX(1, 1), projY(1)];
-  const BR = [projX(1, 0), projY(0)];
-  const BL = [projX(-1, 0), projY(0)];
+  // piso da quadra (azul) — quad com cantos projetados (perto = largo embaixo)
+  const fL = project(-1, 1, 0), fR = project(1, 1, 0);
+  const nL = project(-1, 0, 0), nR = project(1, 0, 0);
   noStroke();
-  fill(34, 96, 140); // quadra azul (hard court)
-  quad(TL[0], TL[1], TR[0], TR[1], BR[0], BR[1], BL[0], BL[1]);
+  fill(38, 116, 168);
+  quad(fL.x, fL.y, fR.x, fR.y, nR.x, nR.y, nL.x, nL.y);
 
-  // entorno
-  noFill();
-  // linhas
-  stroke(235, 240, 245, 220);
+  stroke(238, 243, 248, 230);
   strokeWeight(2);
-  courtLine(-1, 0, -1, 1); // lateral esq
-  courtLine(1, 0, 1, 1);   // lateral dir
-  courtLine(-1, 0, 1, 0);  // base jogador
-  courtLine(-1, 1, 1, 1);  // base CPU
-  // linhas de saque
-  courtLine(-1, 0.28, 1, 0.28);
-  courtLine(-1, 0.72, 1, 0.72);
-  courtLine(0, 0.28, 0, 0.72); // central de saque
+  courtLine(-1, 0, -1, 1); courtLine(1, 0, 1, 1);    // laterais
+  courtLine(-1, 0, 1, 0);  courtLine(-1, 1, 1, 1);    // bases
+  courtLine(-1, 0.28, 1, 0.28); courtLine(-1, 0.72, 1, 0.72); // linhas de saque
+  courtLine(0, 0.28, 0, 0.72);                         // central
 }
-
 function courtLine(cx1, cy1, cx2, cy2) {
-  line(projX(cx1, cy1), projY(cy1), projX(cx2, cy2), projY(cy2));
+  const a = project(cx1, cy1, 0), b = project(cx2, cy2, 0);
+  line(a.x, a.y, b.x, b.y);
 }
 
-function drawNetBack() { drawNet(true); }
-function drawNetFront() { drawNet(false); }
-function drawNet(back) {
-  // postes + faixa da rede em cy=0.5
-  const yBase = projY(NET_CY);
-  const xL = projX(-1.05, NET_CY), xR = projX(1.05, NET_CY);
-  const topL = yBase - projH(NET_H, NET_CY);
+function drawNet() {
+  const L0 = project(-1.05, NET_CY, 0), R0 = project(1.05, NET_CY, 0);
+  const Lt = project(-1.05, NET_CY, NET_H), Rt = project(1.05, NET_CY, NET_H);
   push();
-  // malha
-  stroke(220, 230, 238, back ? 60 : 130);
-  strokeWeight(1);
-  const segs = 26;
+  stroke(225, 233, 240, 120); strokeWeight(1);
+  const segs = 30;
   for (let i = 0; i <= segs; i++) {
     const t = i / segs;
-    const x = lerp(xL, xR, t);
-    line(x, topL, x, yBase);
+    line(lerp(L0.x, R0.x, t), lerp(L0.y, R0.y, t), lerp(Lt.x, Rt.x, t), lerp(Lt.y, Rt.y, t));
   }
-  // faixa superior
-  stroke(245); strokeWeight(3);
-  line(xL, topL, xR, topL);
-  // postes
-  strokeWeight(5); stroke(230);
-  line(xL, yBase, xL, topL);
-  line(xR, yBase, xR, topL);
+  // malha horizontal
+  for (let k = 0; k <= 4; k++) {
+    const t = k / 4;
+    line(lerp(L0.x, Lt.x, t), lerp(L0.y, Lt.y, t), lerp(R0.x, Rt.x, t), lerp(R0.y, Rt.y, t));
+  }
+  stroke(245); strokeWeight(3); line(Lt.x, Lt.y, Rt.x, Rt.y); // faixa superior
+  stroke(70); strokeWeight(5);
+  line(L0.x, L0.y, Lt.x, Lt.y); line(R0.x, R0.y, Rt.x, Rt.y);   // postes
+  pop();
+}
+
+function drawCPU() {
+  const feet = project(aiX, AI_LINE, 0);
+  if (!feet.vis) return;
+  const s = feet.scale;
+  const bodyH = 1.7 * s; // unidades -> px
+  push();
+  translate(feet.x, feet.y);
+  noStroke();
+  // sombra
+  fill(0, 0, 0, 60); ellipse(0, 0, 1.2 * s, 0.4 * s);
+  // corpo
+  fill(232, 107, 90);
+  rect(-0.18 * s, -bodyH, 0.36 * s, bodyH * 0.62, 3); // tronco
+  fill(225, 195, 165);
+  circle(0, -bodyH - 0.12 * s, 0.34 * s);              // cabeça
+  // pernas
+  stroke(40, 40, 50); strokeWeight(Math.max(2, 0.12 * s));
+  line(-0.08 * s, -bodyH * 0.38, -0.1 * s, 0);
+  line(0.08 * s, -bodyH * 0.38, 0.1 * s, 0);
+  // raquete
+  noFill(); stroke(40, 40, 50); strokeWeight(Math.max(1.5, 0.06 * s));
+  ellipse(0.3 * s, -bodyH * 0.7, 0.5 * s, 0.7 * s);
   pop();
 }
 
 function drawShadow() {
-  const x = projX(ball.cx, ball.cy);
-  const y = projY(ball.cy);
-  const s = depthScale(ball.cy);
-  const a = map(ball.z, 0, 2, 90, 18, true);
-  noStroke();
-  fill(0, 0, 0, a);
-  ellipse(x, y, 26 * s, 10 * s);
+  const p = project(ball.cx, ball.cy, 0);
+  if (!p.vis) return;
+  const a = map(ball.z, 0, 2, 95, 18, true);
+  noStroke(); fill(0, 0, 0, a);
+  ellipse(p.x, p.y, 0.5 * p.scale, 0.18 * p.scale);
 }
 
 function drawBall() {
-  // rastro
   noStroke();
   for (let i = 0; i < ball.trail.length; i++) {
     const t = ball.trail[i];
-    const s = depthScale(t.cy);
-    const x = projX(t.cx, t.cy);
-    const y = projY(t.cy) - projH(t.z, t.cy);
-    fill(223, 245, 90, (i / ball.trail.length) * 90);
-    circle(x, y, (8 + 12 * s) * (i / ball.trail.length));
+    const p = project(t.cx, t.cy, t.z);
+    if (!p.vis) continue;
+    const k = i / ball.trail.length;
+    fill(223, 245, 90, k * 80);
+    circle(p.x, p.y, 0.16 * p.scale * k);
   }
-  const x = projX(ball.cx, ball.cy);
-  const y = projY(ball.cy) - projH(ball.z, ball.cy);
-  const r = 8 + 13 * depthScale(ball.cy);
-  noStroke();
-  fill(223, 245, 90);
-  circle(x, y, r);
-  // brilho
-  fill(255, 255, 255, 120);
-  circle(x - r * 0.18, y - r * 0.18, r * 0.4);
+  const p = project(ball.cx, ball.cy, ball.z);
+  if (!p.vis) return;
+  const r = Math.max(3, 0.13 * p.scale);
+  fill(223, 245, 90); circle(p.x, p.y, r);
+  fill(255, 255, 255, 130); circle(p.x - r * 0.18, p.y - r * 0.18, r * 0.4);
+  // costura
+  noFill(); stroke(180, 200, 60); strokeWeight(Math.max(1, r * 0.06));
+  arc(p.x, p.y, r * 0.9, r * 0.9, -0.6, 0.9);
 }
 
-function drawPlayerRacket() {
-  const cy = PLAYER_LINE - 0.02;
-  drawRacket(playerX, cy, '#d4b87a', millis() - lastSwingFx < 130);
-}
-function drawAIRacket() {
-  drawRacket(aiX, AI_LINE + 0.02, '#e86b5a', false);
-}
-function drawRacket(cx, cy, col, hot) {
-  const x = projX(cx, cy);
-  const y = projY(cy);
-  const s = depthScale(cy);
-  const w = 70 * s, h = 96 * s;
+// Raquete em primeiro plano (espaço de tela, segue o celular/mouse)
+function drawForegroundRacket() {
+  const swingT = millis() - lastSwingFx;
+  const swinging = swingT < 200;
+  const rx = width / 2 + playerX * width * 0.40;
+  const ry = height * 0.95;
+  const sz = Math.min(width, height) * 0.0014; // escala base
   push();
-  translate(x, y);
+  translate(rx, ry);
+  let rot = -0.32 + playerX * 0.18;
+  if (swinging) rot += Math.sin((swingT / 200) * Math.PI) * -1.5;
+  rotate(rot);
+  const W = 150 * sz, H = 200 * sz;
+
+  // antebraço / mão
+  noStroke(); fill(225, 195, 165);
+  rect(-14 * sz, H * 0.35, 28 * sz, 160 * sz, 14 * sz);
   // cabo
-  stroke(40, 30, 20); strokeWeight(6 * s);
-  line(0, 0, 0, h * 0.6);
+  stroke(30, 24, 18); strokeWeight(18 * sz); strokeCap(ROUND);
+  line(0, H * 0.45, 0, H * 0.05);
   // aro
-  noFill();
-  stroke(col); strokeWeight((hot ? 7 : 4) * s);
-  ellipse(0, -h * 0.15, w, h);
+  noFill(); stroke(swinging ? '#ffd86b' : '#d4b87a'); strokeWeight((swinging ? 12 : 9) * sz);
+  ellipse(0, -H * 0.18, W, H);
   // cordas
-  stroke(255, 255, 255, 70); strokeWeight(1);
-  for (let i = -2; i <= 2; i++) line(i * w * 0.16, -h * 0.6, i * w * 0.16, h * 0.28);
-  for (let j = -2; j <= 2; j++) line(-w * 0.45, -h * 0.15 + j * h * 0.16, w * 0.45, -h * 0.15 + j * h * 0.16);
+  stroke(255, 255, 255, 90); strokeWeight(1.4 * sz);
+  for (let i = -3; i <= 3; i++) line(i * W * 0.13, -H * 0.62, i * W * 0.13, H * 0.24);
+  for (let j = -3; j <= 3; j++) line(-W * 0.46, -H * 0.18 + j * H * 0.12, W * 0.46, -H * 0.18 + j * H * 0.12);
   pop();
 }
 
 function drawHUD() {
-  // placar
   textFont('IBM Plex Mono, monospace');
-  textAlign(CENTER, TOP);
   noStroke();
-  fill(255, 255, 255, 230);
-  textSize(13);
-  text('VOCÊ', width / 2 - 70, 64);
-  text('CPU', width / 2 + 70, 64);
-  textSize(34);
-  fill(212, 184, 122);
-  text(scoreP, width / 2 - 70, 80);
-  fill(232, 107, 90);
-  text(scoreC, width / 2 + 70, 80);
-  fill(255, 255, 255, 120);
-  textSize(20);
-  text('—', width / 2, 90);
 
-  // indicador de controle
-  textAlign(LEFT, BOTTOM);
-  textSize(11);
+  // placar
+  textAlign(CENTER, TOP);
+  fill(255, 255, 255, 230); textSize(13);
+  text('VOCÊ', width / 2 - 70, 60); text('CPU', width / 2 + 70, 60);
+  textSize(32);
+  fill(212, 184, 122); text(scoreP, width / 2 - 70, 76);
+  fill(232, 107, 90);  text(scoreC, width / 2 + 70, 76);
+  fill(255, 255, 255, 120); textSize(18); text('—', width / 2, 84);
+
+  // latência + modo
+  textAlign(LEFT, TOP); textSize(12);
+  const lat = (window.Phone && Phone.connected && Phone.latency != null) ? Math.round(Phone.latency) + ' ms' : '—';
+  fill(255, 255, 255, 150);
+  text((mode === 'training' ? 'TREINO' : 'PARTIDA') + '   latência: ' + lat, 20, 22);
+
+  // dica de controle
+  textAlign(LEFT, BOTTOM); textSize(11);
   const connected = window.Phone && Phone.connected;
   fill(connected ? color(127, 224, 160) : color(255, 255, 255, 110));
-  text(connected ? '📱 celular conectado — incline para mover, balance para rebater'
-                 : 'mouse move · ESPAÇO/clique rebate', 20, height - 18);
+  text(connected ? '📱 incline para mover · balance para rebater · [C] calibrar'
+                 : 'mouse move · ESPAÇO/clique rebate · [C] calibrar', 20, height - 16);
 
-  // mensagem central (saque / fim de jogo)
   if (msg) {
-    textAlign(CENTER, CENTER);
-    textSize(state === 'over' ? 30 : 18);
-    fill(255, 255, 255, 235);
-    text(msg, width / 2, height * 0.42);
+    textAlign(CENTER, CENTER); textSize(state === 'over' ? 30 : 18);
+    fill(255, 255, 255, 235); text(msg, width / 2, height * 0.30);
   }
 }

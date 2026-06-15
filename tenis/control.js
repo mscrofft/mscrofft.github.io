@@ -23,6 +23,13 @@
   let lastOrientSent = 0;
   let lastSwing = 0;
 
+  // config (ajustada pelo host via mensagem 'config')
+  let sendInterval = 1000 / 60;   // 60 Hz
+  let swingThreshold = 14;        // m/s²
+  let rotThreshold = 320;         // °/s
+  let neutralGamma = 0;           // offset de centro (recalibrar)
+  let lastGamma = 0;
+
   function setStatus(el, msg, cls) {
     if (!el) return;
     el.textContent = msg;
@@ -41,6 +48,7 @@
         $('play').classList.add('on');
         setStatus(status2, 'conectado — pode jogar!', 'ok');
       });
+      conn.on('data', onHostData);
       conn.on('close', () => {
         connected = false;
         setStatus(status2, 'desconectado', 'err');
@@ -62,19 +70,34 @@
     }
   }
 
-  // ── Sensores ────────────────────────────────────────────
-  function onOrient(e) {
-    const now = performance.now();
-    if (now - lastOrientSent < 33) return; // ~30Hz
-    lastOrientSent = now;
-    send({ type: 'orient', gamma: e.gamma || 0, beta: e.beta || 0, alpha: e.alpha || 0 });
-    // feedback visual: barra mostra inclinação lateral
-    const g = Math.max(-38, Math.min(38, e.gamma || 0));
-    if (meterFill) meterFill.style.width = (50 + (g / 38) * 50) + '%';
+  // mensagens vindas do host (computador)
+  function onHostData(d) {
+    if (!d || typeof d !== 'object') return;
+    if (d.type === 'config') {
+      if (d.swingThreshold != null) swingThreshold = d.swingThreshold;
+      if (d.rotThreshold != null) rotThreshold = d.rotThreshold;
+      if (d.sendRate) sendInterval = 1000 / d.sendRate;
+    } else if (d.type === 'ping') {
+      send({ type: 'pong', t: d.t });        // devolve o timestamp p/ medir RTT
+    } else if (d.type === 'center') {
+      neutralGamma = lastGamma;               // ângulo atual vira o "centro"
+      if (navigator.vibrate) navigator.vibrate(20);
+    }
   }
 
-  const SWING_THRESHOLD = 14;  // m/s² (aceleração linear) — pico = raquetada
-  const ROT_THRESHOLD = 320;   // °/s — giro rápido do pulso
+  // ── Sensores ────────────────────────────────────────────
+  function onOrient(e) {
+    lastGamma = e.gamma || 0;
+    const now = performance.now();
+    if (now - lastOrientSent < sendInterval) return; // taxa configurável (default 60Hz)
+    lastOrientSent = now;
+    const g = lastGamma - neutralGamma; // aplica o centro recalibrado
+    send({ type: 'orient', gamma: g, beta: e.beta || 0, alpha: e.alpha || 0 });
+    // feedback visual: barra mostra inclinação lateral
+    const gc = Math.max(-38, Math.min(38, g));
+    if (meterFill) meterFill.style.width = (50 + (gc / 38) * 50) + '%';
+  }
+
   function onMotion(e) {
     const now = performance.now();
     // aceleração sem gravidade quando disponível; senão usa a com gravidade
@@ -88,7 +111,7 @@
     let rotMag = 0;
     if (r) rotMag = Math.hypot(r.alpha || 0, r.beta || 0, r.gamma || 0);
 
-    const isSwing = (accMag > SWING_THRESHOLD || rotMag > ROT_THRESHOLD);
+    const isSwing = (accMag > swingThreshold || rotMag > rotThreshold);
     if (isSwing && now - lastSwing > 280) {
       lastSwing = now;
       const power = Math.min(2.2, 0.8 + accMag / 22 + rotMag / 900);

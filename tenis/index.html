@@ -61,6 +61,50 @@
     }
     #conn.hidden { display: none; }
 
+    /* ── Botão engrenagem ────────────────────────────────────── */
+    #calib-gear {
+      position: fixed; top: 16px; right: 20px; z-index: 45;
+      width: 40px; height: 40px; border-radius: 50%;
+      background: rgba(8,16,26,0.8); border: 1px solid rgba(240,236,227,0.25);
+      color: var(--ui-fg, #f0ece3); font-size: 18px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+    #calib-gear:hover { border-color: var(--ui-accent, #d4b87a); }
+
+    /* ── Painel de calibração ────────────────────────────────── */
+    #calib {
+      position: fixed; top: 64px; right: 20px; z-index: 46;
+      width: min(90vw, 320px);
+      background: rgba(8,16,26,0.95);
+      border: 1px solid var(--ui-accent, #d4b87a); border-radius: 12px;
+      padding: 16px 18px; color: var(--ui-fg, #f0ece3);
+      font-family: 'IBM Plex Mono', ui-monospace, monospace;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    }
+    #calib.hidden { display: none; }
+    .calib-head { font-size: 14px; font-weight: 600; margin-bottom: 12px; letter-spacing: 0.04em; }
+    .calib-mode { display: flex; gap: 8px; margin-bottom: 14px; }
+    .calib-mode button {
+      flex: 1; font-family: inherit; font-size: 12px; padding: 8px;
+      border-radius: 8px; cursor: pointer;
+      background: transparent; color: var(--ui-fg, #f0ece3);
+      border: 1px solid rgba(240,236,227,0.25);
+    }
+    .calib-mode button.on { background: var(--ui-accent, #d4b87a); color: #0a1622; border-color: transparent; }
+    .calib-row { margin-bottom: 12px; }
+    .calib-row label { display: flex; justify-content: space-between; font-size: 10px; opacity: 0.7; margin-bottom: 4px; }
+    .calib-val { opacity: 1; color: var(--ui-accent, #d4b87a); font-weight: 600; }
+    .calib-row input[type=range] { width: 100%; accent-color: var(--ui-accent, #d4b87a); }
+    .calib-check { display: flex; align-items: center; gap: 8px; font-size: 11px; opacity: 0.8; margin: 6px 0 14px; cursor: pointer; }
+    .calib-actions { display: flex; gap: 8px; }
+    .calib-actions button {
+      flex: 1; font-family: inherit; font-size: 11px; padding: 9px;
+      border-radius: 8px; cursor: pointer;
+      background: transparent; color: var(--ui-fg, #f0ece3);
+      border: 1px solid rgba(240,236,227,0.25);
+    }
+    .calib-actions button:hover { border-color: var(--ui-accent, #d4b87a); }
+
     /* Aviso "conectado" rápido */
     #flash {
       position: fixed; top: 80px; left: 50%; transform: translateX(-50%);
@@ -86,9 +130,12 @@
 
   <div id="flash">📱 celular conectado</div>
 
+  <button id="calib-gear" title="Calibração (C)">⚙</button>
+
   <script src="../shared/ui-theme-lite.js"></script>
   <script>UITheme.mountHeader({ title: 'Tênis · Raquete no Celular' });</script>
   <script src="net.js"></script>
+  <script src="calib.js"></script>
   <script src="game.js"></script>
 </body>
 </html>
