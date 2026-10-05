@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kinetic Type</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Playfair+Display:wght@400;700;900&family=Inter:wght@400;700;900&family=Bebas+Neue&family=Anton&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../shared/ui-theme.css" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body data-theme="dark">
+
+  <header class="site-header site-header--solid">
+    <a class="site-logo" href="../index.html">MS<span>.</span></a>
+    <span class="site-title">Kinetic Type · animação tipográfica</span>
+    <span class="site-spacer"></span>
+    <span id="theme-toggle-container"></span>
+  </header>
+
+  <main>
+    <aside id="controls">
+      <div class="group">
+        <h3>Texto</h3>
+        <textarea id="in-text" rows="2">A</textarea>
+        <label>Fonte <select id="in-font">
+          <option>Playfair Display</option>
+          <option>Inter</option>
+          <option>Anton</option>
+          <option>Bebas Neue</option>
+          <option>Space Mono</option>
+          <option>Georgia</option>
+          <option>Helvetica</option>
+          <option>Times New Roman</option>
+        </select></label>
+        <label>Peso <select id="in-weight">
+          <option value="400">Regular</option>
+          <option value="700" selected>Bold</option>
+          <option value="900">Black</option>
+        </select></label>
+        <div class="drop-hint" id="drop-zone">Ou arraste um arquivo .ttf / .otf aqui</div>
+      </div>
+
+      <div class="group">
+        <h3>Formato</h3>
+        <label>Aspecto <select id="in-aspect">
+          <option value="1:1">1:1 (Feed)</option>
+          <option value="9:16">9:16 (Reels/Stories)</option>
+          <option value="16:9">16:9 (Wide)</option>
+          <option value="4:5">4:5 (Portrait)</option>
+        </select></label>
+        <label>Duração (s) <input id="in-duration" type="number" min="1" max="10" step="0.5" value="4" /></label>
+        <label>Loops <input id="in-loops" type="number" min="1" max="20" step="1" value="3" /></label>
+        <label>Escala GIF <select id="in-gif-scale">
+          <option value="1">1×</option>
+          <option value="0.5" selected>1/2</option>
+          <option value="0.25">1/4</option>
+        </select></label>
+      </div>
+
+      <div class="group">
+        <h3>Paleta</h3>
+        <div id="palette-grid" class="palette-grid"></div>
+        <div class="row-h">
+          <label>BG <input id="in-bg" type="color" value="#eaeaea" /></label>
+          <label>A <input id="in-colorA" type="color" value="#000000" /></label>
+          <label>B <input id="in-colorB" type="color" value="#1c3df5" /></label>
+        </div>
+      </div>
+
+      <div class="group">
+        <h3>Efeito</h3>
+        <div class="row-h">
+          <select id="in-effect"></select>
+          <button id="btn-random" class="ghost" title="Randomizar tudo (R)" style="flex:0 0 auto;">🎲</button>
+        </div>
+        <div id="effect-params"></div>
+      </div>
+    </aside>
+
+    <section id="stage">
+      <div id="canvas-wrap">
+        <canvas id="canvas" width="1080" height="1080"></canvas>
+      </div>
+      <div id="playbar">
+        <button id="btn-play">❚❚</button>
+        <input id="scrubber" type="range" min="0" max="1000" value="0" />
+        <span id="time-label" style="font-size:11px; min-width:48px; text-align:right;">0.00s</span>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <span class="status" id="status">Pronto.</span>
+    <div class="export-actions">
+      <button class="ghost" id="btn-reset" title="Restaurar padrões">Reset</button>
+      <button class="ghost" id="btn-png">PNG</button>
+      <button class="ghost" id="btn-gif">GIF</button>
+      <button id="btn-mp4">Exportar MP4</button>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/opentype.js@1.3.4/dist/opentype.min.js"></script>
+  <script src="../shared/ui-theme-lite.js"></script>
+  <script src="src/glyph.js"></script>
+  <script src="src/timeline.js"></script>
+  <script src="src/effects/registry.js"></script>
+  <script src="src/effects/verticalSlice.js"></script>
+  <script src="src/effects/halftone.js"></script>
+  <script src="src/effects/halftoneDense.js"></script>
+  <script src="src/effects/geometric.js"></script>
+  <script src="src/effects/contourLines.js"></script>
+  <script src="src/effects/echo.js"></script>
+  <script src="src/effects/blinds.js"></script>
+  <script src="src/effects/chromatic.js"></script>
+  <script src="src/effects/mosaic.js"></script>
+  <script src="src/export.js"></script>
+  <script src="sketch.js"></script>
+</body>
+</html>
