@@ -1,0 +1,1068 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Type Studio</title>
+<style>
+  :root { --bg:#0e0e10; --panel:#151518; --line:#2a2a30; --fg:#ececec; --dim:#8b8b95; --acc:#7cf; --ink:#f4f4f4; --cell:#1b1b20; --cA:#0a14c8; --cB:#faf6ee; }
+  body[data-theme="light"] { --bg:#f2f2f0; --panel:#fff; --line:#dcdcd6; --fg:#111; --dim:#777; --acc:#06c; --ink:#111; --cell:#ecece8; }
+  * { box-sizing: border-box; }
+  html, body { margin:0; height:100%; background:var(--bg); color:var(--fg); font:12px/1.4 'IBM Plex Mono', ui-monospace, Menlo, monospace; }
+  .app { display:grid; grid-template-columns: 300px 1fr; height:100vh; }
+  aside { background:var(--panel); border-right:1px solid var(--line); overflow-y:auto; padding:14px; }
+  main { overflow-y:auto; padding:16px 20px 60px; display:flex; flex-direction:column; gap:22px; min-width:0; }
+  h1 { font-size:13px; margin:0 0 4px; letter-spacing:.04em; }
+  h2 { font-size:10px; text-transform:uppercase; letter-spacing:.12em; color:var(--dim); margin:18px 0 6px; border-top:1px solid var(--line); padding-top:12px; }
+  .row { display:flex; align-items:center; gap:8px; margin:6px 0; }
+  .row label { flex:0 0 96px; color:var(--dim); }
+  .row input[type=range] { flex:1; min-width:0; accent-color:var(--acc); }
+  .row .val { flex:0 0 38px; text-align:right; font-variant-numeric:tabular-nums; }
+  .step { display:flex; align-items:center; gap:6px; flex:1; justify-content:flex-end; }
+  .step button { width:28px; height:26px; }
+  .step .val { text-align:center; flex:0 0 28px; }
+  button, select, input[type=text], textarea { background:transparent; color:inherit; border:1px solid var(--line); font:inherit; padding:5px 9px; cursor:pointer; border-radius:0; }
+  button:hover { border-color:var(--fg); }
+  button.on { background:var(--fg); color:var(--bg); border-color:var(--fg); }
+  input[type=text], textarea { cursor:text; width:100%; }
+  textarea { resize:vertical; min-height:64px; font-size:14px; }
+  .toggles { display:flex; gap:6px; flex-wrap:wrap; }
+  .toggles button { flex:1; min-width:70px; }
+  .btns { display:flex; gap:6px; flex-wrap:wrap; margin-top:6px; }
+  .btns button { flex:1; white-space:nowrap; }
+  .primary { background:var(--acc); color:#000; border-color:var(--acc); font-weight:600; }
+  .bar { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .bar .cur { font-size:22px; min-width:34px; text-align:center; border:1px solid var(--line); padding:0 8px; }
+  .bar .sp { flex:1; }
+  #ed { width:100%; height:min(58vh, 620px); display:block; background:var(--stage,var(--cell)); touch-action:none; cursor:crosshair; user-select:none; border:1px solid var(--line); }
+  #ed .g { fill:none; stroke:var(--line); stroke-width:.015; }
+  #ed .base { stroke:var(--acc); stroke-width:.02; stroke-dasharray:.1 .1; opacity:.6; }
+  .c0 { fill:var(--k0); stroke:var(--k0); } .c1 { fill:var(--k1); stroke:var(--k1); }
+  .c2 { fill:var(--k2); stroke:var(--k2); } .c3 { fill:var(--k3); stroke:var(--k3); }
+  .c0,.c1,.c2,.c3 { stroke-width:.008; stroke-linejoin:round; }
+  #ed .ghost { fill:none; stroke:var(--acc); stroke-width:.02; opacity:.55; }
+  #grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(62px, 1fr)); gap:4px; }
+  .gc { position:relative; border:1px solid var(--line); background:var(--stage,var(--cell)); cursor:pointer; padding:6px; aspect-ratio:1; }
+  .gc svg { width:100%; height:100%; display:block; }
+  .gc i { position:absolute; left:3px; top:1px; font-style:normal; font-size:9px; color:var(--dim); }
+  .gc.sel { border-color:var(--acc); outline:1px solid var(--acc); }
+  .lbl { font-size:10px; text-transform:uppercase; letter-spacing:.12em; color:var(--dim); margin-bottom:8px; display:flex; gap:12px; align-items:center; }
+  #test { background:var(--stage,var(--cell)); border:1px solid var(--line); margin-top:8px; padding:16px; overflow:hidden; }
+  #test svg { display:block; width:100%; }
+  .hint { color:var(--dim); font-size:11px; margin-top:6px; }
+  input[type=color] { width:34px; height:26px; padding:0; border:1px solid var(--line); background:none; }
+  @media (max-width: 860px) { .app { grid-template-columns:1fr; height:auto; } aside { border-right:0; border-bottom:1px solid var(--line); } main { overflow:visible; } html,body{height:auto;} }
+  .ink { fill:var(--ink); }
+  .sil { fill:var(--cB); }
+  .str { fill:var(--cA); }
+  select { min-width:0; }
+</style>
+</head>
+<body data-theme="dark">
+<div class="app">
+  <aside id="side"></aside>
+  <main>
+    <section>
+      <div class="bar">
+        <div class="cur" id="curlabel">A</div>
+        <button id="undo" title="Cmd/Ctrl+Z">Undo</button>
+        <button id="clear">Clear</button>
+        <button id="brushCells" class="on">Cells</button><button id="brushBend">Square bend</button>
+        <button id="invert">Invert</button>
+        <button data-shift="-1,0">←</button><button data-shift="1,0">→</button>
+        <button data-shift="0,-1">↑</button><button data-shift="0,1">↓</button>
+        <span class="sp"></span>
+        <span style="color:var(--dim)">tap / drag to add or remove pixels</span>
+      </div>
+      <svg id="ed" style="margin-top:10px"></svg>
+    </section>
+    <section>
+      <div class="lbl">Alphabet <span id="count"></span></div>
+      <div id="grid"></div>
+    </section>
+    <section>
+      <div class="lbl">Type test
+        <span>Size <input type="range" id="tsize" min="6" max="48" value="10" style="vertical-align:middle;accent-color:var(--acc)"></span>
+      </div>
+      <textarea id="ttext" spellcheck="false">Type something here 0123456789</textarea>
+      <div id="test"></div>
+    </section>
+  </main>
+</div>
+
+<script src="opentype.min.js"></script>
+<script>
+"use strict";
+/* ============================ DATA ============================ */
+const CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!?.,:;'\"-+=/()*&@#%_".split('');
+const BASE_LIQ = {
+A:".###.|#...#|#...#|#####|#...#|#...#|#...#", B:"####.|#...#|#...#|####.|#...#|#...#|####.",
+C:".###.|#...#|#....|#....|#....|#...#|.###.", D:"###..|#..#.|#...#|#...#|#...#|#..#.|###..",
+E:"#####|#....|#....|####.|#....|#....|#####", F:"#####|#....|#....|####.|#....|#....|#....",
+G:".###.|#...#|#....|#.###|#...#|#...#|.###.", H:"#...#|#...#|#...#|#####|#...#|#...#|#...#",
+I:".###.|..#..|..#..|..#..|..#..|..#..|.###.", J:"..###|...#.|...#.|...#.|...#.|#..#.|.##..",
+K:"#...#|#..#.|#.#..|##...|#.#..|#..#.|#...#", L:"#....|#....|#....|#....|#....|#....|#####",
+M:"#...#|##.##|#.#.#|#.#.#|#...#|#...#|#...#", N:"#...#|##..#|#.#.#|#..##|#...#|#...#|#...#",
+O:".###.|#...#|#...#|#...#|#...#|#...#|.###.", P:"####.|#...#|#...#|####.|#....|#....|#....",
+Q:".###.|#...#|#...#|#...#|#.#.#|#..#.|.##.#", R:"####.|#...#|#...#|####.|#.#..|#..#.|#...#",
+S:".####|#....|#....|.###.|....#|....#|####.", T:"#####|..#..|..#..|..#..|..#..|..#..|..#..",
+U:"#...#|#...#|#...#|#...#|#...#|#...#|.###.", V:"#...#|#...#|#...#|#...#|#...#|.#.#.|..#..",
+W:"#...#|#...#|#...#|#.#.#|#.#.#|##.##|#...#", X:"#...#|#...#|.#.#.|..#..|.#.#.|#...#|#...#",
+Y:"#...#|#...#|.#.#.|..#..|..#..|..#..|..#..", Z:"#####|....#|...#.|..#..|.#...|#....|#####",
+0:".###.|#...#|#..##|#.#.#|##..#|#...#|.###.", 1:"..#..|.##..|..#..|..#..|..#..|..#..|.###.",
+2:".###.|#...#|....#|...#.|..#..|.#...|#####", 3:"#####|...#.|..#..|...#.|....#|#...#|.###.",
+4:"...#.|..##.|.#.#.|#..#.|#####|...#.|...#.", 5:"#####|#....|####.|....#|....#|#...#|.###.",
+6:"..##.|.#...|#....|####.|#...#|#...#|.###.", 7:"#####|....#|...#.|..#..|.#...|.#...|.#...",
+8:".###.|#...#|#...#|.###.|#...#|#...#|.###.", 9:".###.|#...#|#...#|.####|....#|...#.|.##..",
+"!":"..#..|..#..|..#..|..#..|..#..|.....|..#..", "?":".###.|#...#|....#|...#.|..#..|.....|..#..",
+".":".....|.....|.....|.....|.....|.....|..#..", ",":".....|.....|.....|.....|.....|..#..|.#...",
+":":".....|.....|..#..|.....|.....|..#..|.....", ";":".....|.....|..#..|.....|.....|..#..|.#...",
+"'":"..#..|..#..|.#...|.....|.....|.....|.....", '"':".#.#.|.#.#.|.....|.....|.....|.....|.....",
+"-":".....|.....|.....|.###.|.....|.....|.....", "+":".....|..#..|..#..|#####|..#..|..#..|.....",
+"=":".....|.....|#####|.....|#####|.....|.....", "/":"....#|....#|...#.|..#..|.#...|#....|#....",
+"(":"...#.|..#..|.#...|.#...|.#...|..#..|...#.", ")":".#...|..#..|...#.|...#.|...#.|..#..|.#...",
+"*":".....|#.#.#|.###.|..#..|.###.|#.#.#|.....", "&":".##..|#..#.|#.#..|.#...|#.#.#|#..#.|.##.#",
+"@":".###.|#...#|#.###|#.#.#|#.###|#....|.####", "#":".#.#.|.#.#.|#####|.#.#.|#####|.#.#.|.#.#.",
+"%":"##..#|##..#|...#.|..#..|.#...|#..##|#..##", "_":".....|.....|.....|.....|.....|.....|#####"
+};
+const BASE_5 = {
+A:"#####|#...#|#####|#...#|#...#", B:"#####|#...#|####.|#...#|#####", C:"#####|#....|#....|#....|#####",
+D:"####.|#...#|#...#|#...#|####.", E:"#####|#....|####.|#....|#####", F:"#####|#....|####.|#....|#....",
+G:"#####|#....|#.###|#...#|#####", H:"#...#|#...#|#####|#...#|#...#", I:"#####|..#..|..#..|..#..|#####",
+J:"....#|....#|....#|#...#|#####", K:"#...#|#..#.|###..|#..#.|#...#", L:"#....|#....|#....|#....|#####",
+M:"#####|#.#.#|#.#.#|#...#|#...#", N:"#####|#...#|#...#|#...#|#...#", O:"#####|#...#|#...#|#...#|#####",
+P:"#####|#...#|#####|#....|#....", Q:"#####|#...#|#...#|#..##|#####", R:"#####|#...#|####.|#..#.|#...#",
+S:"#####|#....|#####|....#|#####", T:"#####|..#..|..#..|..#..|..#..", U:"#...#|#...#|#...#|#...#|#####",
+V:"#...#|#...#|#...#|.#.#.|..#..", W:"#...#|#...#|#.#.#|#####|#...#", X:"#...#|.#.#.|..#..|.#.#.|#...#",
+Y:"#...#|.#.#.|..#..|..#..|..#..", Z:"#####|....#|.###.|#....|#####",
+0:"#####|#...#|#...#|#...#|#####", 1:"..#..|.##..|..#..|..#..|#####", 2:"#####|....#|#####|#....|#####",
+3:"#####|....#|#####|....#|#####", 4:"#...#|#...#|#####|....#|....#", 5:"#####|#....|#####|....#|#####",
+6:"#####|#....|#####|#...#|#####", 7:"#####|....#|....#|....#|....#", 8:"#####|#...#|#####|#...#|#####",
+9:"#####|#...#|#####|....#|#####",
+"!":"..#..|..#..|..#..|.....|..#..", "?":"#####|....#|..###|.....|..#..", ".":".....|.....|.....|.....|..#..",
+",":".....|.....|.....|..#..|.#...", ":":".....|..#..|.....|..#..|.....", "-":".....|.....|.###.|.....|.....",
+"+":"..#..|..#..|#####|..#..|..#..", "=":".....|#####|.....|#####|.....", "/":"....#|...#.|..#..|.#...|#....",
+"(":"..##.|.#...|.#...|.#...|..##.", ")":".##..|...#.|...#.|...#.|.##..", "_":".....|.....|.....|.....|#####",
+"*":"#...#|.###.|..#..|.###.|#...#",
+";":".....|..#..|.....|..#..|.#...", "'":"..#..|..#..|.....|.....|.....", '"':".#.#.|.#.#.|.....|.....|.....",
+"#":".#.#.|#####|.#.#.|#####|.#.#.", "%":"#...#|...#.|..#..|.#...|#...#", "&":"####.|#....|.##..|#..#.|#####",
+"@":"#####|#...#|#.###|#....|#####"
+};
+const key = (x,y) => y*32 + x;
+const $ = id => document.getElementById(id);
+function defaultGlyphs(base){
+  const g = {};
+  for (const ch of CHARS){
+    const src = base[ch] || base[ch.toUpperCase()];
+    const s = new Set();
+    if (src) src.split('|').forEach((row,y)=>[...row].forEach((c,x)=>{ if(c==='#') s.add(key(x,y)); }));
+    g[ch] = s;
+  }
+  return g;
+}
+
+/* ============================ GLOBAL STATE ============================ */
+let ST=null, P={}, glyphs={}, flips={}, family='', pv=1;
+let MOD=null, moduleSvg='', moduleName='';
+const gv={}; CHARS.forEach(c=>gv[c]=1);
+const store={};                 // saved state per style
+let cur='A', brush='cells';
+const undoStack=[];
+const STYLES={};
+const KEY='typestudio:v1';
+const bumpAll=()=>{ pv++; CHARS.forEach(c=>gv[c]++); };
+const emptyFlips=()=>{ const f={}; CHARS.forEach(c=>f[c]=new Set()); return f; };
+
+/* ============================ GEOMETRY: shared + liquid pixel ============================ */
+function rdp(pts, tol){
+  const n = pts.length; if (n < 3) return pts;
+  const keep = new Uint8Array(n); keep[0]=keep[n-1]=1;
+  const st=[[0,n-1]];
+  while(st.length){
+    const [a,b]=st.pop(); let md=0, mi=-1;
+    const ax=pts[a][0], ay=pts[a][1], dx=pts[b][0]-ax, dy=pts[b][1]-ay, L=Math.hypot(dx,dy)||1e-9;
+    for(let i=a+1;i<b;i++){ const d=Math.abs((pts[i][0]-ax)*dy-(pts[i][1]-ay)*dx)/L; if(d>md){md=d;mi=i;} }
+    if(md>tol){ keep[mi]=1; st.push([a,mi],[mi,b]); }
+  }
+  return pts.filter((_,i)=>keep[i]);
+}
+function simplifyClosed(pts, tol){
+  const n=pts.length; if(n<4) return pts;
+  let m=0, md=-1;
+  for(let i=1;i<n;i++){ const d=Math.hypot(pts[i][0]-pts[0][0], pts[i][1]-pts[0][1]); if(d>md){md=d;m=i;} }
+  const A=rdp(pts.slice(0,m+1),tol), B=rdp(pts.slice(m).concat([pts[0]]),tol);
+  return A.concat(B.slice(1,-1));
+}
+function chaikin(pts){
+  const out=[], n=pts.length;
+  for(let i=0;i<n;i++){
+    const p=pts[i], q=pts[(i+1)%n];
+    out.push([.75*p[0]+.25*q[0], .75*p[1]+.25*q[1]], [.25*p[0]+.75*q[0], .25*p[1]+.75*q[1]]);
+  }
+  return out;
+}
+function area(pts){ let a=0; for(let i=0,n=pts.length;i<n;i++){ const p=pts[i], q=pts[(i+1)%n]; a+=p[0]*q[1]-q[0]*p[1]; } return a/2; }
+
+/* Marching squares → closed polylines (inside = value < level), coords in cell units */
+function isoContours(vals, W, H, S, level){
+  const stride=W+1;
+  const next=new Int32Array(2*stride*(H+1)).fill(-1);
+  const hE=(i,j)=>(j*stride+i)*2, vE=(i,j)=>(j*stride+i)*2+1;
+  for(let j=0;j<H;j++) for(let i=0;i<W;i++){
+    const a=vals[j*stride+i]<level, b=vals[j*stride+i+1]<level, c=vals[(j+1)*stride+i+1]<level, d=vals[(j+1)*stride+i]<level;
+    const cs=(a?1:0)|(b?2:0)|(c?4:0)|(d?8:0);
+    if(cs===0||cs===15) continue;
+    const T=hE(i,j), B=hE(i,j+1), L=vE(i,j), R=vE(i+1,j);
+    switch(cs){
+      case 1: next[L]=T; break;   case 14: next[T]=L; break;
+      case 2: next[T]=R; break;   case 13: next[R]=T; break;
+      case 4: next[R]=B; break;   case 11: next[B]=R; break;
+      case 8: next[B]=L; break;   case 7: next[L]=B; break;
+      case 3: next[L]=R; break;   case 12: next[R]=L; break;
+      case 6: next[T]=B; break;   case 9: next[B]=T; break;
+      case 5: case 10: {
+        const ctr=(vals[j*stride+i]+vals[j*stride+i+1]+vals[(j+1)*stride+i+1]+vals[(j+1)*stride+i])/4<level;
+        if(cs===5){ if(ctr){ next[R]=T; next[L]=B; } else { next[L]=T; next[R]=B; } }
+        else      { if(ctr){ next[T]=L; next[B]=R; } else { next[T]=R; next[B]=L; } }
+      }
+    }
+  }
+  const pt=id=>{
+    const vert=id&1, e=id>>1, j=(e/stride)|0, i=e-j*stride;
+    if(!vert){ const v0=vals[e]-level, v1=vals[e+1]-level; const t=v0/(v0-v1); return [(i+t)/S-1, j/S-1]; }
+    const v0=vals[e]-level, v1=vals[e+stride]-level; const t=v0/(v0-v1); return [i/S-1, (j+t)/S-1];
+  };
+  const out=[];
+  for(let s=0;s<next.length;s++){
+    if(next[s]<0) continue;
+    const pts=[]; let c=s;
+    while(c>=0){ pts.push(pt(c)); const n=next[c]; next[c]=-2; c=n; }
+    if(pts.length>=3) out.push(pts);
+  }
+  return out;
+}
+
+
+/* Glyph outlines for a set of pixels. Returns array of closed polylines (grid units, y-down). */
+function buildContours(set, S){
+  const {cols,rows}=P;
+  const on=new Uint8Array(cols*rows); let any=false;
+  for(const k of set){ const x=k&31, y=k>>5; if(x<cols&&y<rows){ on[y*cols+x]=1; any=true; } }
+  if(!any) return [];
+  const sz=1-P.gap, h=sz/2, r=P.round*h, hr=h-r, k=P.liquify*0.35;
+  const M=MOD, bH=M?M.hv*sz:h, bV=M?M.vh*sz:h, rd=(M?Math.min(bH,bV):h)*0.6;
+  const modD=(dx,dy)=>{   // signed distance of the imported module, centred at (0,0), side = sz
+    let lx=dx/sz+.5, ly=dy/sz+.5;
+    const ex=Math.max(Math.abs(lx-.5)-.5,0), ey=Math.max(Math.abs(ly-.5)-.5,0);
+    lx=lx<0?0:lx>1?1:lx; ly=ly<0?0:ly>1?1:ly;
+    const N=M.N, gx=Math.min(Math.max(lx*N-.5,0),N-1.001), gy=Math.min(Math.max(ly*N-.5,0),N-1.001);
+    const i=gx|0, j=gy|0, fx=gx-i, fy=gy-j, o=j*N+i, v=M.sdf;
+    const d=(v[o]*(1-fx)+v[o+1]*fx)*(1-fy)+(v[o+N]*(1-fx)+v[o+N+1]*fx)*fy;
+    return (d+Math.hypot(ex,ey))*sz;
+  };
+  const mH=P.mergeH, mV=P.mergeV, mD=P.mergeD, grow=P.grow;
+  const cap=(x,y,ax,ay,bx,by)=>{
+    const pax=x-ax, pay=y-ay, bax=bx-ax, bay=by-ay;
+    const t=Math.max(0,Math.min(1,(pax*bax+pay*bay)/(bax*bax+bay*bay)));
+    return Math.hypot(pax-t*bax, pay-t*bay)-rd;
+  };
+  // hard union of pixels (+ merge bridges): near-exact signed distance
+  const field=(x,y)=>{
+    const ci=Math.floor(x), cj=Math.floor(y); let best=Infinity;
+    const j0=Math.max(0,cj-1), j1=Math.min(rows-1,cj+1), i0=Math.max(0,ci-1), i1=Math.min(cols-1,ci+1);
+    for(let jj=j0;jj<=j1;jj++) for(let ii=i0;ii<=i1;ii++){
+      const idx=jj*cols+ii; if(!on[idx]) continue;
+      const dx=x-ii-.5, dy=y-jj-.5;
+      let d;
+      if(M) d=modD(dx,dy);
+      else { const qx=Math.abs(dx)-hr, qy=Math.abs(dy)-hr; d=Math.hypot(Math.max(qx,0),Math.max(qy,0))+Math.min(Math.max(qx,qy),0)-r; }
+      if(d<best) best=d;
+      if(mH && bH>0 && ii+1<cols && on[idx+1]){
+        const bx=Math.abs(x-ii-1)-.5, by=Math.abs(dy)-bH;
+        d=Math.hypot(Math.max(bx,0),Math.max(by,0))+Math.min(Math.max(bx,by),0); if(d<best) best=d;
+      }
+      if(mV && bV>0 && jj+1<rows && on[idx+cols]){
+        const bx=Math.abs(dx)-bV, by=Math.abs(y-jj-1)-.5;
+        d=Math.hypot(Math.max(bx,0),Math.max(by,0))+Math.min(Math.max(bx,by),0); if(d<best) best=d;
+      }
+      if(mD && rd>0){
+        if(ii+1<cols&&jj+1<rows&&on[idx+cols+1]){ d=cap(x,y,ii+.5,jj+.5,ii+1.5,jj+1.5); if(d<best) best=d; }
+        if(ii>0&&jj+1<rows&&on[idx+cols-1]){ d=cap(x,y,ii+.5,jj+.5,ii-.5,jj+1.5); if(d<best) best=d; }
+      }
+    }
+    return (best===Infinity?5:best)-grow;
+  };
+  const W=(cols+2)*S, H=(rows+2)*S, stride=W+1;
+  const U=new Float32Array(stride*(H+1));
+  for(let j=0;j<=H;j++) for(let i=0;i<=W;i++) U[j*stride+i]=field(i/S-1, j/S-1);
+  let vals=U;
+  if(k>0.004){
+    // Liquify = morphological closing (round concave joins, keep convex corners):
+    // f(p) = max over disc(p,k) of U - k, sampled on two rings + centre.
+    vals=new Float32Array(U.length);
+    const ND=32, ks=k*S, offs=[];
+    for(const rr of [ks, ks*.5]) for(let a=0;a<ND;a++){ const t=a/ND*Math.PI*2; offs.push(Math.cos(t)*rr, Math.sin(t)*rr); }
+    const bil=(x,y)=>{
+      x=x<0?0:x>W-.001?W-.001:x; y=y<0?0:y>H-.001?H-.001:y;
+      const i=x|0, j=y|0, fx=x-i, fy=y-j, o=j*stride+i;
+      return (U[o]*(1-fx)+U[o+1]*fx)*(1-fy)+(U[o+stride]*(1-fx)+U[o+stride+1]*fx)*fy;
+    };
+    for(let j=0;j<=H;j++) for(let i=0;i<=W;i++){
+      const u=U[j*stride+i];
+      if(u>k){ vals[j*stride+i]=u; continue; }
+      let m=u;
+      for(let q=0;q<offs.length;q+=2){ const v=bil(i+offs[q], j+offs[q+1]); if(v>m) m=v; }
+      vals[j*stride+i]=m-k;
+    }
+  }
+
+  const tol=0.35/S*0.35;
+  const post=cs=>cs.map(c=>{ let p=c; for(let i=0;i<P.smooth;i++) p=chaikin(p); return simplifyClosed(p,tol); }).filter(c=>c.length>=3);
+  let c0=post(isoContours(vals,W,H,S,0));
+  if(!c0.length) return [];
+  let big=c0[0]; for(const c of c0) if(Math.abs(area(c))>Math.abs(area(big))) big=c;
+  let all=c0;
+  if(P.outline){
+    const inner=post(isoContours(vals,W,H,S,-P.thick)).map(c=>c.slice().reverse());
+    all=c0.concat(inner);
+  }
+  // outer contours end up CCW in y-up space (area<0 in y-down) — required by CFF nonzero winding
+  if(area(big)>0) all=all.map(c=>c.slice().reverse());
+  return all;
+}
+
+const cache=new Map();
+function contoursFor(ch, S){
+  const k=ch+'@'+S, e=cache.get(k);
+  if(e && e.pv===pv && e.gv===gv[ch]) return e.c;
+  const c=buildContours(glyphs[ch]||new Set(), S);
+  cache.set(k,{pv,gv:gv[ch],c,d:null});
+  return c;
+}
+function pathD(cs){
+  let s='';
+  for(const c of cs){ s+='M'+c.map(p=>p[0].toFixed(3)+' '+p[1].toFixed(3)).join('L')+'Z'; }
+  return s;
+}
+function pathFor(ch,S){ const c=contoursFor(ch,S); const e=cache.get(ch+'@'+S); return e.d ?? (e.d=pathD(c)); }
+
+
+/* ============================ Module (SVG) ============================ */
+function edt1(f,n,d,v,z){ // Felzenszwalb squared EDT, 1-D
+  let k=0; v[0]=0; z[0]=-1e20; z[1]=1e20;
+  const isect=(q,p)=>((f[q]+q*q)-(f[p]+p*p))/(2*q-2*p);
+  for(let q=1;q<n;q++){
+    let s=isect(q,v[k]);
+    while(s<=z[k]){ k--; s=isect(q,v[k]); }
+    k++; v[k]=q; z[k]=s; z[k+1]=1e20;
+  }
+  k=0; for(let q=0;q<n;q++){ while(z[k+1]<q) k++; d[q]=(q-v[k])*(q-v[k])+f[v[k]]; }
+}
+function edt2(feat,N){ // feat: 1 = feature. returns squared distance to nearest feature
+  const INF=1e12, g=new Float64Array(N*N), f=new Float64Array(N), d=new Float64Array(N), v=new Int32Array(N), z=new Float64Array(N+1);
+  for(let x=0;x<N;x++){ for(let y=0;y<N;y++) f[y]=feat[y*N+x]?0:INF; edt1(f,N,d,v,z); for(let y=0;y<N;y++) g[y*N+x]=d[y]; }
+  for(let y=0;y<N;y++){ for(let x=0;x<N;x++) f[x]=g[y*N+x]; edt1(f,N,d,v,z); for(let x=0;x<N;x++) g[y*N+x]=d[x]; }
+  return g;
+}
+async function makeModule(text){
+  const N=256;
+  const doc=new DOMParser().parseFromString(text,'image/svg+xml');
+  const root=doc.documentElement;
+  if(!root||root.nodeName.toLowerCase()!=='svg'||doc.querySelector('parsererror')) throw new Error('Not a valid SVG');
+  root.querySelectorAll('script,foreignObject').forEach(n=>n.remove());
+  let vb=(root.getAttribute('viewBox')||'').trim().split(/[\s,]+/).map(Number);
+  if(vb.length!==4||vb.some(isNaN)||vb[2]<=0||vb[3]<=0){
+    const w=parseFloat(root.getAttribute('width')), h=parseFloat(root.getAttribute('height'));
+    if(w>0&&h>0) vb=[0,0,w,h];
+    else { // fall back to content bounding box
+      const host=document.createElement('div'); host.style.cssText='position:absolute;left:-9999px;width:0;height:0;overflow:hidden';
+      host.appendChild(document.importNode(root,true)); document.body.appendChild(host);
+      const b=host.firstChild.getBBox(); host.remove();
+      if(!(b.width>0&&b.height>0)) throw new Error('SVG has no shapes');
+      vb=[b.x,b.y,b.width,b.height];
+    }
+  }
+  root.setAttribute('xmlns','http://www.w3.org/2000/svg');
+  root.setAttribute('viewBox',vb.join(' '));
+  root.setAttribute('width',N); root.setAttribute('height',N);
+  root.setAttribute('preserveAspectRatio',P.modStretch?'none':'xMidYMid meet');
+  const url=URL.createObjectURL(new Blob([new XMLSerializer().serializeToString(root)],{type:'image/svg+xml'}));
+  const img=new Image();
+  await new Promise((res,rej)=>{ img.onload=res; img.onerror=()=>rej(new Error('Could not render SVG')); img.src=url; });
+  const cv=document.createElement('canvas'); cv.width=cv.height=N;
+  const cx=cv.getContext('2d',{willReadFrequently:true}); cx.drawImage(img,0,0,N,N); URL.revokeObjectURL(url);
+  const px=cx.getImageData(0,0,N,N).data, inside=new Uint8Array(N*N), outside=new Uint8Array(N*N); let cnt=0;
+  for(let i=0;i<N*N;i++){ if(px[i*4+3]>127){ inside[i]=1; cnt++; } else outside[i]=1; }
+  if(cnt<N*N*0.001) throw new Error('SVG is empty (needs filled shapes)');
+  if(cnt>N*N*0.995) throw new Error('SVG fills the whole frame — remove the background rectangle');
+  const dIn=edt2(inside,N), dOut=edt2(outside,N), sdf=new Float32Array(N*N);
+  for(let i=0;i<N*N;i++) sdf[i]=inside[i]?-(Math.sqrt(dOut[i])-.5)/N:(Math.sqrt(dIn[i])-.5)/N;
+  // central bar thickness (half extents, in module units) used for merge bridges
+  const c=N>>1, run=(get)=>{ if(!inside[c*N+c]) return 0; let a=0,b=0; while(get(a-1)&&a>-c) a--; while(get(b+1)&&b<c-1) b++; return (b-a+1)/N/2; };
+  const hv=run(t=>inside[(c+t)*N+c]), vh=run(t=>inside[c*N+c+t]);
+  return {sdf,N,hv,vh};
+}
+async function setModule(text,name){
+  try{
+    MOD=await makeModule(text); moduleSvg=text; moduleName=name||'module.svg';
+    CHARS.forEach(c=>gv[c]++); paramsChanged();
+  }catch(err){ alert('Module: '+err.message); }
+}
+function clearModule(){ MOD=null; moduleSvg=''; moduleName=''; paramsChanged(); }
+function loadModuleFile(f){ if(f) f.text().then(t=>setModule(t,f.name)); }
+addEventListener('dragover',e=>e.preventDefault());
+addEventListener('drop',e=>{ if(!ST||ST.id!=='liquid') return; const f=e.dataTransfer&&e.dataTransfer.files[0]; if(f&&/svg/i.test(f.type+f.name)){ e.preventDefault(); loadModuleFile(f); } });
+
+
+
+/* ============================ GEOMETRY: tiles (stripes / lines / mitre / dots) ============================ */
+const ARC_N=24;
+function shortSweep(a0,a1){ let d=a1-a0; while(d>Math.PI) d-=2*Math.PI; while(d<=-Math.PI) d+=2*Math.PI; return d; }
+function arcPts(cx,cy,r,a0,d){ const o=[]; for(let t=0;t<=ARC_N;t++){ const a=a0+d*t/ARC_N; o.push([cx+r*Math.cos(a),cy+r*Math.sin(a)]); } return o; }
+function onGrid(set){
+  const {cols,rows}=P, on=new Uint8Array(cols*rows);
+  for(const k of set){ const x=k&31, y=k>>5; if(x<cols&&y<rows) on[y*cols+x]=1; }
+  return on;
+}
+/* kind: 0 vertical stroke, 1 horizontal stroke, 2 bend (centre = ccx,ccy), 3 free end (mitre cap, nb = neighbour side) */
+function tileInfo(on,cols,rows){
+  const N=cols*rows, kind=new Int8Array(N), ccx=new Float32Array(N), ccy=new Float32Array(N), nb=new Int8Array(N);
+  const at=(x,y)=>x>=0&&y>=0&&x<cols&&y<rows&&on[y*cols+x]===1;
+  for(let y=0;y<rows;y++) for(let x=0;x<cols;x++){
+    const i=y*cols+x; if(!on[i]) continue;
+    const U=at(x,y-1), D=at(x,y+1), L=at(x-1,y), R=at(x+1,y), n=U+D+L+R;
+    if(P.roundCorners!==false&&n===2&&!(U&&D)&&!(L&&R)){ kind[i]=2; ccx[i]=R?1:0; ccy[i]=D?1:0; }
+    else if(U&&D&&!(L&&R)) kind[i]=0;
+    else if(L&&R) kind[i]=1;
+    else if(n===1&&P.endMitre){ kind[i]=3; nb[i]=U?0:R?1:D?2:3; }
+    else if(U||D) kind[i]=0;
+    else if(L||R) kind[i]=1;
+    else kind[i]=0;
+  }
+  return {kind,ccx,ccy,nb};
+}
+function memo(map,ch,fn){
+  const e=map.get(ch); if(e&&e.pv===pv&&e.gv===gv[ch]) return e.v;
+  const v=fn(); map.set(ch,{pv,gv:gv[ch],v}); return v;
+}
+const MEM={stripes:new Map(),lines:new Map(),mitre:new Map(),dots:new Map()};
+const tilesOf=ch=>{ const on=onGrid(glyphs[ch]||new Set()); return {on,ti:tileInfo(on,P.cols,P.rows)}; };
+
+/* ---- stripes (checker) ---- */
+function silhouetteContours(on,cols,rows,kind,ccx,ccy){
+  const at=(x,y)=>x>=0&&y>=0&&x<cols&&y<rows&&on[y*cols+x]===1;
+  const edges=new Map(), all=[];
+  const add=(x0,y0,x1,y1,mid)=>{ const e={x0,y0,x1,y1,mid:mid||[],used:false,dx:x1-x0,dy:y1-y0}; const k=x0+','+y0; if(!edges.has(k)) edges.set(k,[]); edges.get(k).push(e); all.push(e); };
+  for(let y=0;y<rows;y++) for(let x=0;x<cols;x++){
+    const i=y*cols+x; if(!on[i]) continue;
+    const m=[!at(x,y-1),!at(x+1,y),!at(x,y+1),!at(x-1,y)];
+    const E=[[x,y,x+1,y],[x+1,y,x+1,y+1],[x+1,y+1,x,y+1],[x,y+1,x,y]];
+    if(kind[i]===2){
+      let a=-1; for(let q=0;q<4;q++) if(m[q]&&m[(q+1)%4]){ a=q; break; }
+      const S=E[a], T=E[(a+1)%4], cx=x+ccx[i], cy=y+ccy[i];
+      const a0=Math.atan2(S[1]-cy,S[0]-cx), d=shortSweep(a0,Math.atan2(T[3]-cy,T[2]-cx));
+      add(S[0],S[1],T[2],T[3],arcPts(cx,cy,1,a0,d).slice(1,-1));
+    } else for(let q=0;q<4;q++) if(m[q]) add(...E[q]);
+  }
+  const polys=[];
+  for(const e0 of all){
+    if(e0.used) continue;
+    const poly=[]; let cur=e0;
+    while(true){
+      cur.used=true; poly.push([cur.x0,cur.y0]); for(const p of cur.mid) poly.push(p);
+      if(cur.x1===e0.x0&&cur.y1===e0.y0) break;
+      const cand=(edges.get(cur.x1+','+cur.y1)||[]).filter(e=>!e.used);
+      if(!cand.length) break;
+      let best=cand[0], bs=-9;
+      for(const c of cand){ const cr=cur.dx*c.dy-cur.dy*c.dx; const sc=cr>0?2:cr===0?1:0; if(sc>bs){bs=sc;best=c;} }
+      cur=best;
+    }
+    const out=[]; for(let q=0;q<poly.length;q++){ const p=poly[(q+poly.length-1)%poly.length], c=poly[q], n=poly[(q+1)%poly.length];
+      if((c[0]-p[0])*(n[1]-c[1])-(c[1]-p[1])*(n[0]-c[0])===0 && Number.isInteger(c[0])&&Number.isInteger(c[1])) continue; out.push(c); }
+    if(out.length>=3) polys.push(out);
+  }
+  if(!polys.length) return [];
+  let big=polys[0]; for(const c of polys) if(Math.abs(area(c))>Math.abs(area(big))) big=c;
+  return area(big)>0?polys.map(c=>c.slice().reverse()):polys;
+}
+function stripePieces(on,cols,rows,kind,ccx,ccy){
+  const n=P.stripes, polys=[];
+  for(let y=0;y<rows;y++) for(let x=0;x<cols;x++){
+    const i=y*cols+x; if(!on[i]) continue;
+    const par=P.checker?((x+y)&1):0;
+    for(let k=0;k<n;k++){
+      if(kind[i]===0){ if(((k+par)&1)===0) polys.push([[x+k/n,y],[x+(k+1)/n,y],[x+(k+1)/n,y+1],[x+k/n,y+1]]); }
+      else if(kind[i]===1){ if(((k+par)&1)===0) polys.push([[x,y+k/n],[x+1,y+k/n],[x+1,y+(k+1)/n],[x,y+(k+1)/n]]); }
+      else {
+        const j=ccx[i]===1?n-1-k:k; if(((j+par)&1)!==0) continue;
+        const sx=ccx[i]===1?-1:1, sy=ccy[i]===1?-1:1, cx=x+ccx[i], cy=y+ccy[i];
+        const a0=Math.atan2(0,sx), d=shortSweep(a0,Math.atan2(sy,0)), r0=k/n, r1=(k+1)/n;
+        let p=arcPts(cx,cy,r1,a0,d);
+        p=r0>0?p.concat(arcPts(cx,cy,r0,a0,d).reverse()):p.concat([[cx,cy]]);
+        polys.push(p);
+      }
+    }
+  }
+  return polys.map(p=>area(p)>0?p.slice().reverse():p);
+}
+
+/* ---- lines (radial fan) ---- */
+function linePolys(on,cols,rows,kind,ccx,ccy){
+  const n=P.stripes, t=P.strokeW, w=P.lineW/2, polys=[];
+  const quad=(cx,cy,ux,uy,a,b)=>{
+    const px=-uy, py=ux, x0=cx+ux*a, y0=cy+uy*a, x1=cx+ux*b, y1=cy+uy*b;
+    return [[x0+px*w,y0+py*w],[x1+px*w,y1+py*w],[x1-px*w,y1-py*w],[x0-px*w,y0-py*w]];
+  };
+  for(let y=0;y<rows;y++) for(let x=0;x<cols;x++){
+    const i=y*cols+x; if(!on[i]) continue;
+    if(kind[i]===0){ for(let k=0;k<n;k++) polys.push(quad(x+.5,y+(k+.5)/n,1,0,-t/2,t/2)); }
+    else if(kind[i]===1){ for(let k=0;k<n;k++) polys.push(quad(x+(k+.5)/n,y+.5,0,1,-t/2,t/2)); }
+    else {
+      const sx=ccx[i]===1?-1:1, sy=ccy[i]===1?-1:1, cx=x+ccx[i], cy=y+ccy[i];
+      const a0=Math.atan2(0,sx), d=shortSweep(a0,Math.atan2(sy,0)), m=Math.max(1,Math.round(n*Math.PI/4));
+      for(let j=0;j<m;j++){ const th=a0+d*(j+.5)/m; polys.push(quad(cx,cy,Math.cos(th),Math.sin(th),.5-t/2,.5+t/2)); }
+    }
+  }
+  return polys.map(p=>area(p)>0?p.slice().reverse():p);
+}
+
+/* ---- mitre tile: pieces [colorIndex 0..3, polygon] ---- */
+function mitrePieces(set,flipSet){
+  const {cols,rows}=P, n=P.stripes, on=onGrid(set), ti=tileInfo(on,cols,rows), out=[];
+  const Hc=k=>k%2, Vc=k=>2+k%2, rect=(x0,y0,x1,y1)=>[[x0,y0],[x1,y0],[x1,y1],[x0,y1]];
+  for(let y=0;y<rows;y++) for(let x=0;x<cols;x++){
+    const i=y*cols+x; if(!on[i]) continue;
+    const kind=ti.kind[i];
+    if(kind===0){ for(let k=0;k<n;k++) out.push([Vc(k),rect(x+k/n,y,x+(k+1)/n,y+1)]); }
+    else if(kind===1){ for(let k=0;k<n;k++) out.push([Hc(k),rect(x,y+k/n,x+1,y+(k+1)/n)]); }
+    else if(kind===3){
+      const nb=ti.nb[i], horiz=(nb===1||nb===3);
+      const xy=(a,b)=>horiz?[x+(nb===3?a:1-a),y+b]:[x+b,y+(nb===0?a:1-a)];
+      const bx=b=>.5+Math.abs(b-.5);
+      for(let k=0;k<n;k++){
+        const ya=k/n, yb=(k+1)/n, p=[[0,ya],[bx(ya),ya]];
+        if(ya<.5&&yb>.5) p.push([.5,.5]);
+        p.push([bx(yb),yb],[0,yb]);
+        out.push([horiz?Hc(k):Vc(k),p.map(q=>xy(q[0],q[1]))]);
+      }
+      out.push([horiz?(nb===3?3:2):(nb===0?1:0),[[1,0],[1,1],[.5,.5]].map(q=>xy(q[0],q[1]))]);
+    } else {
+      const cx=ti.ccx[i], cy=ti.ccy[i], mp=(u,v)=>[x+(cx?1-u:u),y+(cy?1-v:v)];
+      const round=P.bendRound!==flipSet.has(key(x,y));
+      for(let k=0;k<n;k++){
+        const k0=k/n, k1=(k+1)/n;
+        if(!round){
+          const va=cy?1-k1:k0, vb=cy?1-k0:k1, ua=cx?1-k1:k0, ub=cx?1-k0:k1;
+          out.push([Hc(k),[[0,va],[va,va],[vb,vb],[0,vb]].map(q=>mp(q[0],q[1]))]);
+          out.push([Vc(k),[[ua,0],[ub,0],[ub,ub],[ua,ua]].map(q=>mp(q[0],q[1]))]);
+        } else {
+          const sec=(f0,f1)=>{
+            const st=Math.max(2,Math.round(ARC_N*(f1-f0)/(Math.PI/2))), o=[], inn=[];
+            for(let t=0;t<=st;t++){ const f=f0+(f1-f0)*t/st; o.push(mp(k1*Math.cos(f),k1*Math.sin(f))); inn.push(mp(k0*Math.cos(f),k0*Math.sin(f))); }
+            return k0===0?o.concat([mp(0,0)]):o.concat(inn.reverse());
+          };
+          out.push([Vc(cx?n-1-k:k),sec(0,Math.PI/4)]);
+          out.push([Hc(cy?n-1-k:k),sec(Math.PI/4,Math.PI/2)]);
+        }
+      }
+    }
+  }
+  return out.map(([c,p])=>[c,area(p)>0?p.slice().reverse():p]);
+}
+
+/* ---- dot line: dots (vertical), bars (horizontal), solid discs (bends) ---- */
+function dotPieces(set,flipSet){
+  const {cols,rows}=P, on=onGrid(set), ti=tileInfo(on,cols,rows), out=[];
+  const m=P.dots, L=P.lines, t=P.strokeW, rd=P.dotSize/m/2, lh=P.lineFill/L/2;
+  const cD=Math.max(1,Math.round(m*t)), cL=Math.max(1,Math.round(L*t));
+  const circ=(cx,cy,r)=>{ const o=[]; for(let q=0;q<20;q++){ const a=q/20*2*Math.PI; o.push([cx+r*Math.cos(a),cy+r*Math.sin(a)]); } return o; };
+  const rect=(x0,y0,x1,y1)=>[[x0,y0],[x1,y0],[x1,y1],[x0,y1]];
+  for(let y=0;y<rows;y++) for(let x=0;x<cols;x++){
+    const i=y*cols+x; if(!on[i]) continue;
+    const kind=ti.kind[i];
+    if(kind===0){ for(let a=0;a<m;a++) for(let j=0;j<cD;j++) out.push([0,circ(x+.5+(j-(cD-1)/2)/m,y+(a+.5)/m,rd)]); }
+    else if(kind===1){ for(let j=0;j<cL;j++){ const cy=y+.5+(j-(cL-1)/2)/L; out.push([0,rect(x,cy-lh,x+1,cy+lh)]); } }
+    else if(kind===2){
+      if(flipSet.has(key(x,y))){ out.push([0,rect(x,y,x+1,y+1)]); continue; }
+      const cx=ti.ccx[i], cy=ti.ccy[i], mp=(u,v)=>[x+(cx?1-u:u),y+(cy?1-v:v)];
+      const sec=(r0,r1)=>{
+        const o=[], inn=[];
+        for(let q=0;q<=ARC_N;q++){ const f=Math.PI/2*q/ARC_N; o.push(mp(r1*Math.cos(f),r1*Math.sin(f))); inn.push(mp(r0*Math.cos(f),r0*Math.sin(f))); }
+        return r0===0?o.concat([mp(0,0)]):o.concat(inn.reverse());
+      };
+      out.push([0,sec(P.holeR,1)]);
+      if(P.holeR>0&&P.dotR>0&&P.dotR<P.holeR) out.push([0,sec(0,P.dotR)]);
+    }
+  }
+  return out.map(([c,p])=>[c,area(p)>0?p.slice().reverse():p]);
+}
+
+/* ============================ STYLES ============================ */
+const GRID_CTRL=[
+ {sec:'Grid'},
+ {k:'cols',t:'step',label:'Columns',min:1,max:20},
+ {k:'rows',t:'step',label:'Rows',min:2,max:24},
+ {k:'desc',t:'step',label:'Descender rows',min:0,max:8},
+ {k:'spacing',t:'r',label:'Letter space',min:0,max:3,step:.05},
+];
+const bgRows=`<div class="row"><label>Background</label><input type="color" data-pc="cBg"></div>`;
+
+STYLES.liquid={
+  id:'liquid', label:'1 · Liquid Pixel', family:'Liquid Pixel', base:BASE_LIQ, hasMono:false, flipLabel:null,
+  defaults:{ cols:5, rows:7, desc:0, round:0, gap:0, grow:0, spacing:1, liquify:.5, smooth:0, mergeH:true, mergeV:true, mergeD:true,
+    outline:false, thick:.12, showPx:false, modStretch:false, ink:'#f4f4f4' },
+  ctrl:[
+    {sec:'Grid'},
+    {k:'cols',t:'step',label:'Columns',min:1,max:20},
+    {k:'rows',t:'step',label:'Rows',min:2,max:24},
+    {k:'desc',t:'step',label:'Descender rows',min:0,max:8},
+    {sec:'Pixel'},
+    {k:'round',t:'r',label:'Roundness',min:0,max:1,step:.01},
+    {k:'gap',t:'r',label:'Grid space',min:0,max:.7,step:.01},
+    {k:'grow',t:'r',label:'Weight',min:-.3,max:.45,step:.01},
+    {k:'spacing',t:'r',label:'Letter space',min:0,max:3,step:.05},
+    {sec:'Module (SVG)'},
+    {t:'html',html:`<div class="btns"><button id="modup">Upload SVG</button><button id="modclear">Use pixel</button></div><div class="toggles" style="margin-top:6px"><button data-tog="modStretch">Fill cell</button></div><div class="hint" id="modinfo"></div><input type="file" id="modfile" accept=".svg,image/svg+xml" style="display:none">`},
+    {sec:'Liquid'},
+    {k:'liquify',t:'r',label:'Liquify',min:0,max:1,step:.01},
+    {k:'smooth',t:'r',label:'Smoothing',min:0,max:3,step:1},
+    {sec:'Adjacent merge'},
+    {t:'tog',items:[['mergeH','Horizontal'],['mergeV','Vertical'],['mergeD','Diagonal']]},
+    {sec:'Outline'},
+    {t:'tog',items:[['outline','Outline only']]},
+    {k:'thick',t:'r',label:'Thickness',min:.02,max:.5,step:.01},
+    {sec:'Colors'},
+    {t:'html',html:`<div class="row"><label>Ink</label><input type="color" data-pc="ink"></div>`},
+    {sec:'View'},
+    {t:'tog',items:[['showPx','Show pixels']]},
+  ],
+  exportHtml:'', hint:'Liquid Pixel: draw pixels, then merge, liquify and outline them. Upload an SVG to replace the pixel shape in every letter.',
+  ghost(){ const h=1-P.gap; return {h,r:P.round*h/2}; },
+  render(ch,S){ const d=pathFor(ch,S); return d?`<path class="ink" fill-rule="evenodd" d="${d}"/>`:''; },
+  contours(ch){ return contoursFor(ch,24); },
+  svg(ch){ const d=pathD(contoursFor(ch,24)); return d?`<path fill="#000" fill-rule="evenodd" d="${d}"/>`:''; },
+  bg(){ return null; },
+  applyColors(){ document.body.style.setProperty('--ink',P.ink); },
+  sync(){
+    $('modinfo').textContent=MOD?`Module: ${moduleName} — replaces every pixel. Merge bridges follow the module's central bar; Roundness is off.`:'Drop or upload an SVG (filled shapes, no background). It replaces the pixel in every letter.';
+    side.querySelector('[data-k="round"]').disabled=!!MOD;
+    side.querySelector('[data-k="thick"]').disabled=!P.outline;
+  },
+};
+
+STYLES.stripes={
+  id:'stripes', label:'2 · Stripe Tile (checker)', family:'Stripe Tile', base:BASE_5, hasMono:true, flipLabel:null,
+  defaults:{ cols:5, rows:5, desc:0, spacing:.5, stripes:4, checker:true, roundCorners:true,
+    cA:'#ea3370', cB:'#76fb38', cBg:'#ffffff', showBg:true, showPx:false, svgMono:false, otfStripes:true },
+  ctrl:GRID_CTRL.concat([
+    {sec:'Stripes'},
+    {k:'stripes',t:'step',label:'Stripes / cell',min:1,max:10},
+    {t:'tog',items:[['checker','Checker flip'],['roundCorners','Round corners']]},
+    {sec:'Colors'},
+    {t:'html',html:`<div class="row"><label>Color A</label><input type="color" data-pc="cA"></div><div class="row"><label>Color B</label><input type="color" data-pc="cB"></div>${bgRows}`},
+    {t:'tog',items:[['showBg','Show background']]},
+    {sec:'View'},
+    {t:'tog',items:[['showPx','Show cells']]},
+  ]),
+  exportHtml:`<div class="toggles" style="margin-top:6px"><button data-tog="otfStripes">OTF with stripes</button></div>`,
+  hint:'OTF is one color: with "OTF with stripes" on, Color A is solid and Color B is hollow; off, it exports the full silhouette. SVG keeps both colors.',
+  ghost:()=>({h:.92,r:0}),
+  data(ch){ return memo(MEM.stripes,ch,()=>{
+    const {on,ti}=tilesOf(ch), {cols,rows}=P;
+    const sil=silhouetteContours(on,cols,rows,ti.kind,ti.ccx,ti.ccy), str=stripePieces(on,cols,rows,ti.kind,ti.ccx,ti.ccy);
+    return {sil,str,ds:pathD(sil),dt:pathD(str)};
+  }); },
+  render(ch){ const d=this.data(ch); return d.ds?`<path class="sil" fill-rule="evenodd" d="${d.ds}"/><path class="str" d="${d.dt}"/>`:''; },
+  contours(ch){ const d=this.data(ch); return P.otfStripes?d.str:d.sil; },
+  svg(ch){
+    const d=this.data(ch); if(!d.ds) return '';
+    if(P.svgMono) return `<path fill="#000" fill-rule="evenodd" d="${pathD(this.contours(ch))}"/>`;
+    return `<path fill="${P.cB}" fill-rule="evenodd" d="${d.ds}"/><path fill="${P.cA}" d="${d.dt}"/>`;
+  },
+  bg(){ return P.showBg?P.cBg:null; },
+  applyColors(){ const st=document.body.style; st.setProperty('--cA',P.cA); st.setProperty('--cB',P.cB); },
+};
+
+STYLES.lines={
+  id:'lines', label:'3 · Line Fan', family:'Line Fan', base:BASE_5, hasMono:true, flipLabel:null,
+  defaults:{ cols:5, rows:5, desc:0, spacing:.2, stripes:6, lineW:.1, strokeW:1, roundCorners:true,
+    cA:'#111111', cBg:'#ffffff', showBg:true, showPx:false, svgMono:false },
+  ctrl:GRID_CTRL.concat([
+    {sec:'Lines'},
+    {k:'stripes',t:'step',label:'Lines / cell',min:1,max:24},
+    {k:'lineW',t:'r',label:'Line weight',min:.005,max:.3,step:.005},
+    {k:'strokeW',t:'r',label:'Stroke width',min:.2,max:1,step:.01},
+    {t:'tog',items:[['roundCorners','Radial fan on bends']]},
+    {sec:'Colors'},
+    {t:'html',html:`<div class="row"><label>Line color</label><input type="color" data-pc="cA"></div>${bgRows}`},
+    {t:'tog',items:[['showBg','Show background']]},
+    {sec:'View'},
+    {t:'tog',items:[['showPx','Show cells']]},
+  ]),
+  exportHtml:'',
+  hint:'OTF: every line becomes a thin filled outline (black), the gaps stay empty. SVG keeps the line color and background.',
+  ghost:()=>({h:.92,r:0}),
+  data(ch){ return memo(MEM.lines,ch,()=>{ const {on,ti}=tilesOf(ch); const polys=linePolys(on,P.cols,P.rows,ti.kind,ti.ccx,ti.ccy); return {polys,d:pathD(polys)}; }); },
+  render(ch){ const d=this.data(ch).d; return d?`<path class="str" d="${d}"/>`:''; },
+  contours(ch){ return this.data(ch).polys; },
+  svg(ch){ const d=this.data(ch).d; return d?`<path fill="${P.svgMono?'#000':P.cA}" d="${d}"/>`:''; },
+  bg(){ return P.showBg?P.cBg:null; },
+  applyColors(){ document.body.style.setProperty('--cA',P.cA); },
+};
+
+STYLES.mitre={
+  id:'mitre', label:'4 · Mitre Tile', family:'Mitre Tile', base:BASE_5, hasMono:true, flipLabel:'Bend style',
+  defaults:{ cols:5, rows:5, desc:0, spacing:.5, stripes:2, bendRound:true, endMitre:true,
+    k0:'#7bfdac', k1:'#000000', k2:'#d7e3f4', k3:'#24d2ff', cBg:'#d758ce', showBg:true, showPx:false, svgMono:false, otfSolid:1 },
+  ctrl:GRID_CTRL.concat([
+    {sec:'Stroke'},
+    {k:'stripes',t:'step',label:'Lanes / stroke',min:1,max:6},
+    {t:'tog',items:[['endMitre','Mitre ends'],['bendRound','Round bends']]},
+    {sec:'Colors'},
+    {t:'html',html:`<div class="row"><label>1 · horiz A</label><input type="color" data-pc="k0"></div><div class="row"><label>2 · horiz B</label><input type="color" data-pc="k1"></div><div class="row"><label>3 · vert A</label><input type="color" data-pc="k2"></div><div class="row"><label>4 · vert B</label><input type="color" data-pc="k3"></div>${bgRows}`},
+    {t:'tog',items:[['showBg','Show background']]},
+    {sec:'View'},
+    {t:'tog',items:[['showPx','Show cells']]},
+  ]),
+  exportHtml:`<div class="row" style="margin-top:8px"><label style="flex:0 0 90px">Solid in OTF</label></div><div class="toggles"><button data-solid="0">1</button><button data-solid="1">2</button><button data-solid="2">3</button><button data-solid="3">4</button></div>`,
+  hint:'OTF is one color: only the chosen color (default 2, black) is filled; the other pieces are hollow. "SVG in 1 color" gives the same black-and-hollow result. Use the Bend style brush to flip a single bend.',
+  ghost:()=>({h:.92,r:0}),
+  data(ch){ return memo(MEM.mitre,ch,()=>{
+    const list=mitrePieces(glyphs[ch]||new Set(),flips[ch]||new Set()), d=['','','',''];
+    for(const [c,p] of list) d[c]+=pathD([p]);
+    return {list,d};
+  }); },
+  render(ch){ return this.data(ch).d.map((d,c)=>d?`<path class="c${c}" d="${d}"/>`:'').join(''); },
+  contours(ch){ return this.data(ch).list.filter(p=>p[0]===P.otfSolid).map(p=>p[1]); },
+  svg(ch){
+    if(P.svgMono){ const d=pathD(this.contours(ch)); return d?`<path fill="#000" d="${d}"/>`:''; }
+    return this.data(ch).d.map((d,c)=>d?`<path fill="${P['k'+c]}" stroke="${P['k'+c]}" stroke-width=".01" stroke-linejoin="round" d="${d}"/>`:'').join('');
+  },
+  bg(){ return P.showBg?P.cBg:null; },
+  applyColors(){ const st=document.body.style; ['k0','k1','k2','k3'].forEach(k=>st.setProperty('--'+k,P[k])); },
+};
+
+STYLES.dots={
+  id:'dots', label:'5 · Dot Line', family:'Dot Line', base:BASE_5, hasMono:true, flipLabel:'Square bend',
+  defaults:{ cols:5, rows:5, desc:0, spacing:.5, dots:4, dotSize:.62, lines:3, lineFill:.55, strokeW:.9,
+    holeR:0, dotR:0, k0:'#ffffff', cBg:'#000000', showBg:true, showPx:false, svgMono:false },
+  ctrl:GRID_CTRL.concat([
+    {sec:'Stroke'},
+    {k:'strokeW',t:'r',label:'Stroke width',min:.3,max:1,step:.01},
+    {sec:'Dots (vertical)'},
+    {k:'dots',t:'step',label:'Dots / cell',min:1,max:10},
+    {k:'dotSize',t:'r',label:'Dot size',min:.2,max:1,step:.01},
+    {sec:'Lines (horizontal)'},
+    {k:'lines',t:'step',label:'Lines / cell',min:1,max:8},
+    {k:'lineFill',t:'r',label:'Line weight',min:.1,max:1,step:.01},
+    {sec:'Bends (solid disc)'},
+    {k:'holeR',t:'r',label:'Hole radius',min:0,max:.5,step:.01},
+    {k:'dotR',t:'r',label:'Center dot',min:0,max:.4,step:.01},
+    {sec:'Colors'},
+    {t:'html',html:`<div class="row"><label>Ink</label><input type="color" data-pc="k0"></div>${bgRows}`},
+    {t:'tog',items:[['showBg','Show background']]},
+    {sec:'View'},
+    {t:'tog',items:[['showPx','Show cells']]},
+  ]),
+  exportHtml:'',
+  hint:'OTF: everything drawn (dots, bars, discs) is filled; the rest is empty. Dots and thin bars need large sizes to read. "SVG in 1 color" = black, no background. Hole radius 0 = no hole.',
+  ghost:()=>({h:.92,r:0}),
+  data(ch){ return memo(MEM.dots,ch,()=>{ const list=dotPieces(glyphs[ch]||new Set(),flips[ch]||new Set()); return {list,d:pathD(list.map(p=>p[1]))}; }); },
+  render(ch){ const d=this.data(ch).d; return d?`<path class="c0" d="${d}"/>`:''; },
+  contours(ch){ return this.data(ch).list.map(p=>p[1]); },
+  svg(ch){ const d=this.data(ch).d; return d?`<path fill="${P.svgMono?'#000':P.k0}" d="${d}"/>`:''; },
+  bg(){ return P.showBg?P.cBg:null; },
+  applyColors(){ document.body.style.setProperty('--k0',P.k0); },
+};
+
+/* ============================ STYLE SWITCHING / STATE ============================ */
+const side=$('side');
+function saveCurrent(){ if(ST) store[ST.id]={P,glyphs,flips,family,MOD,moduleSvg,moduleName}; }
+function useStyle(id){
+  saveCurrent();
+  ST=STYLES[id];
+  const s=store[id];
+  if(s){ P=s.P; glyphs=s.glyphs; flips=s.flips; family=s.family; MOD=s.MOD||null; moduleSvg=s.moduleSvg||''; moduleName=s.moduleName||''; }
+  else { P={...ST.defaults}; glyphs=defaultGlyphs(ST.base); flips=emptyFlips(); family=ST.family; MOD=null; moduleSvg=''; moduleName=''; }
+  undoStack.length=0; brush='cells';
+  bumpAll(); buildSide(); updateBar(); syncControls(); dirty.all=true; sched();
+}
+function updateBar(){
+  $('brushCells').style.display=$('brushBend').style.display=ST.flipLabel?'':'none';
+  $('brushBend').textContent=ST.flipLabel||'';
+  $('brushCells').classList.add('on'); $('brushBend').classList.remove('on');
+}
+const ser=o=>{ const r={}; for(const c of CHARS) r[c]=[...(o[c]||[])]; return r; };
+const deser=a=>{ const r={}; for(const c of CHARS) r[c]=new Set((a&&a[c])||[]); return r; };
+function exportState(){
+  saveCurrent();
+  const out={v:2,style:ST.id,styles:{}};
+  for(const id in store){ const s=store[id]; out.styles[id]={P:s.P,family:s.family,glyphs:ser(s.glyphs),flips:ser(s.flips),moduleSvg:s.moduleSvg,moduleName:s.moduleName}; }
+  return out;
+}
+function loadAll(obj){
+  if(!obj||!obj.styles) return;
+  for(const id in obj.styles){ if(!STYLES[id]) continue; const s=obj.styles[id];
+    store[id]={P:{...STYLES[id].defaults,...s.P},family:s.family||STYLES[id].family,glyphs:deser(s.glyphs),flips:deser(s.flips),MOD:null,moduleSvg:s.moduleSvg||'',moduleName:s.moduleName||''}; }
+  ST=null;
+  useStyle(STYLES[obj.style]?obj.style:'liquid');
+  const L=store.liquid;
+  if(L&&L.moduleSvg) makeModule(L.moduleSvg).then(m=>{ L.MOD=m; if(ST.id==='liquid'){ MOD=m; bumpAll(); paramsChanged(); } }).catch(()=>{});
+}
+
+/* ============================ UI: sidebar ============================ */
+function buildSide(){
+  let h=`<h1>TYPE STUDIO</h1><div style="color:var(--dim)">draw · style · export</div>
+  <div class="row" style="margin-top:12px"><label style="flex:0 0 50px">Style</label><select id="stylesel" style="flex:1">${Object.values(STYLES).map(s=>`<option value="${s.id}"${s.id===ST.id?' selected':''}>${s.label}</option>`).join('')}</select></div>`;
+  for(const c of ST.ctrl){
+    if(c.sec){ h+=`<h2>${c.sec}</h2>`; continue; }
+    if(c.t==='r') h+=`<div class="row"><label>${c.label}</label><input type="range" data-k="${c.k}" min="${c.min}" max="${c.max}" step="${c.step}"><span class="val" data-v="${c.k}"></span></div>`;
+    else if(c.t==='step') h+=`<div class="row"><label>${c.label}</label><div class="step"><button data-dec="${c.k}">−</button><span class="val" data-v="${c.k}"></span><button data-inc="${c.k}">+</button></div></div>`;
+    else if(c.t==='html') h+=c.html;
+    else if(c.t==='tog') h+=`<div class="toggles">${c.items.map(([k,l])=>`<button data-tog="${k}">${l}</button>`).join('')}</div>`;
+  }
+  h+=`<h2>Font</h2>
+  <div class="row"><label>Name</label><input type="text" id="fname"></div>
+  <div class="row"><label>UI theme</label><button id="theme" style="margin-left:auto">Dark / Light</button></div>
+  <h2>Export</h2>
+  <div class="btns"><button class="primary" id="xotf">Export .otf</button></div>
+  ${ST.exportHtml}
+  <div class="btns"><button id="xsvg">SVG alphabet</button><button id="xsvg1">SVG glyph</button></div>
+  ${ST.hasMono?'<div class="toggles" style="margin-top:6px"><button data-tog="svgMono">SVG in 1 color</button></div>':''}
+  <div class="hint">${ST.hint}</div>
+  <h2>Project</h2>
+  <div class="btns"><button id="save">Save .json</button><button id="load">Load .json</button><button id="reset">Reset style</button></div>
+  <input type="file" id="file" accept=".json,application/json" style="display:none">
+  <div class="hint">Autosaves in this browser. Each style keeps its own settings and alphabet. Lowercase starts as a copy of the capitals. Type a key to jump to a glyph.</div>`;
+  side.innerHTML=h;
+}
+function applyColors(){
+  const st=document.body.style, b=ST.bg();
+  ST.applyColors();
+  if(b) st.setProperty('--stage',b); else st.removeProperty('--stage');
+}
+function syncControls(){
+  side.querySelectorAll('input[data-k]').forEach(i=>{ i.value=P[i.dataset.k]; });
+  side.querySelectorAll('[data-v]').forEach(s=>{ const v=P[s.dataset.v]; s.textContent=(typeof v==='number'&&!Number.isInteger(v))?v.toFixed(2):v; });
+  side.querySelectorAll('[data-tog]').forEach(b=>b.classList.toggle('on',!!P[b.dataset.tog]));
+  side.querySelectorAll('[data-pc]').forEach(i=>{ i.value=P[i.dataset.pc]; });
+  side.querySelectorAll('[data-solid]').forEach(b=>b.classList.toggle('on',+b.dataset.solid===P.otfSolid));
+  $('fname').value=family;
+  if(ST.sync) ST.sync();
+  applyColors();
+}
+function paramsChanged(){ pv++; syncControls(); dirty.all=true; sched(); }
+side.addEventListener('input',e=>{
+  const k=e.target.dataset.k; if(k){ P[k]=parseFloat(e.target.value); paramsChanged(); }
+  if(e.target.id==='fname'){ family=e.target.value; sched(); }
+  if(e.target.dataset.pc){ P[e.target.dataset.pc]=e.target.value; applyColors(); pv++; dirty.all=true; sched(); }
+});
+side.addEventListener('change',e=>{
+  if(e.target.id==='stylesel') useStyle(e.target.value);
+  if(e.target.id==='modfile'){ loadModuleFile(e.target.files[0]); e.target.value=''; }
+  if(e.target.id==='file'){
+    const f=e.target.files[0]; if(!f) return;
+    f.text().then(t=>loadAll(JSON.parse(t))).catch(()=>alert('Invalid file'));
+    e.target.value='';
+  }
+});
+side.addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(!b) return;
+  const d=b.dataset;
+  if(d.inc||d.dec){ const k=d.inc||d.dec, c=ST.ctrl.find(c=>c.k===k); P[k]=Math.max(c.min,Math.min(c.max,P[k]+(d.inc?1:-1))); if(P.desc>=P.rows) P.desc=P.rows-1; paramsChanged(); }
+  else if(d.tog){ P[d.tog]=!P[d.tog]; if(d.tog==='modStretch'&&moduleSvg) setModule(moduleSvg,moduleName); else paramsChanged(); }
+  else if(d.solid!==undefined){ P.otfSolid=+d.solid; paramsChanged(); }
+  else if(b.id==='modup') $('modfile').click();
+  else if(b.id==='modclear') clearModule();
+  else if(b.id==='theme'){ const t=document.body.dataset.theme==='dark'?'light':'dark'; document.body.dataset.theme=t; if(STYLES.liquid){ const L=(ST.id==='liquid')?P:(store.liquid&&store.liquid.P); if(L) L.ink=t==='dark'?'#f4f4f4':'#111111'; } paramsChanged(); }
+  else if(b.id==='xotf') exportOTF();
+  else if(b.id==='xsvg') exportSVGAlphabet();
+  else if(b.id==='xsvg1') exportSVGGlyph();
+  else if(b.id==='save') download('type-studio.json',JSON.stringify(exportState()),'application/json');
+  else if(b.id==='load') $('file').click();
+  else if(b.id==='reset'){ if(confirm('Reset this style (settings and alphabet) to the default?')){ const id=ST.id; delete store[id]; ST=null; useStyle(id); } }
+});
+
+/* ============================ Editor ============================ */
+const ed=$('ed');
+const snap=()=>({ch:cur, a:[...glyphs[cur]], f:[...flips[cur]]});
+function pushUndo(){ undoStack.push(snap()); if(undoStack.length>200) undoStack.shift(); }
+function touchGlyph(ch){ gv[ch]++; dirty.editor=true; dirty.grid=true; dirty.test=true; sched(); }
+function undo(){ const s=undoStack.pop(); if(!s) return; glyphs[s.ch]=new Set(s.a); flips[s.ch]=new Set(s.f||[]); cur=s.ch; touchGlyph(s.ch); dirty.sel=true; }
+$('undo').onclick=undo;
+$('clear').onclick=()=>{ pushUndo(); glyphs[cur]=new Set(); touchGlyph(cur); };
+$('invert').onclick=()=>{ pushUndo(); const s=new Set(); for(let y=0;y<P.rows;y++)for(let x=0;x<P.cols;x++) if(!glyphs[cur].has(key(x,y))) s.add(key(x,y)); glyphs[cur]=s; touchGlyph(cur); };
+document.querySelectorAll('[data-shift]').forEach(b=>b.onclick=()=>{
+  const [dx,dy]=b.dataset.shift.split(',').map(Number); pushUndo();
+  const s=new Set(); for(const k of glyphs[cur]){ const x=(k&31)+dx, y=(k>>5)+dy; if(x>=0&&y>=0&&x<32&&y<32) s.add(key(x,y)); }
+  glyphs[cur]=s; touchGlyph(cur);
+});
+let paint=null;
+function cellAt(e){
+  const pt=ed.createSVGPoint(); pt.x=e.clientX; pt.y=e.clientY;
+  const p=pt.matrixTransform(ed.getScreenCTM().inverse()), x=Math.floor(p.x), y=Math.floor(p.y);
+  return (x<0||y<0||x>=P.cols||y>=P.rows)?null:[x,y];
+}
+function setPx(x,y,v){ const k=key(x,y), s=glyphs[cur]; if(s.has(k)===v) return; v?s.add(k):s.delete(k); touchGlyph(cur); }
+const setBrush=b=>{ brush=b; $('brushCells').classList.toggle('on',b==='cells'); $('brushBend').classList.toggle('on',b==='bend'); };
+$('brushCells').onclick=()=>setBrush('cells'); $('brushBend').onclick=()=>setBrush('bend');
+ed.addEventListener('pointerdown',e=>{
+  const c=cellAt(e); if(!c) return;
+  if(brush==='bend'&&ST.flipLabel){ pushUndo(); const k=key(c[0],c[1]), f=flips[cur]; f.has(k)?f.delete(k):f.add(k); touchGlyph(cur); e.preventDefault(); return; }
+  pushUndo(); paint=!glyphs[cur].has(key(c[0],c[1])); setPx(c[0],c[1],paint); ed.setPointerCapture(e.pointerId); e.preventDefault();
+});
+ed.addEventListener('pointermove',e=>{ if(paint===null) return; const c=cellAt(e); if(c) setPx(c[0],c[1],paint); });
+['pointerup','pointercancel'].forEach(t=>ed.addEventListener(t,()=>{ paint=null; }));
+
+function renderEditor(){
+  const {cols,rows,desc}=P, m=.7;
+  ed.setAttribute('viewBox',`${-m} ${-m} ${cols+2*m} ${rows+2*m}`);
+  let s='';
+  for(let y=0;y<rows;y++)for(let x=0;x<cols;x++) s+=`<rect class="g" x="${x}" y="${y}" width="1" height="1"/>`;
+  const by=rows-desc;
+  s+=`<line class="base" x1="${-m}" x2="${cols+m}" y1="${by}" y2="${by}"/>`;
+  if(P.showPx){
+    const {h,r}=ST.ghost();
+    for(const k of glyphs[cur]){ const x=k&31,y=k>>5; if(x<cols&&y<rows) s+=`<rect class="ghost" x="${x+(1-h)/2}" y="${y+(1-h)/2}" width="${h}" height="${h}" rx="${r}"/>`; }
+  } else {
+    for(const k of glyphs[cur]){ const x=k&31,y=k>>5; if(x<cols&&y<rows) s+=`<circle cx="${x+.5}" cy="${y+.5}" r=".05" fill="var(--acc)" opacity=".5"/>`; }
+  }
+  s+=ST.render(cur,20);
+  ed.innerHTML=s;
+  $('curlabel').textContent=cur;
+}
+
+/* ============================ Alphabet grid ============================ */
+const gridEl=$('grid'), cells={}, thumbV={};
+for(const ch of CHARS){
+  const d=document.createElement('div'); d.className='gc'; d.innerHTML=`<i>${ch.replace('&','&amp;').replace('<','&lt;')}</i><svg><g></g></svg>`;
+  d.onclick=()=>select(ch); gridEl.appendChild(d); cells[ch]=d;
+}
+function select(ch){ cur=ch; dirty.editor=dirty.sel=true; sched(); }
+function renderGrid(){
+  const {cols,rows,spacing}=P;
+  for(const ch of CHARS){
+    const el=cells[ch], svg=el.querySelector('svg'), g=el.querySelector('g'), v=pv+':'+gv[ch];
+    if(thumbV[ch]!==v){
+      svg.setAttribute('viewBox',`-.3 -.3 ${cols+spacing+.6} ${rows+.6}`);
+      g.setAttribute('transform',`translate(${spacing/2} 0)`);
+      g.innerHTML=ST.render(ch,10);
+      thumbV[ch]=v;
+    }
+  }
+  $('count').textContent=`${CHARS.length} glyphs · ${CHARS.filter(c=>glyphs[c].size).length} drawn`;
+}
+function renderSel(){ for(const ch of CHARS) cells[ch].classList.toggle('sel',ch===cur); }
+
+/* ============================ Type tester ============================ */
+function renderTest(){
+  const txt=$('ttext').value, cell=+$('tsize').value, box=$('test');
+  const adv=P.cols+P.spacing, W=Math.max(200,box.clientWidth-32);
+  const perLine=Math.max(1,Math.floor(W/(adv*cell)));
+  const lines=[];
+  for(const para of txt.split('\n')){
+    let line='';
+    for(const w of para.split(/(\s+)/)){
+      if(w.length>perLine){
+        for(const chunk of w.match(new RegExp('.{1,'+perLine+'}','gs'))||[]){ if(line.length+chunk.length>perLine){ lines.push(line); line=''; } line+=chunk; }
+        continue;
+      }
+      if(line.length+w.length>perLine){ lines.push(line.replace(/\s+$/,'')); line=w.trimStart(); } else line+=w;
+    }
+    lines.push(line);
+  }
+  const lh=P.rows+1.6; let body='';
+  lines.forEach((ln,li)=>{ [...ln].forEach((ch,ci)=>{
+    if(!glyphs[ch]) return;
+    const d=ST.render(ch,16); if(!d) return;
+    body+=`<g transform="translate(${ci*adv+P.spacing/2} ${li*lh})">${d}</g>`;
+  }); });
+  const vw=Math.max(adv*perLine, 1)*cell, vh=lines.length*lh*cell;
+  box.innerHTML=`<svg viewBox="0 0 ${vw} ${vh}" width="${vw}" height="${vh}" style="max-width:100%;height:auto"><g transform="scale(${cell}) translate(0 .3)" fill-rule="evenodd">${body}</g></svg>`;
+}
+$('ttext').addEventListener('input',renderTest);
+$('tsize').addEventListener('input',renderTest);
+window.addEventListener('resize',renderTest);
+
+/* ============================ render loop / persistence ============================ */
+const dirty={all:true,editor:true,grid:true,test:true,sel:true};
+let raf=0, saveT=0;
+function sched(){ if(raf) return; raf=requestAnimationFrame(()=>{
+  raf=0;
+  if(dirty.all){ dirty.editor=dirty.grid=dirty.test=dirty.sel=true; }
+  if(dirty.grid) renderGrid();
+  if(dirty.editor) renderEditor();
+  if(dirty.sel) renderSel();
+  if(dirty.test) renderTest();
+  dirty.all=dirty.editor=dirty.grid=dirty.test=dirty.sel=false;
+  clearTimeout(saveT); saveT=setTimeout(persist,400);
+}); }
+function persist(){ try{ localStorage.setItem(KEY,JSON.stringify(exportState())); }catch(e){} }
+document.addEventListener('keydown',e=>{
+  if((e.metaKey||e.ctrlKey)&&e.key==='z'){ e.preventDefault(); undo(); return; }
+  if(e.metaKey||e.ctrlKey||e.altKey) return;
+  if(/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) return;
+  if(glyphs[e.key]) select(e.key);
+});
+
+/* ============================ Export ============================ */
+function download(name, data, type){
+  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([data],{type})); a.download=name; document.body.appendChild(a); a.click();
+  setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },500);
+}
+const safeName=()=>(family||'font').replace(/[^\w-]+/g,'-');
+const svgBg=(w,h)=>{ const b=ST.bg(); return (b&&!(ST.hasMono&&P.svgMono))?`<rect x="0" y="0" width="${w}" height="${h}" fill="${b}"/>`:''; };
+function exportSVGGlyph(){
+  const {cols,rows,spacing}=P, w=cols+spacing;
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${rows}" width="${w*100}" height="${rows*100}">${svgBg(w,rows)}<g transform="translate(${spacing/2} 0)">${ST.svg(cur)}</g></svg>`;
+  download(`${safeName()}-${cur.charCodeAt(0).toString(16)}.svg`,svg,'image/svg+xml');
+}
+function exportSVGAlphabet(){
+  const {cols,rows,spacing}=P, w=cols+spacing, per=10, gx=w+1, gy=rows+1.5;
+  const nrow=Math.ceil(CHARS.length/per);
+  let body='';
+  CHARS.forEach((ch,i)=>{ const b=ST.svg(ch); if(!b) return;
+    body+=`<g transform="translate(${(i%per)*gx+spacing/2} ${Math.floor(i/per)*gy})">${b}<title>${ch.replace(/&/g,'&amp;').replace(/</g,'&lt;')}</title></g>`; });
+  const W=per*gx, H=nrow*gy;
+  download(`${safeName()}-alphabet.svg`,`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W*40}" height="${H*40}">${svgBg(W,H)}${body}</svg>`,'image/svg+xml');
+}
+function exportOTF(){
+  const btn=$('xotf'); btn.textContent='Building…';
+  setTimeout(()=>{ try{
+    const rowsUp=P.rows-P.desc, cell=800/rowsUp, adv=Math.round((P.cols+P.spacing)*cell);
+    const fam=(family||ST.family).replace(/[<>()[\]{}\/%]/g,' ').trim()||ST.family;
+    const ps=fam.replace(/[^A-Za-z0-9]/g,'')||'TypeStudio';
+    const glyphList=[];
+    const nd=new opentype.Path(); nd.moveTo(60,0); nd.lineTo(adv-60,0); nd.lineTo(adv-60,800); nd.lineTo(60,800); nd.close();
+    nd.moveTo(120,60); nd.lineTo(120,740); nd.lineTo(adv-120,740); nd.lineTo(adv-120,60); nd.close();
+    glyphList.push(new opentype.Glyph({name:'.notdef',unicode:0,advanceWidth:adv,path:nd}));
+    glyphList.push(new opentype.Glyph({name:'space',unicode:32,advanceWidth:adv,path:new opentype.Path()}));
+    for(const ch of CHARS){
+      const path=new opentype.Path();
+      for(const c of ST.contours(ch)){
+        const pts=[]; for(const p of c){ const q=[Math.round((p[0]+P.spacing/2)*cell), Math.round((rowsUp-p[1])*cell)];
+          const l=pts[pts.length-1]; if(!l||l[0]!==q[0]||l[1]!==q[1]) pts.push(q); }
+        if(pts.length<3) continue;
+        path.moveTo(pts[0][0],pts[0][1]); for(let i=1;i<pts.length;i++) path.lineTo(pts[i][0],pts[i][1]); path.close();
+      }
+      const cp=ch.codePointAt(0);
+      glyphList.push(new opentype.Glyph({name:/[A-Za-z0-9]/.test(ch)?ch:'uni'+cp.toString(16).toUpperCase().padStart(4,'0'),unicode:cp,advanceWidth:adv,path}));
+    }
+    const font=new opentype.Font({familyName:fam,styleName:'Regular',unitsPerEm:1000,ascender:900,descender:-Math.round(P.desc*cell+100),glyphs:glyphList});
+    const nm=(k,v)=>{ font.names[k]={en:v}; };
+    font.names=font.names||{};
+    nm('fontFamily',fam); nm('fontSubfamily','Regular'); nm('fullName',fam+' Regular'); nm('postScriptName',ps+'-Regular');
+    nm('uniqueID',fam+' Regular 1.000'); nm('version','Version 1.000'); nm('designer','Type Studio'); nm('manufacturer','Type Studio');
+    download(safeName()+'.otf',font.toArrayBuffer(),'font/otf');
+  }catch(err){ console.error(err); alert('OTF export failed: '+err.message); }
+  btn.textContent='Export .otf'; },30);
+}
+
+/* ============================ boot ============================ */
+let booted=false;
+try{ const s=localStorage.getItem(KEY); if(s){ loadAll(JSON.parse(s)); booted=!!ST; } }catch(e){}
+if(!booted) useStyle('liquid');
+window.__dbg={P:()=>P,glyphs:()=>glyphs,ST:()=>ST,useStyle,exportOTF,STYLES};
+</script>
+</body>
+</html>
