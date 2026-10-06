@@ -81,6 +81,14 @@
       header.appendChild(title);
     }
 
+    if (opts.bar) {
+      const back = document.createElement('a');
+      back.className = 'site-back';
+      back.href = opts.home || '../index.html';
+      back.textContent = '← back';
+      header.appendChild(back);
+    }
+
     const spacer = document.createElement('span');
     spacer.className = 'site-spacer';
     header.appendChild(spacer);

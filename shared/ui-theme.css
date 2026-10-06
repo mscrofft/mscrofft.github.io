@@ -169,6 +169,12 @@ body.ui-std[data-theme] {
   color: #0a0a0a; opacity: 1;
   min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
+.site-header--bar .site-back {
+  font-size: 15px; font-weight: 600; letter-spacing: -0.03em;
+  color: #0a0a0a; flex: none; white-space: nowrap; text-decoration: none;
+  transition: opacity var(--ui-transition);
+}
+.site-header--bar .site-back:hover { opacity: 0.6; }
 .site-header--bar .ui-invert-btn {
   font-family: inherit; font-size: 15px; font-weight: 600; letter-spacing: -0.03em;
   text-transform: none; color: #0a0a0a;
