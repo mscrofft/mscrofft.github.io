@@ -4,524 +4,190 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Manuel Scrofft</title>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Bebas+Neue&display=swap" rel="stylesheet" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="shared/ui-theme.css" />
   <style>
-    /* ── Design tokens ──────────────────────────────────────── */
+    /* Tema padrão (data-theme="dark" do shared) = visual claro da referência.
+       "Inverter" (data-theme="light") = versão escura. */
     :root {
-      --bg:     #0a0a0a;
-      --fg:     #f0ece3;
-      --accent: #d4b87a;
-      --muted:  #2a2a2a;
-      --border: #222;
+      --bg:   #f6f5f1;
+      --fg:   #0b0b0b;
+      --line: rgba(11,11,11,0.85);
+      --dim:  rgba(11,11,11,0.5);
+      --pad:  22px;
+      --font: 'Inter Tight', 'Helvetica Neue', system-ui, -apple-system, Arial, sans-serif;
     }
-
     body[data-theme="light"] {
-      --bg:     #f0ece3;
-      --fg:     #0a0a0a;
-      --accent: #8a6d35;
-      --muted:  #ccc8c0;
-      --border: #d0ccc4;
-      background: var(--bg);
-      color: var(--fg);
-    }
-
-    /* Light theme — overlay flips */
-    body[data-theme="light"] #preview-overlay {
-      background: linear-gradient(to top, rgba(240,236,227,0.92) 0%, rgba(240,236,227,0.3) 55%, transparent 100%);
-    }
-    body[data-theme="light"] .preview-layer {
-      filter: brightness(1.15) saturate(0.6);
+      --bg:   #0b0b0b;
+      --fg:   #f6f5f1;
+      --line: rgba(246,245,241,0.85);
+      --dim:  rgba(246,245,241,0.5);
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html { scroll-behavior: smooth; }
 
     body {
       background: var(--bg);
       color: var(--fg);
-      font-family: 'Space Mono', monospace;
-      min-height: 100vh;
+      font-family: var(--font);
+      font-weight: 500;
+      letter-spacing: -0.04em;
+      line-height: 1;
+      min-height: 100svh;
       overflow-x: hidden;
-      cursor: none;
+      -webkit-font-smoothing: antialiased;
       transition: background 0.4s ease, color 0.4s ease;
     }
+    a { color: inherit; text-decoration: none; }
 
-    /* ── Cursor ─────────────────────────────────────────────── */
-    .cursor {
-      position: fixed;
-      width: 12px; height: 12px;
-      background: var(--accent);
-      border-radius: 50%;
-      pointer-events: none;
-      z-index: 9999;
-      transform: translate(-50%, -50%);
-      transition: width 0.2s ease, height 0.2s ease;
-      mix-blend-mode: difference;
+    /* ── Topo ──────────────────────────────────────────────── */
+    .topbar {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 16px var(--pad) 0;
+      font-size: 15px;
     }
-    .cursor.hover { width: 40px; height: 40px; }
-
-    /* ── Grain overlay ──────────────────────────────────────── */
-    body::before {
-      content: '';
-      position: fixed;
-      inset: 0;
-      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
-      pointer-events: none;
-      z-index: 1000;
-      opacity: 0.5;
-    }
-
-    /* ── Preview layers (cross-fade) ────────────────────────── */
-    .preview-layer {
-      position: fixed;
-      inset: 0;
-      z-index: -2;
-      background-size: cover;
-      background-position: center;
-      opacity: 0;
-      transform: scale(1.05);
-      transition: opacity 0.55s ease, transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-      will-change: opacity, transform;
-    }
-    .preview-layer.active {
-      opacity: 1;
-      transform: scale(1);
-    }
-
-    /* Readability gradient on top of preview */
-    #preview-overlay {
-      position: fixed;
-      inset: 0;
-      z-index: -1;
-      background: linear-gradient(to top,
-        rgba(0,0,0,0.88) 0%,
-        rgba(0,0,0,0.4)  45%,
-        transparent       100%);
-      pointer-events: none;
-      opacity: 0;
-      transition: opacity 0.5s ease;
-    }
-    #preview-overlay.active { opacity: 1; }
-
-    /* ── Header ─────────────────────────────────────────────── */
-    header {
-      padding: 48px 60px 32px;
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      position: relative;
-      z-index: 2;
-    }
-
-    .logo {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: clamp(36px, 5vw, 64px);
-      letter-spacing: 0.04em;
-      line-height: 1;
-      color: var(--fg);
-      text-decoration: none;
-      transition: color 0.4s ease;
-    }
-    .logo span { color: var(--accent); transition: color 0.4s ease; }
-
-    .header-right {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-      gap: 12px;
-      padding-top: 6px;
-    }
-
-    .header-meta {
-      text-align: right;
-      font-size: 10px;
-      letter-spacing: 0.15em;
-      text-transform: uppercase;
-      opacity: 0.4;
-      line-height: 1.8;
-    }
-
-    /* Invert button override — adapts to page fonts */
+    .logo { font-weight: 600; font-size: 18px; letter-spacing: -0.05em; }
     #btn-invert {
-      font-family: 'Space Mono', monospace;
-      font-size: 9px;
-      /* colors come from ui-theme.css .ui-invert-btn using --ui-fg / --ui-bg */
+      font: inherit; letter-spacing: inherit; color: var(--fg);
+      background: none; border: 0; padding: 0; cursor: pointer; text-transform: none;
+    }
+    #btn-invert svg { display: none; }
+    #btn-invert:hover { background: none; color: var(--fg); opacity: 0.55; }
+
+    h1 {
+      padding: 0 var(--pad);
+      margin: 6px 0 6px;
+      font-size: clamp(28px, 3.6vw, 56px);
+      font-weight: 500;
+      letter-spacing: -0.06em;
+      line-height: 0.95;
+      padding-bottom: 0.08em;
     }
 
-    /* ── Section label ──────────────────────────────────────── */
-    .section-label {
-      padding: 20px 60px;
-      font-size: 10px;
-      letter-spacing: 0.3em;
-      text-transform: uppercase;
-      opacity: 0.3;
-      display: flex;
-      justify-content: space-between;
-      position: relative;
-      z-index: 2;
-    }
+    /* ── Lista ─────────────────────────────────────────────── */
+    .list { display: block; padding-bottom: 48px; }
 
-    /* ── List ───────────────────────────────────────────────── */
-    .list {
-      display: flex;
-      flex-direction: column;
-      position: relative;
-      z-index: 2;
-    }
-
-    /* ── Row ────────────────────────────────────────────────── */
     .row {
       position: relative;
       display: grid;
-      grid-template-columns: auto 1fr auto auto;
+      grid-template-columns: clamp(64px, 7vw, 120px) minmax(0, 1fr) auto;
+      grid-template-areas: "num name tags";
       align-items: center;
-      gap: 32px;
-      padding: 28px 60px;
-      text-decoration: none;
-      color: var(--fg);
-      overflow: hidden;
+      padding: 14px var(--pad);
+      font-size: clamp(22px, 2.7vw, 46px);
+      animation: in 0.5s both;
+      animation-delay: calc(var(--i) * 0.04s);
     }
-
     .row::before {
       content: '';
-      position: absolute;
-      inset: 0;
-      background: var(--accent);
-      transform: translateX(-100%);
-      transition: transform 0.5s cubic-bezier(0.76, 0, 0.24, 1);
-      z-index: 0;
+      position: absolute; left: var(--pad); right: var(--pad); top: 0;
+      height: 1px; background: var(--line);
     }
-    .row:hover::before { transform: translateX(0); }
-
-    .row:hover .row-number,
-    .row:hover .row-title,
-    .row:hover .row-tag,
-    .row:hover .row-arrow { color: var(--bg); }
-
-    .row:hover .row-tag { border-color: var(--bg); opacity: 1; }
-    .row:hover .row-arrow { opacity: 1; transform: translate(4px, -4px); }
-
-    .row-number {
-      font-size: 11px;
-      letter-spacing: 0.2em;
-      opacity: 0.3;
-      position: relative;
-      z-index: 1;
-      transition: color 0.3s ease, opacity 0.3s ease;
-    }
-    .row:hover .row-number { opacity: 0.5; }
-
-    .row-title {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: clamp(24px, 3vw, 42px);
-      letter-spacing: 0.03em;
-      line-height: 1;
-      position: relative;
-      z-index: 1;
-      transition: color 0.3s ease;
+    .row:last-child::after {
+      content: '';
+      position: absolute; left: var(--pad); right: var(--pad); bottom: 0;
+      height: 1px; background: var(--line);
     }
 
-    .row-tag {
-      display: inline-block;
-      font-size: 9px;
-      letter-spacing: 0.2em;
+    .num { grid-area: num; transition: color 0.2s ease; }
+    .main { grid-area: name; min-width: 0; }
+    .name { display: block; transition: color 0.2s ease; }
+
+
+    .tags { grid-area: tags; display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
+    .tag {
+      font-size: clamp(11px, 0.9vw, 14px);
+      font-weight: 500;
+      letter-spacing: -0.02em;
       text-transform: uppercase;
-      border: 1px solid rgba(240, 236, 227, 0.2);
-      padding: 4px 10px;
-      opacity: 0.5;
-      white-space: nowrap;
-      position: relative;
-      z-index: 1;
-      transition: color 0.3s ease, border-color 0.3s ease, opacity 0.3s ease;
-    }
-    body[data-theme="light"] .row-tag {
-      border-color: rgba(10, 10, 10, 0.2);
+      border: 1.5px solid var(--fg);
+      border-radius: 999px;
+      padding: 5px 12px 6px;
+      transition: background 0.25s ease, color 0.25s ease;
     }
 
-    .row-arrow {
-      font-size: 22px;
-      opacity: 0.3;
-      position: relative;
-      z-index: 1;
-      transition: color 0.3s ease, opacity 0.3s ease, transform 0.3s ease;
+    @media (hover: hover) {
+      .row:hover .num, .row:hover .name { color: #e55ab6; }
+      .row:hover .tag { background: var(--fg); color: var(--bg); }
     }
 
-    /* ── Footer ─────────────────────────────────────────────── */
-    footer {
-      padding: 32px 60px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 10px;
-      letter-spacing: 0.15em;
-      text-transform: uppercase;
-      opacity: 0.25;
-      position: relative;
-      z-index: 2;
+    /* ── Responsivo ────────────────────────────────────────── */
+    @media (max-width: 800px) {
+      :root { --pad: 14px; }
+      .row {
+        grid-template-columns: 38px minmax(0, 1fr);
+        grid-template-areas: "num name" ". tags";
+        row-gap: 12px;
+        padding: 16px var(--pad);
+        font-size: clamp(20px, 5.4vw, 30px);
+      }
+      .tags { justify-content: flex-start; gap: 6px; }
+      .tag { font-size: 11px; padding: 4px 9px 5px; }
     }
 
-    /* ── Responsive ─────────────────────────────────────────── */
-    @media (max-width: 900px) {
-      header { padding: 32px 28px 24px; }
-      .section-label { padding: 16px 28px; }
-      .row { padding: 22px 28px; gap: 20px; }
-      footer { padding: 24px 28px; }
-    }
-    @media (max-width: 560px) {
-      .row { grid-template-columns: auto 1fr auto; padding: 20px 22px; gap: 16px; }
-      .row-tag { display: none; }
-      footer { padding: 20px 22px; }
-    }
-
-    /* ── Entrance animation ─────────────────────────────────── */
-    .row {
-      opacity: 0;
-      transform: translateY(20px);
-      animation: fadeUp 0.6s forwards;
-    }
-    .row:nth-child(1) { animation-delay: 0.05s; }
-    .row:nth-child(2) { animation-delay: 0.12s; }
-    .row:nth-child(3) { animation-delay: 0.19s; }
-    .row:nth-child(4) { animation-delay: 0.26s; }
-    .row:nth-child(5) { animation-delay: 0.33s; }
-    .row:nth-child(6) { animation-delay: 0.40s; }
-    .row:nth-child(7) { animation-delay: 0.47s; }
-    .row:nth-child(8) { animation-delay: 0.54s; }
-    .row:nth-child(9) { animation-delay: 0.61s; }
-
-    @keyframes fadeUp {
-      to { opacity: 1; transform: translateY(0); }
+    @keyframes in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+    @media (prefers-reduced-motion: reduce) {
+      .row { animation: none; }
+      .num, .name, .tag { transition: none; }
     }
   </style>
 </head>
 <body>
 
-  <div class="cursor" id="cursor"></div>
-
-  <!-- Preview background layers (cross-fade) -->
-  <div class="preview-layer" id="preview-a"></div>
-  <div class="preview-layer" id="preview-b"></div>
-  <div id="preview-overlay" aria-hidden="true"></div>
-
-  <header>
-    <a class="logo" href="#">MS<span>.</span></a>
-    <div class="header-right">
-      <button id="btn-invert" class="ui-invert-btn" type="button" title="Inverter cores">
-        <svg viewBox="0 0 16 16"><path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm0 12.5A5.5 5.5 0 0 1 8 2.5v11a5.5 5.5 0 0 1 0-11z"/></svg>
-        Inverter
-      </button>
-      <div class="header-meta">JS Experiments</div>
-    </div>
+  <header class="topbar">
+    <a class="logo" href="#">MJ.</a>
+    <button id="btn-invert" class="ui-invert-btn" type="button" title="Inverter cores">Inverter</button>
   </header>
 
-  <div class="section-label">
-    <span>Projetos / 15</span>
-    <span>JavaScript — Canvas — WebGL</span>
-  </div>
+  <h1>Projetos</h1>
 
   <main class="list">
-
-    <a class="row" href="Dither_halftone/index.html"
-       data-preview="previews/01.jpg"
-       data-color="linear-gradient(135deg, #1a1a1a 0%, #3d3d3d 100%)">
-      <span class="row-number">01</span>
-      <span class="row-title">Dither Halftone</span>
-      <span class="row-tag">Imagem · Filtro</span>
-      <span class="row-arrow">↗</span>
+    <a class="row" style="--i:0" href="Dither_halftone/index.html">
+      <span class="num">01</span><span class="main"><span class="name">Dither Halftone</span></span>
+      <span class="tags"><span class="tag">#imagem</span><span class="tag">#filtro</span></span>
     </a>
-
-    <a class="row" href="Grid_painter/index.html"
-       data-preview="previews/02.jpg"
-       data-color="linear-gradient(135deg, #0d1117 0%, #1f2937 100%)">
-      <span class="row-number">02</span>
-      <span class="row-title">Grid Painter</span>
-      <span class="row-tag">Canvas · Interativo</span>
-      <span class="row-arrow">↗</span>
+    <a class="row" style="--i:1" href="Grid_painter/index.html">
+      <span class="num">02</span><span class="main"><span class="name">Grid Painter</span></span>
+      <span class="tags"><span class="tag">#canvas</span><span class="tag">#interativo</span></span>
     </a>
-
-    <a class="row" href="emoji_gravity/index.html"
-       data-preview="previews/03.jpg"
-       data-color="linear-gradient(135deg, #111111 0%, #282820 100%)">
-      <span class="row-number">03</span>
-      <span class="row-title">Emoji Particles</span>
-      <span class="row-tag">Particle system</span>
-      <span class="row-arrow">↗</span>
+    <a class="row" style="--i:2" href="emoji_gravity/index.html">
+      <span class="num">03</span><span class="main"><span class="name">Emoji Particles</span></span>
+      <span class="tags"><span class="tag">#canvas</span><span class="tag">#particulas</span></span>
     </a>
-
-    <a class="row" href="TypeExtrude3D/index.html"
-       data-preview="previews/04.jpg"
-       data-color="linear-gradient(135deg, #0a0a12 0%, #1e1e30 100%)">
-      <span class="row-number">04</span>
-      <span class="row-title">Type Extrude 3D</span>
-      <span class="row-tag">3D · Tipografia</span>
-      <span class="row-arrow">↗</span>
+    <a class="row" style="--i:3" href="TypeExtrude3D/index.html">
+      <span class="num">04</span><span class="main"><span class="name">Type Extrude 3D</span></span>
+      <span class="tags"><span class="tag">#3d</span><span class="tag">#tipografia</span></span>
     </a>
-
-    <a class="row" href="Card_Studio_3d/index.html"
-       data-preview="previews/05.jpg"
-       data-color="linear-gradient(135deg, #12080a 0%, #2d1010 100%)">
-      <span class="row-number">05</span>
-      <span class="row-title">Card Studio 3D</span>
-      <span class="row-tag">3D</span>
-      <span class="row-arrow">↗</span>
+    <a class="row" style="--i:4" href="Card_Studio_3d/index.html">
+      <span class="num">05</span><span class="main"><span class="name">Card Studio 3D</span></span>
+      <span class="tags"><span class="tag">#3d</span></span>
     </a>
-
-    <a class="row" href="visuals_app/index.html"
-       data-preview="previews/06.jpg"
-       data-color="linear-gradient(135deg, #080f0a 0%, #101f14 100%)">
-      <span class="row-number">06</span>
-      <span class="row-title">Visuals App</span>
-      <span class="row-tag">Visual · App</span>
-      <span class="row-arrow">↗</span>
+    <a class="row" style="--i:5" href="visuals_app/index.html">
+      <span class="num">06</span><span class="main"><span class="name">Visuals App</span></span>
+      <span class="tags"><span class="tag">#visual</span><span class="tag">#app</span></span>
     </a>
-
-    <a class="row" href="Font_Editor/index.html"
-       data-preview="previews/07.jpg"
-       data-color="linear-gradient(135deg, #0d0a12 0%, #1a152d 100%)">
-      <span class="row-number">07</span>
-      <span class="row-title">Font Editor</span>
-      <span class="row-tag">letters</span>
-      <span class="row-arrow">↗</span>
+    <a class="row" style="--i:6" href="Font_Editor/index.html">
+      <span class="num">07</span><span class="main"><span class="name">Font Editor</span></span>
+      <span class="tags"><span class="tag">#letters</span><span class="tag">#tipografia</span></span>
     </a>
-
-    <a class="row" href="iris_p5/index.html"
-       data-preview="previews/08.jpg"
-       data-color="linear-gradient(135deg, #080d12 0%, #10192a 100%)">
-      <span class="row-number">08</span>
-      <span class="row-title">Iris</span>
-      <span class="row-tag">Lines · P5</span>
-      <span class="row-arrow">↗</span>
+    <a class="row" style="--i:7" href="iris_p5/index.html">
+      <span class="num">08</span><span class="main"><span class="name">Iris</span></span>
+      <span class="tags"><span class="tag">#lines</span><span class="tag">#p5</span></span>
     </a>
-
- 
-
-    <a class="row" href="kinetic_type/index.html"
-       data-color="linear-gradient(135deg, #0a0a0a 0%, #1c3df5 100%)">
-      <span class="row-number">09</span>
-      <span class="row-title">Kinetic Type</span>
-      <span class="row-tag">Tipografia · Animação</span>
-      <span class="row-arrow">↗</span>
+    <a class="row" style="--i:8" href="kinetic_type/index.html">
+      <span class="num">09</span><span class="main"><span class="name">Kinetic Type</span></span>
+      <span class="tags"><span class="tag">#tipografia</span><span class="tag">#animacao</span></span>
     </a>
-
-
-
-
-    <a class="row" href="Poster_Collage/index.html"
-       data-color="linear-gradient(135deg, #0a0a0a 0%, #507cdd 100%)">
-      <span class="row-number">10</span>
-      <span class="row-title">Poster Collage</span>
-      <span class="row-tag">Grade · SVG · Paleta</span>
-      <span class="row-arrow">↗</span>
+    <a class="row" style="--i:9" href="Poster_Collage/index.html">
+      <span class="num">10</span><span class="main"><span class="name">Poster Collage</span></span>
+      <span class="tags"><span class="tag">#grade</span><span class="tag">#svg</span><span class="tag">#paleta</span></span>
     </a>
-
   </main>
 
-  <footer>
-    <span>Manuel Scrofft</span>
-    <span>© 2025</span>
-  </footer>
-
-  <!-- Shared theme toggle (dark ↔ light, persists in localStorage) -->
   <script src="shared/ui-theme-lite.js"></script>
-
   <script>
-    /* ── Cursor ─────────────────────────────────────────────── */
-    const cursor = document.getElementById('cursor');
-    document.addEventListener('mousemove', e => {
-      cursor.style.left = e.clientX + 'px';
-      cursor.style.top  = e.clientY + 'px';
-    });
-    document.querySelectorAll('a, button').forEach(el => {
-      el.addEventListener('mouseenter', () => cursor.classList.add('hover'));
-      el.addEventListener('mouseleave', () => cursor.classList.remove('hover'));
-    });
-
-    /* ── Invert button ──────────────────────────────────────── */
     document.getElementById('btn-invert').addEventListener('click', UITheme.toggleTheme);
-
-    /* ── Preview cross-fade ─────────────────────────────────── */
-    const layerA  = document.getElementById('preview-a');
-    const layerB  = document.getElementById('preview-b');
-    const overlay = document.getElementById('preview-overlay');
-    const rows    = document.querySelectorAll('.row');
-
-    let front    = layerA;   // currently visible layer
-    let back     = layerB;   // hidden layer (will be shown next)
-    let isActive = false;
-    let imgCache = {};       // { src: true } — tracks loaded images
-
-    function applyVisual(layer, color, src) {
-      layer.style.background = color;
-      layer.style.backgroundSize  = 'cover';
-      layer.style.backgroundPosition = 'center';
-
-      if (src && !imgCache[src]) {
-        const img = new Image();
-        img.onload = () => {
-          imgCache[src] = true;
-          // Apply only if this layer is still the front one
-          if (layer === front) {
-            layer.style.backgroundImage = `url(${src})`;
-          }
-        };
-        img.src = src;
-      } else if (src && imgCache[src]) {
-        layer.style.backgroundImage = `url(${src})`;
-      } else {
-        layer.style.backgroundImage = 'none';
-      }
-    }
-
-    rows.forEach(row => {
-      row.addEventListener('mouseenter', () => {
-        const color = row.dataset.color || '#1a1a1a';
-        const src   = row.dataset.preview || '';
-
-        if (!isActive) {
-          // First hover: bring front layer in
-          applyVisual(front, color, src);
-          front.classList.add('active');
-          overlay.classList.add('active');
-          isActive = true;
-        } else {
-          // Already active: cross-fade to back layer
-          // 1. Instantly snap back layer to initial state (no transition)
-          back.style.transition = 'none';
-          back.style.transform  = 'scale(1.05)';
-          back.style.opacity    = '0';
-          void back.getBoundingClientRect(); // commit inline values
-
-          // 2. Clear inline overrides so CSS class can take control, re-enable transition
-          back.style.transition = '';
-          back.style.opacity    = '';   // CSS default: opacity:0
-          back.style.transform  = '';   // CSS default: scale(1.05)
-          void back.getBoundingClientRect(); // commit CSS-default state
-
-          // 3. Set content and animate in
-          applyVisual(back, color, src);
-          back.classList.add('active');    // CSS transition: opacity:0→1, scale:1.05→1
-          front.classList.remove('active');
-
-          // Swap roles
-          [front, back] = [back, front];
-        }
-      });
-
-      row.addEventListener('mouseleave', () => {
-        // Small delay so moving between rows doesn't flicker
-        setTimeout(() => {
-          const hovered = document.querySelector('.row:hover');
-          if (!hovered) {
-            front.classList.remove('active');
-            back.classList.remove('active');
-            overlay.classList.remove('active');
-            isActive = false;
-          }
-        }, 60);
-      });
-    });
   </script>
-
 </body>
 </html>
