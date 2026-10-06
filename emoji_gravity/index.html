@@ -21,7 +21,7 @@
     display:flex;align-items:center;justify-content:center;
     backdrop-filter:blur(8px);
     /* desktop: top-right */
-    top:14px;right:14px;bottom:auto;left:auto;
+    top:calc(var(--bar-h) + 14px);right:14px;bottom:auto;left:auto;
   }
   @media(max-width:600px){
     #toggle{
@@ -33,7 +33,7 @@
 
   /* ── DESKTOP: side panel (right) ── */
   #panel{
-    position:fixed;top:0;right:0;bottom:0;z-index:20;
+    position:fixed;top:var(--bar-h);right:0;bottom:0;z-index:20;
     width:248px;
     background:var(--ui-bg-panel);
     border-left:1px solid var(--ui-border);
@@ -130,16 +130,20 @@
   @media(max-width:600px){#touch-hint{display:block}}
 </style>
 </head>
-<body>
+<body class="ui-std">
 
-<a class="ui-back" href="../index.html">&lt; back</a>
+<header class="site-header site-header--bar">
+  <a class="site-logo" href="../index.html">MS<span>.</span></a>
+  <span class="site-title">Emoji Particles</span>
+  <span class="site-spacer"></span>
+  <button class="ui-invert-btn" type="button" data-ui-invert title="Inverter cores">Inverter</button>
+</header>
 <div id="canvas-wrap"><canvas id="c"></canvas></div>
 <div id="touch-hint">toque para spawnar · segure para arrastar</div>
 <button id="toggle" title="Painel">⚙</button>
 
 <div id="panel">
   <div style="display:flex;justify-content:flex-end;margin-bottom:4px;">
-    <button class="ui-invert-btn" id="ui-invert"><svg viewBox="0 0 16 16"><path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm0 12.5A5.5 5.5 0 0 1 8 2.5v11a5.5 5.5 0 0 1 0-11z"/></svg> Inverter</button>
   </div>
 
   <div>
@@ -215,8 +219,8 @@
 </div>
 
 <script src="../shared/ui-theme-lite.js"></script>
+<script src="../shared/site-header.js"></script>
 <script>
-document.getElementById('ui-invert').addEventListener('click', () => UITheme.toggleTheme());
 </script>
 <script>
 const canvas = document.getElementById('c');
