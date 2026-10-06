@@ -28,7 +28,7 @@ canvas { display: block; }
 
 /* ── Debug box ── */
 #debugBox {
-  position: fixed; left: 12px; top: 12px;
+  position: fixed; left: 12px; top: calc(var(--bar-h, 40px) + 12px);
   max-width: min(520px, calc(100vw - 24px));
   z-index: 10; font-size: 10px; line-height: 1.3;
   font-family: var(--ui-font, monospace);
@@ -230,4 +230,118 @@ input[type="checkbox"] {
   #mobileSheet { padding-bottom: env(safe-area-inset-bottom); }
   #fabMenu { bottom: calc(18px + env(safe-area-inset-bottom)); }
   #swatchesBar { bottom: calc(12px + env(safe-area-inset-bottom)); }
+}
+
+/* ============================================================
+   dat.GUI no padrão do painel do Dither Halftone
+   ============================================================ */
+body.ui-std .dg.ac { top: var(--bar-h, 40px) !important; right: 0 !important; z-index: 100 !important; }
+
+body.ui-std .dg.main {
+  width: 230px !important;
+  height: calc(100vh - var(--bar-h, 40px));
+  overflow-x: hidden; overflow-y: auto;
+  background: var(--ui-bg-panel);
+  border-left: 1px solid var(--ui-border);
+  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+  font-family: var(--ui-font); font-size: 10px; color: var(--ui-fg);
+  scrollbar-width: thin; scrollbar-color: var(--ui-border) transparent;
+  padding-bottom: 24px;
+}
+body.ui-std .dg.main > div:not([class]) { display: none; }
+body.ui-std .dg.main .close-button { display: none !important; }
+body.ui-std .dg.main > ul { height: auto !important; }
+body.ui-std .dg.main > ul::before {
+  content: 'VISUALS APP';
+  display: block; padding: 14px 14px 10px; margin-bottom: 6px;
+  border-bottom: 1px solid var(--ui-border);
+  font-size: 10px; font-weight: 600; letter-spacing: 0.12em; color: var(--ui-fg); opacity: 0.9;
+}
+
+/* pastas = seções */
+body.ui-std .dg li.folder { border-left: 0 !important; border-bottom: 1px solid var(--ui-border); background: none; }
+body.ui-std .dg li.title {
+  display: flex; align-items: center; justify-content: space-between;
+  height: auto; line-height: 1.2; padding: 8px 14px !important;
+  background: none !important; border: 0 !important;
+  font-size: 9px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--ui-muted); text-shadow: none !important;
+}
+body.ui-std .dg li.title::after { content: '▾'; font-size: 8px; transition: transform 150ms ease; }
+body.ui-std .dg ul.closed > li.title::after { transform: rotate(-90deg); }
+body.ui-std .dg li.title:hover { color: var(--ui-fg); }
+body.ui-std .dg .folder > .dg > ul { padding-bottom: 6px; }
+
+/* linhas */
+body.ui-std .dg li.cr {
+  height: auto !important; min-height: 26px; padding: 3px 14px !important;
+  background: transparent !important; border: 0 !important;
+  overflow: visible; transition: none;
+}
+body.ui-std .dg li.cr:hover { background: transparent !important; }
+body.ui-std .dg li.cr > div { display: flex; align-items: center; gap: 8px; min-height: 20px; }
+body.ui-std .dg .property-name {
+  float: none !important; clear: none !important; width: auto !important; flex: 1;
+  font-size: 10px; color: var(--ui-fg); opacity: 0.75;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+body.ui-std .dg .c { float: none !important; width: auto !important; flex: 1.2; position: relative; min-width: 0; }
+
+/* número: slider + valor */
+body.ui-std .dg li.cr.number .c { display: flex; flex-direction: row-reverse; align-items: center; gap: 8px; }
+body.ui-std .dg li.cr.number.has-slider > div > .property-name { flex: 0 0 72px; }
+body.ui-std .dg .cr.number input[type=text] {
+  float: none !important; width: 34px !important; height: auto; margin: 0 !important; padding: 0 !important;
+  background: transparent !important; border: 0 !important; outline: 0; box-shadow: none;
+  font-family: var(--ui-font); font-size: 9px; color: var(--ui-muted) !important; text-align: right;
+}
+body.ui-std .dg .cr.number input[type=text]:focus { color: var(--ui-fg) !important; }
+body.ui-std .dg .cr.number .slider {
+  float: none !important; flex: 1; width: auto !important; margin: 0 !important;
+  height: 14px; background: transparent !important; position: relative; cursor: ew-resize; overflow: visible;
+}
+body.ui-std .dg .cr.number .slider::before {
+  content: ''; position: absolute; left: 0; right: 0; top: 6px; height: 2px;
+  border-radius: 1px; background: var(--ui-border);
+}
+body.ui-std .dg .cr.number .slider-fg {
+  position: absolute; left: 0; top: 6px; height: 2px; padding: 0 !important; max-width: 100%;
+  background: var(--ui-accent) !important; border-radius: 1px;
+}
+body.ui-std .dg .cr.number .slider-fg::after {
+  content: ''; position: absolute; right: -5px; top: -4px; width: 10px; height: 10px;
+  border-radius: 50%; background: var(--ui-accent); transition: transform 120ms ease;
+}
+body.ui-std .dg .cr.number .slider:hover .slider-fg::after { transform: scale(1.3); }
+
+/* select */
+body.ui-std .dg .c select {
+  width: 100%; margin: 0 !important; height: auto;
+  font-family: var(--ui-font); font-size: 9px; color: var(--ui-fg);
+  background: transparent; border: 1px solid var(--ui-border); border-radius: var(--ui-radius);
+  padding: 3px 6px; outline: none; -webkit-appearance: none; appearance: none; cursor: pointer;
+}
+body.ui-std .dg .c select:focus { border-color: var(--ui-accent); }
+body.ui-std .dg .c select option { background: var(--ui-bg); color: var(--ui-fg); }
+
+/* checkbox */
+body.ui-std .dg li.cr.boolean .c { flex: 0 0 auto; display: flex; justify-content: flex-end; }
+body.ui-std .dg .cr.boolean input[type=checkbox] { accent-color: var(--ui-accent); margin: 0; cursor: pointer; }
+
+/* botões (linha inteira clicável no dat.GUI) */
+body.ui-std .dg li.cr.function > div { display: block; }
+body.ui-std .dg li.cr.function .c { display: none; }
+body.ui-std .dg li.cr.function .property-name {
+  display: block; width: 100% !important; text-align: center; opacity: 1; cursor: pointer;
+  font-size: 9px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--ui-fg); border: 1px solid var(--ui-border); border-radius: var(--ui-radius);
+  padding: 4px 10px; transition: background var(--ui-transition), color var(--ui-transition), border-color var(--ui-transition);
+}
+body.ui-std .dg li.cr.function:hover .property-name { background: var(--ui-fg); color: var(--ui-bg); border-color: var(--ui-fg); }
+
+/* cor */
+body.ui-std .dg .cr.color .c input[type=text] {
+  width: 100% !important; height: auto !important; padding: 3px 6px !important; margin: 0 !important;
+  border: 1px solid var(--ui-border) !important; border-radius: var(--ui-radius);
+  font-family: var(--ui-font); font-size: 9px; text-align: center; box-shadow: none;
 }

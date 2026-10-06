@@ -560,20 +560,88 @@ function drawCustomSVG(drawSVG, forma, d, rotDeg, x, y, color){
 }
 
 // --- Recording ---
-function toggleRecording(){
-  if (!isRecording) startRecording(); else stopRecording();
+async function toggleRecording(){
+  if (!isRecording) await startRecording(); else await stopRecording();
 }
-function startRecording(){
+// Escolhe uma configuração H.264 aceita pelo navegador, reduzindo a resolução se preciso.
+async function pickH264Config(w, h, fps){
+  const profiles = ["avc1.640034","avc1.640033","avc1.64002a","avc1.640028","avc1.4d0028","avc1.4d001f","avc1.42001f"];
+  const accels = ["no-preference","prefer-software"];
+  for (let scale=1; scale>=0.25; scale*=0.75){
+    const cw=Math.max(2, Math.round(w*scale)&~1), ch=Math.max(2, Math.round(h*scale)&~1);
+    const bitrate=Math.round(Math.min(16_000_000, Math.max(2_000_000, cw*ch*fps*0.1)));
+    for (const hw of accels){
+      for (const codec of profiles){
+        const cfg={codec,width:cw,height:ch,bitrate,framerate:fps,hardwareAcceleration:hw,avc:{format:"avc"}};
+        try{ const sup=await VideoEncoder.isConfigSupported(cfg); if (sup.supported) return sup.config||cfg; }catch(_){}
+      }
+    }
+  }
+  return null;
+}
+
+async function startRecording(){
+  if (isRecording || recorder) return;
   const btn=document.getElementById("btnRecord");
-  const stream=cnv.elt.captureStream(60);
-  const mime=MediaRecorder.isTypeSupported("video/webm;codecs=vp9")?"video/webm;codecs=vp9":(MediaRecorder.isTypeSupported("video/webm;codecs=vp8")?"video/webm;codecs=vp8":"video/webm");
-  recordedChunks=[];
-  try{ recorder=new MediaRecorder(stream,{mimeType:mime,videoBitsPerSecond:6_000_000}); }catch(e){ alert("MediaRecorder não suportado."); return; }
-  recorder.ondataavailable=e=>{ if (e.data && e.data.size) recordedChunks.push(e.data); };
-  recorder.onstop=()=>{ const blob=new Blob(recordedChunks,{type:"video/webm"}); const url=URL.createObjectURL(blob); const a=document.createElement("a"); a.href=url; a.download="visuals_capture.webm"; a.click(); URL.revokeObjectURL(url); };
-  recorder.start(100); isRecording=true; if (btn) btn.textContent="⏹ Stop Recording";
+  if (!("VideoEncoder" in window)){ alert("Gravar em MP4 requer Chrome 94+ ou Safari 16.4+."); return; }
+  try{
+    const { Muxer, ArrayBufferTarget } = await import("https://esm.sh/mp4-muxer@5");
+    const src=cnv.elt;
+    // tamanho lógico (sem pixelDensity do p5, que dobra a resolução em telas Retina) limitado a 4K
+    const density = (typeof pixelDensity==="function" ? pixelDensity() : 1) || 1;
+    let w=Math.round(src.width/density), h=Math.round(src.height/density);
+    const k=Math.min(1, 3840/Math.max(w,h), 2160/Math.min(w,h));
+    w=Math.max(2, Math.round(w*k)&~1); h=Math.max(2, Math.round(h*k)&~1); // H.264 exige dimensões pares
+    const fps=30;
+    const cfg=await pickH264Config(w,h,fps);
+    if (!cfg) throw new Error("Nenhum perfil H.264 compatível neste navegador/dispositivo.");
+    const cw=cfg.width, ch=cfg.height;
+    const off=document.createElement("canvas"); off.width=cw; off.height=ch;
+    const octx=off.getContext("2d");
+    const target=new ArrayBufferTarget();
+    const muxer=new Muxer({target,video:{codec:"avc",width:cw,height:ch},fastStart:"in-memory"});
+    const rec={fps,target,muxer,off,octx,src,startedAt:performance.now(),nextFrameAt:0,frameNumber:0,raf:null,error:null,encoder:null,codec:cfg.codec};
+    rec.encoder=new VideoEncoder({
+      output:(chunk,meta)=>{ try{ muxer.addVideoChunk(chunk,meta); }catch(e){ rec.error=e; } },
+      error:e=>{ rec.error=e; }
+    });
+    rec.encoder.configure(cfg);
+    recorder=rec; isRecording=true;
+    if (btn) btn.textContent="⏹ Stop Recording";
+    captureMP4Frame();
+  }catch(e){ recorder=null; isRecording=false; console.error(e); alert("Falha ao iniciar gravação: "+e.message); }
 }
-function stopRecording(){ const btn=document.getElementById("btnRecord"); if (recorder && isRecording) recorder.stop(); isRecording=false; if (btn) btn.textContent="🎥 Start Recording"; }
+function captureMP4Frame(now=performance.now()){
+  const r=recorder; if (!r || !isRecording) return;
+  if (r.error){ console.error(r.error); stopRecording(); return; }
+  if (now>=r.nextFrameAt && r.encoder.encodeQueueSize<=6){
+    try{
+      r.octx.drawImage(r.src,0,0,r.off.width,r.off.height);
+      const frame=new VideoFrame(r.off,{timestamp:Math.round(r.frameNumber/r.fps*1e6)});
+      r.encoder.encode(frame,{keyFrame:r.frameNumber%r.fps===0});
+      frame.close();
+    }catch(e){ r.error=e; }
+    r.frameNumber++;
+    r.nextFrameAt=r.startedAt+r.frameNumber/r.fps*1000;
+  }
+  r.raf=requestAnimationFrame(captureMP4Frame);
+}
+async function stopRecording(){
+  const btn=document.getElementById("btnRecord");
+  const r=recorder; recorder=null; isRecording=false;
+  if (btn) btn.textContent="🎥 Start Recording";
+  if (!r) return;
+  if (r.raf) cancelAnimationFrame(r.raf);
+  try{
+    if (r.error) throw r.error;
+    await r.encoder.flush(); r.muxer.finalize();
+    const url=URL.createObjectURL(new Blob([r.target.buffer],{type:"video/mp4"}));
+    const a=document.createElement("a"); a.href=url; a.download="visuals_capture.mp4";
+    document.body.appendChild(a); a.click();
+    setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); },200);
+  }catch(e){ console.error(e); alert("Falha ao salvar MP4: "+e.message); }
+  finally{ try{ if (r.encoder.state!=="closed") r.encoder.close(); }catch(_){} }
+}
 
 // ─────────────────────────────────────────────────────────────
 // MOBILE UI — Bottom-sheet controls
@@ -763,8 +831,8 @@ function bindMobileUI(){
   if (btnSVG) btnSVG.addEventListener("click", () => { guiState.exportarSVG(); });
 
   const btnRec = document.getElementById("m-record");
-  if (btnRec) btnRec.addEventListener("click", () => {
-    guiState.record();
+  if (btnRec) btnRec.addEventListener("click", async () => {
+    await toggleRecording();
     btnRec.textContent = isRecording ? "⏹ Parar" : "🎥 Gravar";
   });
 

@@ -7,8 +7,13 @@
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="../shared/ui-theme.css"/>
 </head>
-<body>
-<a class="ui-back" href="../index.html">&lt; back</a>
+<body class="ui-std">
+<header class="site-header site-header--bar">
+  <a class="site-logo" href="../index.html">MS<span>.</span></a>
+  <span class="site-title">Visuals App</span>
+  <span class="site-spacer"></span>
+  <button class="ui-invert-btn" type="button" data-ui-invert title="Inverter cores">Inverter</button>
+</header>
   <input type="file" id="svgUpload" accept=".svg" style="display:none" />
 
   <div id="swatchesBar" aria-hidden="true"></div>
@@ -30,7 +35,6 @@
     <div id="sheetHeader">
       <h2>Controles</h2>
       <div style="display:flex;align-items:center;gap:8px;">
-        <button class="ui-invert-btn" id="ui-invert"><svg viewBox="0 0 16 16"><path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm0 12.5A5.5 5.5 0 0 1 8 2.5v11a5.5 5.5 0 0 1 0-11z"/></svg> Inverter</button>
         <button id="sheetClose" aria-label="Fechar">✕</button>
       </div>
     </div>
@@ -143,8 +147,8 @@
   <script src="https://cdn.jsdelivr.net/npm/@svgdotjs/svg.js"></script>
   <script src="visuals_app.js"></script>
   <script src="../shared/ui-theme-lite.js"></script>
+  <script src="../shared/site-header.js"></script>
   <script>
-    document.getElementById('ui-invert').addEventListener('click', () => UITheme.toggleTheme());
   </script>
 </body>
 </html>
