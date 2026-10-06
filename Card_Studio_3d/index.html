@@ -14,7 +14,7 @@
       color: var(--ui-fg);
       display: flex; align-items: stretch; min-height: 100vh;
     }
-    .app { display: flex; flex-direction: column; width: 100%; min-height: 100vh; background: var(--ui-bg-canvas); }
+    .app { display: flex; flex-direction: column; width: 100%; min-height: 100vh; padding-top: var(--bar-h); background: var(--ui-bg-canvas); }
     .main { display: flex; flex: 1; min-height: 560px; }
 
     /* ── panels (desktop) ── */
@@ -207,8 +207,8 @@
       .panel-left, .panel-right { display: none; }
 
       /* Canvas fills everything except bottom bar */
-      .main { min-height: calc(100dvh - 56px); }
-      .canvas-wrap { min-height: calc(100dvh - 56px); }
+      .main { min-height: calc(100dvh - 56px - var(--bar-h)); }
+      .canvas-wrap { min-height: calc(100dvh - 56px - var(--bar-h)); }
 
       /* Bottom bar: three zones */
       .bottom-bar {
@@ -234,15 +234,35 @@
         transition: background .15s, border-color .15s;
       }
       .mob-fab:active { background: var(--ui-fg); color: var(--ui-bg); border-color: var(--ui-fg); }
-      .mob-fab-left  { top: 12px; left: 12px; }
-      .mob-fab-right { top: 12px; right: 12px; }
+      .mob-fab-left  { top: calc(var(--bar-h) + 12px); left: 12px; }
+      .mob-fab-right { top: calc(var(--bar-h) + 12px); right: 12px; }
 
       /* Hint hides on mobile — FABs tell the story */
       .hint { display: none; }
     }
+
+    /* ── acento padrão (#e55ab6) ── */
+    body.ui-std .mode-btn.active,
+    body.ui-std .fp.active, body.ui-std .lp.active, body.ui-std .cp.active,
+    body.ui-std .card-item.active { background: var(--ui-accent); border-color: var(--ui-accent); color: #0a0a0a; opacity: 1; }
+    body.ui-std .export-btn { background: var(--ui-accent); color: #0a0a0a; }
+    body.ui-std .fp:hover, body.ui-std .lp:hover, body.ui-std .cp:hover,
+    body.ui-std .card-item:hover, body.ui-std .rot-btn:hover,
+    body.ui-std .upload-label:hover, body.ui-std .add-card-btn:hover { border-color: var(--ui-accent); }
+    body.ui-std .upload-label.has-file { border-color: var(--ui-accent); color: var(--ui-accent); }
+    body.ui-std .clear-btn:hover { background: var(--ui-accent); border-color: var(--ui-accent); color: #0a0a0a; }
+    body.ui-std .mob-fab:active { background: var(--ui-accent); border-color: var(--ui-accent); color: #0a0a0a; }
   </style>
 </head>
-<body>
+<body class="ui-std">
+
+<header class="site-header site-header--bar">
+  <a class="site-logo" href="../index.html">MS<span>.</span></a>
+  <span class="site-title">Card Studio 3D</span>
+  <span class="site-spacer"></span>
+  <button class="ui-invert-btn" type="button" data-ui-invert title="Inverter cores">Inverter</button>
+</header>
+
 
 <!-- ── Mobile FAB triggers ── -->
 <button class="mob-fab mob-fab-left"  onclick="openSheet('left')"  aria-label="Style options">✦</button>
@@ -384,7 +404,6 @@
   </div>
 </div>
 
-<a class="ui-back" href="../index.html">&lt; back</a>
 <div class="app">
   <div class="main">
     <!-- Desktop left panel -->
@@ -392,7 +411,6 @@
       <div>
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
           <div class="panel-label" style="margin:0;"><b>CARD STUDIO 3D</b></div>
-          <button class="ui-invert-btn" id="ui-invert"><svg viewBox="0 0 16 16"><path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm0 12.5A5.5 5.5 0 0 1 8 2.5v11a5.5 5.5 0 0 1 0-11z"/></svg> Inverter</button>
         </div>
         <div class="panel-label">Finish</div>
         <div style="display:flex;flex-direction:column;gap:4px;">
@@ -584,8 +602,8 @@
 </div>
 
 <script src="../shared/ui-theme-lite.js"></script>
+<script src="../shared/site-header.js"></script>
 <script>
-document.getElementById('ui-invert').addEventListener('click', () => UITheme.toggleTheme());
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <!-- Post-processing -->
