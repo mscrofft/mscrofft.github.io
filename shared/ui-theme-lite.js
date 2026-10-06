@@ -49,6 +49,56 @@
     return btn;
   }
 
+  /**
+   * Monta o header padrão do site (logo "MS." + título + Inverter).
+   * @param {object} [opts]
+   *   title  {string}  título da página (opcional)
+   *   home   {string}  href do logo (default '../index.html')
+   *   solid  {boolean} barra opaca em fluxo (apps); default: fixa transparente
+   *   bar    {boolean} padrão v2: barra #e55ab6 em largura total (ativa body.ui-std)
+   *   toggle {boolean} incluir botão Inverter (default true)
+   *   mount  {string|HTMLElement} container; default: prepend no body
+   * @returns {HTMLElement|null}
+   */
+  function mountHeader(opts) {
+    opts = opts || {};
+    const header = document.createElement('header');
+    header.className = 'site-header' + (opts.solid ? ' site-header--solid' : '') + (opts.bar ? ' site-header--bar' : '');
+    if (opts.bar) document.body.classList.add('ui-std');
+
+    const logo = document.createElement('a');
+    logo.className = 'site-logo';
+    logo.href = opts.home || '../index.html';
+    logo.innerHTML = 'MS<span>.</span>';
+    logo.title = 'Voltar para a home';
+    logo.addEventListener('click', function (e) { e.stopPropagation(); });
+    header.appendChild(logo);
+
+    if (opts.title) {
+      const title = document.createElement('span');
+      title.className = 'site-title';
+      title.textContent = opts.title;
+      header.appendChild(title);
+    }
+
+    const spacer = document.createElement('span');
+    spacer.className = 'site-spacer';
+    header.appendChild(spacer);
+
+    if (opts.toggle !== false) {
+      const btn = makeInvertButton(opts.label);
+      btn.addEventListener('click', function (e) { e.stopPropagation(); });
+      header.appendChild(btn);
+    }
+
+    const target = typeof opts.mount === 'string'
+      ? document.querySelector(opts.mount)
+      : (opts.mount || document.body);
+    if (!target) return null;
+    target.insertBefore(header, target.firstChild);
+    return header;
+  }
+
   function initFromStorage() {
     let stored = null;
     try { stored = localStorage.getItem(KEY); } catch (e) {}
@@ -64,6 +114,6 @@
 
   global.UITheme = global.UITheme || {
     setTheme, getTheme, toggleTheme,
-    makeInvertButton, mountInvertButton,
+    makeInvertButton, mountInvertButton, mountHeader,
   };
 })(window);
