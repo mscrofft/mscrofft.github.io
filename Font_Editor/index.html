@@ -4,12 +4,14 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Type Studio</title>
+<link rel="stylesheet" href="../shared/ui-theme.css"/>
 <style>
-  :root { --bg:#0e0e10; --panel:#151518; --line:#2a2a30; --fg:#ececec; --dim:#8b8b95; --acc:#7cf; --ink:#f4f4f4; --cell:#1b1b20; --cA:#0a14c8; --cB:#faf6ee; }
-  body[data-theme="light"] { --bg:#f2f2f0; --panel:#fff; --line:#dcdcd6; --fg:#111; --dim:#777; --acc:#06c; --ink:#111; --cell:#ecece8; }
+  :root { --bg:#0e0e10; --panel:#151518; --line:#2a2a30; --fg:#ececec; --dim:#8b8b95; --acc:#e55ab6; --ink:#f4f4f4; --cell:#1b1b20; --cA:#0a14c8; --cB:#faf6ee; }
+  body[data-theme="light"] { --bg:#f2f2f0; --panel:#fff; --line:#dcdcd6; --fg:#111; --dim:#777; --acc:#e55ab6; --ink:#111; --cell:#ecece8; }
   * { box-sizing: border-box; }
+  body { padding-top: var(--bar-h); }
   html, body { margin:0; height:100%; background:var(--bg); color:var(--fg); font:12px/1.4 'IBM Plex Mono', ui-monospace, Menlo, monospace; }
-  .app { display:grid; grid-template-columns: 300px 1fr; height:100vh; }
+  .app { display:grid; grid-template-columns: 300px 1fr; height:calc(100vh - var(--bar-h)); }
   aside { background:var(--panel); border-right:1px solid var(--line); overflow-y:auto; padding:14px; }
   main { overflow-y:auto; padding:16px 20px 60px; display:flex; flex-direction:column; gap:22px; min-width:0; }
   h1 { font-size:13px; margin:0 0 4px; letter-spacing:.04em; }
@@ -58,7 +60,13 @@
   select { min-width:0; }
 </style>
 </head>
-<body data-theme="dark">
+<body class="ui-std" data-theme="dark">
+<header class="site-header site-header--bar">
+  <a class="site-logo" href="../index.html">MS<span>.</span></a>
+  <span class="site-title">Font Editor</span>
+  <span class="site-spacer"></span>
+  <button class="ui-invert-btn" type="button" data-ui-invert title="Inverter cores">Inverter</button>
+</header>
 <div class="app">
   <aside id="side"></aside>
   <main>
@@ -90,6 +98,8 @@
   </main>
 </div>
 
+<script src="../shared/ui-theme-lite.js"></script>
+<script src="../shared/site-header.js"></script>
 <script src="opentype.min.js"></script>
 <script>
 "use strict";

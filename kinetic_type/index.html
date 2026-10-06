@@ -8,13 +8,13 @@
   <link rel="stylesheet" href="../shared/ui-theme.css" />
   <link rel="stylesheet" href="style.css" />
 </head>
-<body data-theme="dark">
+<body class="ui-std" data-theme="dark">
 
-  <header class="site-header site-header--solid">
+  <header class="site-header site-header--bar">
     <a class="site-logo" href="../index.html">MS<span>.</span></a>
     <span class="site-title">Kinetic Type · animação tipográfica</span>
     <span class="site-spacer"></span>
-    <span id="theme-toggle-container"></span>
+    <button class="ui-invert-btn" type="button" data-ui-invert title="Inverter cores">Inverter</button>
   </header>
 
   <main>
@@ -101,6 +101,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/opentype.js@1.3.4/dist/opentype.min.js"></script>
   <script src="../shared/ui-theme-lite.js"></script>
+  <script src="../shared/site-header.js"></script>
   <script src="src/glyph.js"></script>
   <script src="src/timeline.js"></script>
   <script src="src/effects/registry.js"></script>

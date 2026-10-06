@@ -223,3 +223,17 @@ footer .status { font-size: 12px; opacity: 0.7; }
 /* Hide number spinners for a cleaner look */
 .param-num::-webkit-inner-spin-button,
 .param-num::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+
+/* header padrão (barra) dentro do grid da página */
+header.site-header--bar {
+  position: sticky; top: 0; z-index: 500;
+  justify-content: flex-start;
+  padding: 0 16px;
+  border-bottom: 0;
+}
+@media (max-width: 800px) {
+  body { grid-template-columns: minmax(0, 1fr); overflow-x: hidden; }
+  main { grid-template-columns: minmax(0, 1fr); }
+  #controls, #stage { min-width: 0; }
+  #controls { border-right: 0; border-bottom: 1px solid var(--border); }
+}

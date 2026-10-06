@@ -505,7 +505,6 @@ function init() {
   buildEffectParams();
   syncControlsUI();          // reflect state into DOM inputs
   wireInputs();
-  if (window.UITheme) UITheme.mountInvertButton('#theme-toggle-container');
   ensureFontThenRender(state.fontFamily, state.fontWeight);
   loop();
 }

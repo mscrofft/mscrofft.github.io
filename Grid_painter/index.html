@@ -14,6 +14,11 @@
       background: #000;
     }
     canvas { display: block; }
+    #ui-panel { top: var(--bar-h) !important; height: calc(100vh - var(--bar-h)) !important; }
+    #ui-theme-toggle { display: none !important; }
+    @media (max-width: 700px) {
+      #ui-panel { top: auto !important; bottom: 0; left: 0; width: 100% !important; height: 45vh !important; border-left: 0 !important; border-top: 1px solid var(--ui-border); }
+    }
 
     /* overlay MIDI — posicionamento; estilos de fonte/cor vêm do ui-theme.js */
     #midiOverlay {
@@ -55,8 +60,13 @@
     }
   </style>
 </head>
-<body>
-  <a class="ui-back" href="../index.html">&lt; back</a>
+<body class="ui-std">
+  <header class="site-header site-header--bar">
+    <a class="site-logo" href="../index.html">MS<span>.</span></a>
+    <span class="site-title">Grid Painter</span>
+    <span class="site-spacer"></span>
+    <button class="ui-invert-btn" type="button" data-ui-invert title="Inverter cores">Inverter</button>
+  </header>
   <input type="file" id="customSvg" accept=".svg" style="display:none"/>
 
   <div id="midiOverlay">
@@ -66,6 +76,7 @@
   </div>
 
   <!-- sistema de tema (deve vir antes do sketch) -->
+  <script src="../shared/site-header.js"></script>
   <script src="./ui-theme.js"></script>
   <!-- sketch principal -->
   <script src="./sketch.js"></script>
