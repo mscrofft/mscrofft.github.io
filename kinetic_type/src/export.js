@@ -106,6 +106,29 @@ window.Exporter = {
   exportPNG({ canvas, filename }) {
     canvas.toBlob((blob) => downloadBlob(blob, (filename || 'kinetic') + '.png'));
   },
+
+  // Vetoriza o frame atual com ImageTracer, restrito às cores da paleta (fundo, A, B).
+  async exportSVG({ canvas, palette, filename }) {
+    if (!window.ImageTracer) {
+      await loadScript('https://cdn.jsdelivr.net/npm/imagetracerjs@1.2.6/imagetracer_v1.2.6.js');
+    }
+    const k = Math.min(1, 1600 / Math.max(canvas.width, canvas.height));
+    const w = Math.round(canvas.width * k), h = Math.round(canvas.height * k);
+    const off = document.createElement('canvas');
+    off.width = w; off.height = h;
+    const octx = off.getContext('2d');
+    octx.drawImage(canvas, 0, 0, w, h);
+    const hex = c => ({ r: parseInt(c.slice(1, 3), 16), g: parseInt(c.slice(3, 5), 16), b: parseInt(c.slice(5, 7), 16), a: 255 });
+    const svg = ImageTracer.imagedataToSVG(octx.getImageData(0, 0, w, h), {
+      pal: [palette.bg, palette.colorA, palette.colorB].map(hex),
+      colorsampling: 0, numberofcolors: 3, colorquantcycles: 1,
+      ltres: 1, qtres: 1, pathomit: 12, rightangleenhance: true,
+      blurradius: 0, strokewidth: 0, roundcoords: 1, desc: false,
+      scale: 1 / k, viewbox: true,
+    });
+    const sized = svg.replace('<svg ', `<svg width="${canvas.width}" height="${canvas.height}" `);
+    downloadBlob(new Blob([sized], { type: 'image/svg+xml' }), (filename || 'kinetic') + '.svg');
+  },
 };
 
 function loadScript(src) {

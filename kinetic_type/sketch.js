@@ -29,7 +29,7 @@ const DEFAULT_STATE = {
   loops: 3,
   gifScale: 0.5,
   fps: 30,
-  effectId: 'verticalSlice',
+  effectId: 'halftoneDense',
   effectParams: {},
   palette: { bg: '#eaeaea', colorA: '#000000', colorB: '#1c3df5' },
 };
@@ -75,11 +75,38 @@ const $ = id => document.getElementById(id);
 const canvas = $('canvas');
 const ctx = canvas.getContext('2d');
 
+// Mantém a proporção escolhida e ocupa o máximo da área disponível, colado ao header.
+// `zoom` é relativo ao tamanho ajustado (1 = Fit); acima de 1 a área rola.
+let zoom = 1;
+function fitCanvas() {
+  const vp = $('viewport');
+  if (!vp || !canvas.width) return;
+  const cs = getComputedStyle(vp);
+  const padX = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
+  const padY = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
+  const stacked = window.innerWidth <= 800;
+  const availW = Math.max(120, vp.clientWidth - padX);
+  const availH = stacked ? Math.max(200, window.innerHeight * 0.7) : Math.max(120, vp.clientHeight - padY);
+  const k = Math.min(availW / canvas.width, availH / canvas.height) * zoom;
+  canvas.style.width = Math.floor(canvas.width * k) + 'px';
+  canvas.style.height = Math.floor(canvas.height * k) + 'px';
+}
+
+function setZoom(z) {
+  zoom = z;
+  document.querySelectorAll('.zoom-btn').forEach(b => b.classList.toggle('active', parseFloat(b.dataset.zoom) === z));
+  fitCanvas();
+}
+
 function resizeCanvas() {
   const a = ASPECTS[state.aspect];
   canvas.width = a.w;
   canvas.height = a.h;
+  fitCanvas();
 }
+window.addEventListener('resize', fitCanvas);
+window.addEventListener('load', fitCanvas);
+document.querySelectorAll('.zoom-btn').forEach(b => b.addEventListener('click', () => setZoom(parseFloat(b.dataset.zoom))));
 
 function currentGlyph() {
   return Glyph.build({
@@ -218,26 +245,58 @@ function buildEffectParams() {
   }
 }
 
+function paletteGradient(pal) {
+  return `linear-gradient(90deg, ${pal.bg} 0% 33.3%, ${pal.a} 33.3% 66.6%, ${pal.b} 66.6% 100%)`;
+}
+
+function setPaletteMenu(open) {
+  const dd = $('pal-dd');
+  const menu = $('palette-grid');
+  dd.classList.toggle('open', open);
+  menu.hidden = !open;
+  $('pal-trigger').setAttribute('aria-expanded', String(open));
+  if (!open) return;
+  // menu flutuante: abre para baixo ou para cima conforme o espaço disponível
+  const r = $('pal-trigger').getBoundingClientRect();
+  const below = window.innerHeight - r.bottom - 12;
+  const above = r.top - 12;
+  const up = below < 180 && above > below;
+  const max = Math.max(120, Math.min(280, up ? above : below));
+  menu.style.position = 'fixed';
+  menu.style.left = r.left + 'px';
+  menu.style.width = r.width + 'px';
+  menu.style.right = 'auto';
+  menu.style.maxHeight = max + 'px';
+  if (up) { menu.style.top = 'auto'; menu.style.bottom = (window.innerHeight - r.top + 4) + 'px'; }
+  else    { menu.style.bottom = 'auto'; menu.style.top = (r.bottom + 4) + 'px'; }
+}
+
 function buildPaletteGrid() {
   const host = $('palette-grid');
-  host.innerHTML = '';
+  host.querySelectorAll('.palette-swatch').forEach(n => n.remove());
+  const custom = host.querySelector('.pal-custom');
   PALETTES.forEach((pal, idx) => {
     const sw = document.createElement('div');
     sw.className = 'palette-swatch';
     sw.dataset.idx = idx;
-    sw.style.background = `linear-gradient(135deg, ${pal.bg} 0% 33%, ${pal.a} 33% 66%, ${pal.b} 66% 100%)`;
-    sw.title = pal.name;
+    sw.setAttribute('role', 'option');
+    sw.innerHTML = '<span class="pal-chip"></span><span class="pal-label"></span>';
+    sw.firstChild.style.background = paletteGradient(pal);
+    sw.lastChild.textContent = pal.name;
     sw.addEventListener('click', () => {
       state.palette = { bg: pal.bg, colorA: pal.a, colorB: pal.b };
       $('in-bg').value = pal.bg;
       $('in-colorA').value = pal.a;
       $('in-colorB').value = pal.b;
-      [...host.children].forEach(c => c.classList.remove('active'));
-      sw.classList.add('active');
+      syncPaletteUI();
+      setPaletteMenu(false);
       requestRender();
     });
-    host.appendChild(sw);
+    host.insertBefore(sw, custom);
   });
+  $('pal-trigger').addEventListener('click', () => setPaletteMenu($('palette-grid').hidden));
+  document.addEventListener('click', e => { if (!$('pal-dd').contains(e.target)) setPaletteMenu(false); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') setPaletteMenu(false); });
 }
 
 // Merge persisted effectParams over the current effect's defaults, keeping only
@@ -266,6 +325,9 @@ function syncPaletteUI() {
     const match = pal && pal.bg === state.palette.bg && pal.a === state.palette.colorA && pal.b === state.palette.colorB;
     sw.classList.toggle('active', !!match);
   });
+  const cur = PALETTES.find(pal => pal.bg === state.palette.bg && pal.a === state.palette.colorA && pal.b === state.palette.colorB);
+  $('pal-name').textContent = cur ? cur.name : 'personalizada';
+  $('pal-prev').style.background = paletteGradient(cur || { bg: state.palette.bg, a: state.palette.colorA, b: state.palette.colorB });
 }
 
 // Reflect all top-level inputs from state (used on load + reset + randomize).
@@ -375,7 +437,7 @@ function wireInputs() {
     saveStateSoon();
   });
   for (const [id, k] of [['in-bg','bg'],['in-colorA','colorA'],['in-colorB','colorB']]) {
-    $(id).addEventListener('input', e => { state.palette[k] = e.target.value; requestRender(); });
+    $(id).addEventListener('input', e => { state.palette[k] = e.target.value; syncPaletteUI(); requestRender(); });
   }
   $('in-effect').addEventListener('change', e => {
     state.effectId = e.target.value;
@@ -434,6 +496,21 @@ function wireInputs() {
   // Export buttons
   $('btn-png').addEventListener('click', () => {
     Exporter.exportPNG({ canvas, filename: 'kinetic_' + (state.text || 'frame') });
+  });
+  $('btn-svg').addEventListener('click', async () => {
+    const btn = $('btn-svg');
+    btn.disabled = true;
+    setStatus('Vetorizando frame…');
+    await new Promise(r => setTimeout(r, 30));
+    try {
+      await Exporter.exportSVG({ canvas, palette: state.palette, filename: 'kinetic_' + (state.text || 'frame') });
+      setStatus('SVG salvo.');
+    } catch (e) {
+      console.error(e);
+      setStatus('Erro: ' + e.message);
+    } finally {
+      btn.disabled = false;
+    }
   });
   $('btn-mp4').addEventListener('click', async () => {
     const wasPlaying = state.playing;

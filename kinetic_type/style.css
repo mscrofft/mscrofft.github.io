@@ -130,37 +130,47 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 
 #stage {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
+  flex-direction: column;
   position: relative;
+  min-width: 0;
+  min-height: 0;
   overflow: hidden;
   background:
     repeating-conic-gradient(var(--muted) 0% 25%, var(--bg) 0% 50%) 50% / 16px 16px;
 }
 
-#canvas-wrap {
-  position: relative;
-  box-shadow: 0 8px 40px rgba(0,0,0,0.4);
-  background: #000;
+#viewport {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  display: flex;
+  padding: 12px 16px;
 }
 
-#canvas { display: block; max-width: 100%; max-height: 75vh; }
+#canvas-wrap {
+  position: relative;
+  margin: 0 auto;
+  flex: none;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.4);
+  background: #000;
+  align-self: flex-start;
+}
+
+#canvas { display: block; }
 
 #playbar {
-  position: absolute;
-  bottom: 16px;
-  left: 50%;
-  transform: translateX(-50%);
+  flex: none;
   display: flex;
   align-items: center;
   gap: 10px;
+  align-self: center;
+  width: min(560px, calc(100% - 32px));
+  margin: 4px 0 12px;
   background: rgba(10,10,10,0.78);
   color: #fff;
   padding: 8px 12px;
   border-radius: 999px;
   backdrop-filter: blur(8px);
-  min-width: 360px;
 }
 #playbar input[type="range"] { flex: 1; }
 #playbar button {
@@ -183,20 +193,6 @@ footer {
 footer .export-actions { display: flex; gap: 8px; }
 footer .status { font-size: 12px; opacity: 0.7; }
 
-.palette-grid {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 6px;
-}
-.palette-swatch {
-  height: 28px;
-  border: 1px solid var(--border);
-  border-radius: 3px;
-  cursor: pointer;
-  position: relative;
-  overflow: hidden;
-}
-.palette-swatch.active { outline: 2px solid var(--accent); outline-offset: 1px; }
 
 .drop-hint {
   border: 1px dashed var(--border);
@@ -237,3 +233,62 @@ header.site-header--bar {
   #controls, #stage { min-width: 0; }
   #controls { border-right: 0; border-bottom: 1px solid var(--border); }
 }
+
+/* ── dropdown de paletas ── */
+.pal-dd { position: relative; }
+.pal-trigger {
+  width: 100%; display: flex; align-items: center; gap: 10px;
+  padding: 6px 8px; font-size: 13px; font-weight: 400; text-align: left;
+}
+.pal-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pal-caret { font-size: 10px; opacity: 0.7; transition: transform 0.15s; }
+.pal-dd.open .pal-caret { transform: rotate(180deg); }
+.pal-chip {
+  flex: none; width: 44px; height: 16px; border-radius: 2px;
+  border: 1px solid var(--border); background: var(--muted);
+}
+.pal-menu {
+  position: absolute; left: 0; right: 0; top: calc(100% + 4px); z-index: 600;
+  display: flex; flex-direction: column; gap: 2px;
+  max-height: 280px; overflow-y: auto; padding: 4px;
+  background: var(--panel); border: 1px solid var(--border); border-radius: 3px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+}
+.pal-menu[hidden] { display: none; }
+.palette-swatch {
+  display: flex; align-items: center; gap: 10px;
+  padding: 5px 6px; border-radius: 2px; cursor: pointer; font-size: 12px;
+}
+.palette-swatch:hover { background: rgba(127,127,127,0.18); }
+.palette-swatch.active { outline: 1px solid var(--accent); }
+.palette-swatch .pal-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* desktop: app preso à altura da janela; só o painel de controles rola */
+@media (min-width: 801px) {
+  body { height: 100vh; min-height: 0; overflow: hidden; grid-template-rows: auto minmax(0, 1fr) auto; }
+  main { min-height: 0; overflow: hidden; }
+  #controls { min-height: 0; }
+}
+
+/* ── zoom ── */
+#zoombar {
+  position: absolute; top: 10px; right: 14px; z-index: 5;
+  display: flex; gap: 2px; padding: 3px;
+  background: rgba(10,10,10,0.78); border-radius: 999px; backdrop-filter: blur(8px);
+}
+.zoom-btn {
+  background: transparent; color: #fff; border: 0; border-radius: 999px;
+  padding: 3px 10px; font-size: 11px; font-weight: 600; opacity: 0.7;
+}
+.zoom-btn:hover { opacity: 1; }
+.zoom-btn.active { background: var(--accent); color: #0a0a0a; opacity: 1; }
+
+/* ── cores personalizadas dentro do dropdown ── */
+.pal-custom {
+  position: sticky; bottom: -4px; margin: 2px -4px -4px; padding: 8px 10px 10px;
+  background: var(--panel); border-top: 1px solid var(--border);
+}
+.pal-custom-title { display: block; margin-bottom: 6px; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; opacity: 0.6; }
+
+/* acento padrão do site (#e55ab6) no lugar do dourado local */
+body.ui-std { --accent: var(--ui-accent); }

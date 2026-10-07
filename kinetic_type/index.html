@@ -60,11 +60,22 @@
 
       <div class="group">
         <h3>Paleta</h3>
-        <div id="palette-grid" class="palette-grid"></div>
-        <div class="row-h">
-          <label>BG <input id="in-bg" type="color" value="#eaeaea" /></label>
-          <label>A <input id="in-colorA" type="color" value="#000000" /></label>
-          <label>B <input id="in-colorB" type="color" value="#1c3df5" /></label>
+        <div class="pal-dd" id="pal-dd">
+          <button type="button" class="ghost pal-trigger" id="pal-trigger" aria-haspopup="listbox" aria-expanded="false">
+            <span class="pal-chip" id="pal-prev"></span>
+            <span class="pal-name" id="pal-name">Paleta</span>
+            <span class="pal-caret" aria-hidden="true">▾</span>
+          </button>
+          <div id="palette-grid" class="palette-grid pal-menu" role="listbox" hidden>
+            <div class="pal-custom">
+              <span class="pal-custom-title">Personalizar</span>
+              <div class="row-h">
+                <label>BG <input id="in-bg" type="color" value="#eaeaea" /></label>
+                <label>A <input id="in-colorA" type="color" value="#000000" /></label>
+                <label>B <input id="in-colorB" type="color" value="#1c3df5" /></label>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -79,8 +90,16 @@
     </aside>
 
     <section id="stage">
-      <div id="canvas-wrap">
-        <canvas id="canvas" width="1080" height="1080"></canvas>
+      <div id="viewport">
+        <div id="canvas-wrap">
+          <canvas id="canvas" width="1080" height="1080"></canvas>
+        </div>
+      </div>
+      <div id="zoombar" role="group" aria-label="Zoom do canvas">
+        <button type="button" class="zoom-btn active" data-zoom="1">Fit</button>
+        <button type="button" class="zoom-btn" data-zoom="1.5">150%</button>
+        <button type="button" class="zoom-btn" data-zoom="2">200%</button>
+        <button type="button" class="zoom-btn" data-zoom="3">300%</button>
       </div>
       <div id="playbar">
         <button id="btn-play">❚❚</button>
@@ -95,6 +114,7 @@
     <div class="export-actions">
       <button class="ghost" id="btn-reset" title="Restaurar padrões">Reset</button>
       <button class="ghost" id="btn-png">PNG</button>
+      <button class="ghost" id="btn-svg" title="Salvar SVG vetorizado do frame atual">SVG</button>
       <button class="ghost" id="btn-gif">GIF</button>
       <button id="btn-mp4">Exportar MP4</button>
     </div>
