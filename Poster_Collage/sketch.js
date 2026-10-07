@@ -3,11 +3,11 @@
 
 /* ── estado ─────────────────────────────────────────────── */
 const S = {
-  cols: 8, rows: 8,
-  p3: 0.12, p2: 0.25,
+  cols: 16, rows: 9,
+  p3: 0.26, p2: 0.46,
   useSeed: false, seed: 12345,
   paletteMode: 'Triádica',
-  fixedPalette: '—',
+  fixedPalette: 'Paleta 2',
   hue: 210,
   showGrid: false, showLabels: false,
   randomRotation: false,
@@ -340,7 +340,7 @@ function buildUI() {
   });
   cor.slider('Matiz', { min: 0, max: 359, value: S.hue, onChange: v => { S.hue = v; S.fixedPalette = '—'; fixedSel.setValue('—'); regenPalette(); recolor(); } });
   const fixedSel = cor.select('Fixa', Object.keys(FIXED_PALETTES), {
-    value: '—', onChange: v => { S.fixedPalette = v; regenPalette(); recolor(); },
+    value: S.fixedPalette, onChange: v => { S.fixedPalette = v; regenPalette(); recolor(); },
   });
   swatchEl = document.createElement('div'); swatchEl.className = 'swatches';
   cor._body.appendChild(swatchEl);
