@@ -562,9 +562,13 @@ function _saveSVG_do(){
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-// gravação
-function pickMimeType(){
-  const cands = ['video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm'];
+// gravação (MP4)
+let wcRec = null; // gravação via WebCodecs (fallback sem áudio)
+
+function pickMp4MimeType(hasAudio){
+  const cands = hasAudio
+    ? ['video/mp4;codecs=avc1.640034,mp4a.40.2','video/mp4;codecs=avc1,mp4a.40.2','video/mp4;codecs=avc1','video/mp4']
+    : ['video/mp4;codecs=avc1.640034','video/mp4;codecs=avc1','video/mp4'];
   for (const t of cands){
     try { if (typeof MediaRecorder!=='undefined' && MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(t)) return t; }
     catch(_){}
@@ -572,24 +576,44 @@ function pickMimeType(){
   return '';
 }
 
+async function pickH264Config(w, h, fps){
+  const profiles = ['avc1.640034','avc1.640033','avc1.64002a','avc1.640028','avc1.4d0028','avc1.42001f'];
+  for (let scale=1; scale>=0.25; scale*=0.75){
+    const cw=Math.max(2, Math.round(w*scale)&~1), ch=Math.max(2, Math.round(h*scale)&~1);
+    const bitrate=Math.round(Math.min(16_000_000, Math.max(2_000_000, cw*ch*fps*0.1)));
+    for (const hw of ['no-preference','prefer-software']){
+      for (const codec of profiles){
+        const cfg={codec,width:cw,height:ch,bitrate,framerate:fps,hardwareAcceleration:hw,avc:{format:'avc'}};
+        try{ const sup=await VideoEncoder.isConfigSupported(cfg); if (sup.supported) return sup.config||cfg; }catch(_){}
+      }
+    }
+  }
+  return null;
+}
+
+function prepareRecordingCanvas(){
+  gSrc.remove(); gProc.remove();
+  gSrc = createGraphics(exportW, exportH);
+  gProc = createGraphics(exportW, exportH);
+  resizeCanvas(exportW, exportH);
+}
+
 function startRecording(){
   if (isRecording) return;
   try {
-    gSrc.remove(); gProc.remove();
-    gSrc = createGraphics(exportW, exportH);
-    gProc = createGraphics(exportW, exportH);
-    resizeCanvas(exportW, exportH);
+    prepareRecordingCanvas();
     const stream = canvas.elt.captureStream(30);
+    let hasAudio = false;
     if (srcVideo && srcVideo.elt && typeof srcVideo.elt.captureStream === 'function'){
       try {
         const vstream = srcVideo.elt.captureStream();
         const audioTracks = vstream.getAudioTracks();
-        if (audioTracks && audioTracks.length) stream.addTrack(audioTracks[0]);
+        if (audioTracks && audioTracks.length){ stream.addTrack(audioTracks[0]); hasAudio = true; }
       } catch(err){ console.warn('Não foi possível anexar o áudio do vídeo.', err); }
     }
-    const mimeType = pickMimeType();
-    const opts = mimeType ? { mimeType, videoBitsPerSecond: 6_000_000 } : { videoBitsPerSecond: 6_000_000 };
-    mediaRecorder = new MediaRecorder(stream, opts);
+    const mimeType = pickMp4MimeType(hasAudio);
+    if (!mimeType){ startWebCodecsRecording(); return; }
+    mediaRecorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 8_000_000 });
     recordedChunks = [];
     mediaRecorder.ondataavailable = e => { if (e.data && e.data.size>0) recordedChunks.push(e.data); };
     mediaRecorder.onstop = saveRecording;
@@ -597,31 +621,96 @@ function startRecording(){
     if (!srcVideo) loop();
     isRecording = true;
   } catch(err){
-    alert('Falha ao iniciar gravação. Seu navegador suporta MediaRecorder/WebM?\n' + err);
+    console.error(err);
+    alert('Falha ao iniciar gravação em MP4.\n' + err);
+  }
+}
+
+async function startWebCodecsRecording(){
+  try {
+    if (!('VideoEncoder' in window)) throw new Error('Seu navegador não suporta gravação em MP4 (requer Chrome 94+, Edge ou Safari 16.4+).');
+    const { Muxer, ArrayBufferTarget } = await import('https://esm.sh/mp4-muxer@5');
+    const fps = 30;
+    const cfg = await pickH264Config(exportW & ~1, exportH & ~1, fps);
+    if (!cfg) throw new Error('Nenhum perfil H.264 compatível neste navegador/dispositivo.');
+    const off = document.createElement('canvas');
+    off.width = cfg.width; off.height = cfg.height;
+    const target = new ArrayBufferTarget();
+    const muxer = new Muxer({ target, video: { codec: 'avc', width: cfg.width, height: cfg.height }, fastStart: 'in-memory' });
+    const rec = { fps, off, octx: off.getContext('2d'), target, muxer, encoder: null, n: 0, startedAt: performance.now(), next: 0, raf: null, error: null };
+    rec.encoder = new VideoEncoder({
+      output: (chunk, meta) => { try { muxer.addVideoChunk(chunk, meta); } catch(e){ rec.error = e; } },
+      error: e => { rec.error = e; },
+    });
+    rec.encoder.configure(cfg);
+    wcRec = rec;
+    if (!srcVideo) loop();
+    isRecording = true;
+    const tick = (now) => {
+      if (wcRec !== rec) return;
+      if (rec.error){ console.error(rec.error); stopRecording(); return; }
+      if (now >= rec.next && rec.encoder.encodeQueueSize <= 6){
+        try {
+          rec.octx.drawImage(canvas.elt, 0, 0, rec.off.width, rec.off.height);
+          const frame = new VideoFrame(rec.off, { timestamp: Math.round(rec.n / fps * 1e6) });
+          rec.encoder.encode(frame, { keyFrame: rec.n % fps === 0 });
+          frame.close();
+        } catch(e){ rec.error = e; }
+        rec.n++;
+        rec.next = rec.startedAt + rec.n / fps * 1000;
+      }
+      rec.raf = requestAnimationFrame(tick);
+    };
+    rec.raf = requestAnimationFrame(tick);
+  } catch(err){
+    console.error(err);
+    wcRec = null; isRecording = false;
+    if (!srcVideo) noLoop();
+    alert('Falha ao iniciar gravação em MP4.\n' + err.message);
   }
 }
 
 function stopRecording(){
   if (!isRecording) return;
-  try { mediaRecorder.stop(); } catch(err){ console.warn('Erro ao parar recorder', err); }
   isRecording = false;
+  if (wcRec) { finishWebCodecsRecording(); return; }
+  try { mediaRecorder.stop(); } catch(err){ console.warn('Erro ao parar recorder', err); }
   if (!srcVideo) noLoop();
 }
 
-function saveRecording(){
-  const type = recordedChunks[0]?.type || 'video/webm';
-  const blob = new Blob(recordedChunks, { type });
+async function finishWebCodecsRecording(){
+  const rec = wcRec; wcRec = null;
+  if (rec.raf) cancelAnimationFrame(rec.raf);
+  if (!srcVideo) noLoop();
+  try {
+    if (rec.error) throw rec.error;
+    await rec.encoder.flush();
+    rec.muxer.finalize();
+    downloadRecording(new Blob([rec.target.buffer], { type: 'video/mp4' }));
+  } catch(e){ console.error(e); alert('Falha ao salvar MP4: ' + e.message); }
+  finally { try { if (rec.encoder.state !== 'closed') rec.encoder.close(); } catch(_){} }
+  restoreAfterRecording();
+}
+
+function downloadRecording(blob){
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = 'processed-video.webm';
+  a.download = 'processed-video.mp4';
   document.body.appendChild(a);
   a.click();
   setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 200);
+}
 
+function restoreAfterRecording(){
   try { gSrc.remove(); gProc.remove(); } catch(e) {}
   gSrc  = createGraphics(1280, 720);
   gProc = createGraphics(1280, 720);
+}
+
+function saveRecording(){
+  downloadRecording(new Blob(recordedChunks, { type: 'video/mp4' }));
+  restoreAfterRecording();
 }
 
 async function renderAtSizeAndDo(w, h, action){
