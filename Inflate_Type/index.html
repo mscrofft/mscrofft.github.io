@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Inflate Type</title>
+<link rel="stylesheet" href="../shared/ui-theme.css"/>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html,body{width:100%;height:100%;overflow:hidden;background:var(--ui-bg-canvas);font-family:var(--ui-font);color:var(--ui-fg)}
+  body{--panel-w:272px}
+
+  /* ── palco ── */
+  #stage{position:fixed;top:var(--bar-h);left:0;bottom:0;right:var(--panel-w);transition:right .28s cubic-bezier(.4,0,.2,1);overflow:hidden}
+  body.panel-closed #stage{right:0}
+  #cv{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:default}
+  #cv.over-body{cursor:grab}
+  #cv.dragging{cursor:grabbing}
+  #cv.tool-blow{cursor:crosshair}
+  #cv.tool-inflate{cursor:cell}
+
+  #hint{position:absolute;left:14px;top:12px;font-size:10px;line-height:1.7;color:var(--ui-muted);pointer-events:none;letter-spacing:.02em}
+  #hint b{color:var(--ui-fg);opacity:.8;font-weight:500}
+  #msg{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);max-width:420px;text-align:center;font-size:11px;line-height:1.7;color:var(--ui-muted);pointer-events:none;display:none}
+  #msg.show{display:block}
+
+  /* ── barra de ferramentas ── */
+  #toolbar{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);display:flex;gap:6px;align-items:center;
+    padding:6px;background:var(--ui-bg-panel);border:1px solid var(--ui-border);border-radius:var(--ui-radius);backdrop-filter:blur(10px);max-width:calc(100% - 24px)}
+  #toolbar .gap{width:1px;align-self:stretch;background:var(--ui-border);margin:0 2px}
+  button,.btn{
+    padding:0 10px;min-height:30px;font-size:9px;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;white-space:nowrap;
+    border:1px solid var(--ui-border);background:transparent;color:var(--ui-fg);font-family:var(--ui-font);
+    border-radius:var(--ui-radius);transition:background .15s,color .15s,border-color .15s;
+    display:inline-flex;align-items:center;justify-content:center;gap:5px}
+  button:hover,.btn:hover{background:var(--ui-fg);color:var(--ui-bg);border-color:var(--ui-fg)}
+  button.on{background:var(--ui-accent);color:#0a0a0a;border-color:var(--ui-accent)}
+  button.rec{border-color:#ff4d4d;color:#ff4d4d}
+  button.rec.on{background:#ff4d4d;color:#0a0a0a}
+  button kbd{font-family:inherit;opacity:.5;font-size:8px}
+
+  /* ── painel ── */
+  #toggle{position:fixed;z-index:30;width:36px;height:36px;border-radius:var(--ui-radius);background:var(--ui-bg-panel);
+    border:1px solid var(--ui-border);color:var(--ui-fg);font-size:16px;cursor:pointer;display:none;align-items:center;justify-content:center;
+    backdrop-filter:blur(8px);top:calc(var(--bar-h) + 10px);right:10px;padding:0;min-height:0}
+  body.panel-closed #toggle{display:flex}
+  #panel{position:fixed;top:var(--bar-h);right:0;bottom:0;z-index:20;width:var(--panel-w);background:var(--ui-bg-panel);
+    border-left:1px solid var(--ui-border);backdrop-filter:blur(10px);overflow-y:auto;-webkit-overflow-scrolling:touch;
+    padding:6px 14px 28px;transition:transform .28s cubic-bezier(.4,0,.2,1)}
+  body.panel-closed #panel{transform:translateX(100%)}
+  #panel-head{display:flex;justify-content:flex-end;padding:4px 0}
+  #panel-head button{min-height:22px;padding:0 8px}
+
+  details{border-bottom:1px solid var(--ui-border);padding:10px 0}
+  details:last-of-type{border-bottom:0}
+  summary{list-style:none;cursor:pointer;font-size:9px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--ui-muted);
+    display:flex;justify-content:space-between;align-items:center;user-select:none}
+  summary::-webkit-details-marker{display:none}
+  summary::after{content:'+';font-size:12px;font-weight:400}
+  details[open] summary::after{content:'–'}
+  details[open] summary{margin-bottom:10px;color:var(--ui-fg)}
+  .group{display:flex;flex-direction:column;gap:8px}
+  .row{display:flex;align-items:center;gap:6px;font-size:10px;opacity:.9}
+  .row label{flex:1;min-width:0;line-height:1.3}
+  .row input[type=range]{width:96px;flex-shrink:0;cursor:pointer}
+  .row span.v{font-size:9px;font-weight:500;color:var(--ui-muted);min-width:34px;text-align:right}
+  .row.col{flex-direction:column;align-items:stretch;gap:4px}
+  select,textarea,input[type=text]{width:100%;background:var(--ui-bg-input);border:1px solid var(--ui-border);color:var(--ui-fg);
+    font-family:var(--ui-font);font-size:11px;padding:6px 7px;border-radius:var(--ui-radius);outline:none}
+  select{cursor:pointer}
+  select option{background:#161616;color:#f0ece3}
+  textarea{resize:vertical;min-height:54px;line-height:1.35}
+  input[type=color]{width:34px;height:24px;border:1px solid var(--ui-border);background:transparent;padding:1px;border-radius:var(--ui-radius);cursor:pointer}
+  .seg{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+  .seg button{padding:0 2px;font-size:8.5px}
+  .btns{display:flex;gap:6px;flex-wrap:wrap}
+  .btns button{flex:1}
+  .check{display:flex;align-items:center;gap:6px;font-size:10px;cursor:pointer}
+  .check input{accent-color:var(--ui-accent)}
+  .note{font-size:9px;line-height:1.6;color:var(--ui-muted)}
+
+  @media(max-width:700px){
+    body{--panel-w:100%}
+    #stage,body.panel-closed #stage{right:0}
+    #panel{top:auto;left:0;right:0;width:100%;max-height:62vh;border-left:0;border-top:1px solid var(--ui-border);border-radius:14px 14px 0 0;
+      padding:0 16px calc(24px + env(safe-area-inset-bottom))}
+    body.panel-closed #panel{transform:translateY(100%)}
+    #toggle{top:auto;bottom:calc(66px + env(safe-area-inset-bottom));right:12px}
+    #toolbar{bottom:calc(12px + env(safe-area-inset-bottom));flex-wrap:wrap;justify-content:center}
+    #hint{display:none}
+  }
+</style>
+</head>
+<body class="ui-std">
+
+<header class="site-header site-header--bar">
+  <a class="site-logo" href="../index.html">MS<span>.</span></a>
+  <span class="site-title">Inflate Type</span>
+  <a class="site-back" href="../index.html">← back</a>
+  <span class="site-spacer"></span>
+  <button class="ui-invert-btn" type="button" data-ui-invert title="Inverter cores">Inverter</button>
+</header>
+
+<div id="stage">
+  <canvas id="cv"></canvas>
+  <div id="hint"><b>1</b> arrastar · <b>2</b> soprar · <b>3</b> inflar<br><b>espaço</b> sacode · duplo clique (inflar) fura</div>
+  <div id="msg"></div>
+  <div id="toolbar">
+    <button data-tool="drag" class="on">Arrastar</button>
+    <button data-tool="blow">Soprar</button>
+    <button data-tool="inflate">Inflar</button>
+    <span class="gap"></span>
+    <button id="btn-shake">Sacudir</button>
+    <button id="btn-deflate">Murchar</button>
+    <button id="btn-reset">Reiniciar</button>
+  </div>
+</div>
+
+<button id="toggle" title="Painel">⚙</button>
+
+<aside id="panel">
+  <div id="panel-head"><button id="btn-close" title="Esconder painel">Esconder ›</button></div>
+
+  <details open>
+    <summary>Texto</summary>
+    <div class="group">
+      <textarea id="text" spellcheck="false" rows="2">INFLADO</textarea>
+      <select id="font"></select>
+      <div class="btns"><label class="btn" for="fontfile">Subir fonte…</label><input type="file" id="fontfile" accept=".ttf,.otf,.woff" hidden></div>
+      <div class="row"><label>Tamanho</label><input type="range" id="size" min="40" max="700" step="1" value="260"><span class="v" id="size-v"></span></div>
+      <div class="row"><label>Espaçamento</label><input type="range" id="track" min="-0.1" max="0.4" step="0.005" value="0"><span class="v" id="track-v"></span></div>
+      <div class="row"><label>Resolução malha</label><input type="range" id="res" min="10" max="40" step="1" value="22"><span class="v" id="res-v"></span></div>
+    </div>
+  </details>
+
+  <details open>
+    <summary>Física</summary>
+    <div class="group">
+      <div class="row"><label>Rigidez do layout</label><input type="range" id="layout" min="0" max="1" step="0.01" value="0.35"><span class="v" id="layout-v"></span></div>
+      <div class="row"><label>Gravidade</label><input type="range" id="gravity" min="0" max="3" step="0.05" value="1"><span class="v" id="gravity-v"></span></div>
+      <div class="row"><label>Direção (°)</label><input type="range" id="gdir" min="0" max="360" step="1" value="90"><span class="v" id="gdir-v"></span></div>
+      <div class="row"><label>Elasticidade</label><input type="range" id="bounce" min="0" max="1" step="0.01" value="0.45"><span class="v" id="bounce-v"></span></div>
+      <div class="row"><label>Maciez (deformação)</label><input type="range" id="soft" min="0" max="1" step="0.01" value="0.5"><span class="v" id="soft-v"></span></div>
+      <div class="row"><label>Pressão (volume)</label><input type="range" id="pressure" min="0" max="1" step="0.01" value="0.7"><span class="v" id="pressure-v"></span></div>
+      <div class="row"><label>Amortecimento</label><input type="range" id="damp" min="0" max="1" step="0.01" value="0.3"><span class="v" id="damp-v"></span></div>
+      <div class="row"><label>Força do toque</label><input type="range" id="force" min="0.2" max="3" step="0.05" value="1"><span class="v" id="force-v"></span></div>
+      <p class="note">Layout 0 = letras soltas que caem e colidem · 1 = texto composto preso no lugar.</p>
+    </div>
+  </details>
+
+  <details open>
+    <summary>Cor</summary>
+    <div class="group">
+      <div class="row"><label>Paleta</label>
+        <select id="palette" style="width:150px"></select></div>
+      <div class="row"><label>Cor</label><input type="color" id="color" value="#e55ab6"></div>
+      <div class="row"><label>Fundo</label><input type="color" id="bg" value="#0b0b0d"></div>
+      <div class="row"><label>Inflar (espessura)</label><input type="range" id="puff" min="0" max="0.25" step="0.002" value="0.085"><span class="v" id="puff-v"></span></div>
+    </div>
+  </details>
+
+  <details open>
+    <summary>Exportar</summary>
+    <div class="group">
+      <div class="row"><label>Escala PNG</label>
+        <select id="exscale" style="width:70px"><option value="1">1×</option><option value="2" selected>2×</option><option value="3">3×</option></select></div>
+      <label class="check"><input type="checkbox" id="extransp"> PNG com fundo transparente</label>
+      <div class="btns">
+        <button id="btn-png">PNG</button>
+        <button id="btn-svg">SVG</button>
+      </div>
+      <div class="btns">
+        <button id="btn-rec" class="rec">● Vídeo</button>
+        <button id="btn-gif">GIF 3s</button>
+      </div>
+      <p class="note" id="exnote">SVG exporta a forma do frame atual.</p>
+    </div>
+  </details>
+</aside>
+
+<script src="../shared/ui-theme-lite.js"></script>
+<script src="../shared/site-header.js"></script>
+<script src="opentype.min.js"></script>
+<script>
+(() => {
+'use strict';
+const $ = id => document.getElementById(id);
+const clamp = (v,a,b) => v<a?a:v>b?b:v;
+
+/* ═════════════ parâmetros ═════════════ */
+const P = {
+  text:'INFLADO', font:'TitanOne-Regular.ttf', size:222, track:-0.05, res:40,
+  palette:'preset4', color:'#e55ab6', bg:'#0b0b0d',
+  puff:0.085,
+  gravity:2, gdir:335, layout:0, soft:0.5, pressure:0.12, bounce:1, damp:0.03, force:0.85
+};
+const PAL_GROUPS = [
+  ['Padrão', [['neon','Neon',['#ff2d95','#00e5ff','#c6ff00','#ff9100','#7c4dff']]]],
+  ['SVG_dither · visuals_app', [
+    ['preset1','Preset 1',['#FF6B6B','#FFE66D','#4472CA','#4ECDC4','#222831']],
+    ['preset2','Preset 2',['#6A0572','#AB83A1','#EDE6DB','#F9F9F9','#333333']],
+    ['preset3','Preset 3',['#05668D','#028090','#00A896','#02C39A','#F0F3BD']],
+    ['preset4','Preset 4',['#FFD166','#EF476F','#06D6A0','#118AB2','#073B4C']],
+    ['preset5','Preset 5',['#8E44AD','#2980B9','#27AE60','#F39C12','#2C3E50']]]],
+  ['kinetic_type · sliced_type', [
+    ['blueblack','blue/black',['#000000','#1c3df5'],'#eaeaea'],
+    ['noir','noir',['#f0ece3','#d4b87a'],'#0a0a0a'],
+    ['paper','paper',['#0a0a0a','#e60023'],'#f0ece3'],
+    ['ocean','ocean',['#e8eef0','#5ad7ff'],'#0b1f2a'],
+    ['lime','lime',['#0f2b33','#ffffff'],'#c4ff3d'],
+    ['pinkmaroon','pink-maroon',['#7a1e1e','#0a0a0a'],'#f5a8dc'],
+    ['sangue','sangue',['#e8c8b0','#c44a2a'],'#1a0606'],
+    ['verde','verde',['#b8d4b8','#d4f25b'],'#0e1a14'],
+    ['editorial','editorial',['#d4b87a','#f0ece3'],'#1c1a17'],
+    ['glitch','glitch',['#ff00aa','#00ffd5'],'#0a0a0a'],
+    ['lavlime','lavender-lime',['#0e3b2e','#d4f25b'],'#e0c9f2'],
+    ['pinkred','pink-red',['#0a0a0a','#e60023'],'#f5a8dc']]],
+  ['Isometrico', [['iso','Isométrico',['#2f9df5','#ff8a2d','#eff200','#f28abc','#55b58e','#8074df','#e8e5df']]]],
+  ['Card_Studio_3d', [['card','Card Studio',['#e85d26','#2255cc','#22aa66','#cc2266','#aaaa22','#8822cc','#cc8822','#2288aa']]]]
+];
+const PALETTES = {};
+PAL_GROUPS.forEach(g => g[1].forEach(([k,name,colors,bg]) => { PALETTES[k] = {colors, bg}; }));
+const FONTS = [
+  ['Titan One','TitanOne-Regular.ttf'],['Lilita One','LilitaOne-Regular.ttf'],['Paytone One','PaytoneOne-Regular.ttf'],
+  ['Sniglet ExtraBold','Sniglet-ExtraBold.ttf'],['Bubblegum Sans','BubblegumSans-Regular.ttf'],['Chango','Chango-Regular.ttf'],
+  ['Modak','Modak-Regular.ttf'],['Bowlby One','BowlbyOne-Regular.ttf'],['Rammetto One','RammettoOne-Regular.ttf'],
+  ['Archivo Black','ArchivoBlack-Regular.ttf'],['Alfa Slab One','AlfaSlabOne-Regular.ttf'],['Rubik Mono One','RubikMonoOne-Regular.ttf'],
+  ['Shrikhand','Shrikhand-Regular.ttf'],['Bungee','Bungee-Regular.ttf'],['Anton','Anton-Regular.ttf'],['Bebas Neue','BebasNeue-Regular.ttf']
+];
+let tool = 'drag';
+let globalTarget = 1;          // 1 = inflado, 0 = murcho
+let bgCustom = false;
+
+/* ═════════════ UI ═════════════ */
+const SLIDERS = {
+  size:[0,true], track:[3,true], res:[0,true],
+  puff:[3,true],
+  gravity:[2,false], gdir:[0,false], layout:[2,false], soft:[2,false], pressure:[2,false], bounce:[2,false], damp:[2,false], force:[2,false]
+};
+for (const [id,[dec,rebuild]] of Object.entries(SLIDERS)) {
+  const el = $(id), out = $(id+'-v');
+  const show = () => { out.textContent = (+el.value).toFixed(dec); };
+  el.addEventListener('input', () => { P[id] = +el.value; show(); if (id==='size') userSized = true; if (rebuild) scheduleRebuild(false); });
+  el.value = P[id]; show();
+}
+function setSlider(id,v){ const el=$(id); el.value=v; P[id]=v; $(id+'-v').textContent=(+v).toFixed(SLIDERS[id][0]); }
+
+FONTS.forEach(([n,f]) => { const o=document.createElement('option'); o.value=f; o.textContent=n; $('font').appendChild(o); });
+$('font').value = P.font;
+
+let rebuildQueued = false, rebuildAnim = false, userSized = true;
+function scheduleRebuild(anim){ rebuildAnim = rebuildAnim || anim; if (rebuildQueued) return; rebuildQueued = true;
+  requestAnimationFrame(() => { rebuildQueued=false; const a=rebuildAnim; rebuildAnim=false; buildBodies(a); }); }
+
+$('text').addEventListener('input', e => { P.text = e.target.value; scheduleRebuild(true); });
+$('font').addEventListener('change', e => { P.font = e.target.value; loadFont(e.target.value).then(()=>scheduleRebuild(true)); });
+$('fontfile').addEventListener('change', async e => {
+  const f = e.target.files[0]; if (!f) return;
+  try {
+    const font = opentype.parse(await f.arrayBuffer());
+    const key = 'custom:' + f.name; fontCache[key] = font;
+    let o = [...$('font').options].find(o=>o.value===key);
+    if (!o) { o = document.createElement('option'); o.value=key; o.textContent='▸ '+f.name; $('font').appendChild(o); }
+    $('font').value = key; P.font = key; currentFont = font; scheduleRebuild(true); say('');
+  } catch (err) { say('Não consegui ler essa fonte (use .ttf, .otf ou .woff).'); }
+  e.target.value = '';
+});
+
+(function fillPalettes(){
+  const sel=$('palette'); const add=(p,k,n)=>{ const o=document.createElement('option'); o.value=k; o.textContent=n; p.appendChild(o); };
+  add(sel,'unica','Cor única');
+  PAL_GROUPS.forEach(([label,items]) => { const og=document.createElement('optgroup'); og.label=label; items.forEach(([k,n])=>add(og,k,n)); sel.appendChild(og); });
+  sel.value=P.palette;
+})();
+$('palette').addEventListener('change', e => {
+  P.palette = e.target.value;
+  const pal = PALETTES[P.palette];
+  if (pal && pal.bg) { P.bg = pal.bg; $('bg').value = pal.bg; bgCustom = true; }
+  applyColors();
+});
+$('color').addEventListener('input', e => { P.color = e.target.value; applyColors(); });
+$('bg').addEventListener('input', e => { P.bg = e.target.value; bgCustom = true; });
+document.addEventListener('ui-theme-change', e => {
+  if (!bgCustom) { P.bg = e.detail.theme==='light' ? '#f0f0ee' : '#0b0b0d'; $('bg').value = P.bg; }
+});
+if (document.body.getAttribute('data-theme')==='light') { P.bg='#f0f0ee'; $('bg').value=P.bg; }
+
+function setTool(t){
+  tool = t;
+  document.querySelectorAll('#toolbar [data-tool]').forEach(b => b.classList.toggle('on', b.dataset.tool===t));
+  cv.classList.toggle('tool-blow', t==='blow'); cv.classList.toggle('tool-inflate', t==='inflate');
+}
+document.querySelectorAll('#toolbar [data-tool]').forEach(b => b.addEventListener('click', () => setTool(b.dataset.tool)));
+$('btn-shake').addEventListener('click', () => shake());
+$('btn-deflate').addEventListener('click', () => {
+  globalTarget = globalTarget>0.5 ? 0 : 1;
+  if (globalTarget===1) bodies.forEach(b => b.user = 1);
+  $('btn-deflate').textContent = globalTarget>0.5 ? 'Murchar' : 'Encher';
+});
+$('btn-reset').addEventListener('click', () => { globalTarget=1; $('btn-deflate').textContent='Murchar'; buildBodies(true); });
+$('btn-close').addEventListener('click', () => document.body.classList.add('panel-closed'));
+$('toggle').addEventListener('click', () => document.body.classList.remove('panel-closed'));
+if (innerWidth<=700) document.body.classList.add('panel-closed');
+
+window.addEventListener('keydown', e => {
+  if (/^(TEXTAREA|INPUT|SELECT)$/.test(document.activeElement.tagName)) return;
+  if (e.key==='1') setTool('drag'); else if (e.key==='2') setTool('blow'); else if (e.key==='3') setTool('inflate');
+  else if (e.code==='Space') { e.preventDefault(); shake(); }
+});
+
+function say(t){ const m=$('msg'); m.textContent=t; m.classList.toggle('show',!!t); }
+
+/* ═════════════ fontes ═════════════ */
+const fontCache = {};
+let currentFont = null;
+async function loadFont(name){
+  if (fontCache[name]) { currentFont = fontCache[name]; return currentFont; }
+  try {
+    const r = await fetch('fonts/' + name); if (!r.ok) throw new Error(r.status);
+    currentFont = fontCache[name] = opentype.parse(await r.arrayBuffer()); say('');
+  } catch (err) {
+    say('Não consegui carregar as fontes embutidas (abrir o arquivo direto do disco bloqueia isso). Rode um servidor local ou use "Subir fonte…".');
+  }
+  return currentFont;
+}
+
+/* ═════════════ geometria dos glifos ═════════════ */
+function flatten(cmds){
+  const out=[]; let cur=null, cx=0, cy=0;
+  const push=(x,y)=>{ const p=cur[cur.length-1]; if(!p||Math.abs(p[0]-x)+Math.abs(p[1]-y)>1e-3) cur.push([x,y]); };
+  for (const c of cmds) {
+    if (c.type==='M') { cur=[]; out.push(cur); cx=c.x; cy=c.y; push(cx,cy); }
+    else if (c.type==='L') { cx=c.x; cy=c.y; push(cx,cy); }
+    else if (c.type==='Q') { for(let k=1;k<=10;k++){ const t=k/10,u=1-t; push(u*u*cx+2*u*t*c.x1+t*t*c.x, u*u*cy+2*u*t*c.y1+t*t*c.y); } cx=c.x; cy=c.y; }
+    else if (c.type==='C') { for(let k=1;k<=14;k++){ const t=k/14,u=1-t; push(u*u*u*cx+3*u*u*t*c.x1+3*u*t*t*c.x2+t*t*t*c.x, u*u*u*cy+3*u*u*t*c.y1+3*u*t*t*c.y2+t*t*t*c.y); } cx=c.x; cy=c.y; }
+  }
+  return out.map(p => { while(p.length>2 && Math.abs(p[0][0]-p[p.length-1][0])+Math.abs(p[0][1]-p[p.length-1][1])<1e-3) p.pop(); return p; }).filter(p=>p.length>=3);
+}
+const CORNER_COS = Math.cos(40*Math.PI/180);
+function resample(pts, spacing){
+  const n=pts.length, isCorner=new Array(n).fill(false);
+  for (let i=0;i<n;i++){
+    const a=pts[(i+n-1)%n], b=pts[i], c=pts[(i+1)%n];
+    const ux=b[0]-a[0], uy=b[1]-a[1], vx=c[0]-b[0], vy=c[1]-b[1];
+    const l=Math.hypot(ux,uy)*Math.hypot(vx,vy);
+    if (l>1e-6 && (ux*vx+uy*vy)/l < CORNER_COS) isCorner[i]=true;
+  }
+  const xs=[], ys=[], cs=[];
+  const corners=[]; for(let i=0;i<n;i++) if(isCorner[i]) corners.push(i);
+  const emitRun=(startIdx,count,flagFirst)=>{          // percorre count segmentos a partir de startIdx
+    const run=[]; for(let k=0;k<=count;k++) run.push(pts[(startIdx+k)%n]);
+    const cum=[0]; for(let k=1;k<run.length;k++) cum.push(cum[k-1]+Math.hypot(run[k][0]-run[k-1][0],run[k][1]-run[k-1][1]));
+    const L=cum[cum.length-1]; const m=Math.max(flagFirst?1:6, Math.round(L/spacing));
+    let seg=1;
+    for (let j=0;j<m;j++){
+      const d=L*j/m; while(seg<cum.length-1 && cum[seg]<d) seg++;
+      const d0=cum[seg-1], d1=cum[seg], t=d1>d0?(d-d0)/(d1-d0):0;
+      xs.push(run[seg-1][0]+(run[seg][0]-run[seg-1][0])*t); ys.push(run[seg-1][1]+(run[seg][1]-run[seg-1][1])*t);
+      cs.push(j===0 && flagFirst ? 1 : 0);
+    }
+  };
+  if (!corners.length) emitRun(0,n,false);
+  else for (let k=0;k<corners.length;k++){
+    const a=corners[k], b=corners[(k+1)%corners.length];
+    emitRun(a, ((b-a)+n-1)%n+1, true);
+  }
+  return {xs,ys,cs};
+}
+
+/* ═════════════ corpos ═════════════ */
+const bodies = [];
+let W=800, H=600;
+let nextId = 0;
+
+function makeBody(contourPts, color, ch){
+  const spacing = Math.max(5, P.size / P.res);
+  const cs=[]; let xs=[], ys=[], flags=[];
+  for (const pts of contourPts){
+    const r = resample(pts, spacing);
+    cs.push({s:xs.length, n:r.xs.length, A0:0}); xs=xs.concat(r.xs); ys=ys.concat(r.ys); flags=flags.concat(r.cs);
+  }
+  const n=xs.length, b = {
+    id:nextId++, ch, n, cs, color,
+    x:Float64Array.from(xs), y:Float64Array.from(ys), ox:new Float64Array(n), oy:new Float64Array(n),
+    vx:new Float64Array(n), vy:new Float64Array(n), hx:Float64Array.from(xs), hy:Float64Array.from(ys),
+    qx:new Float64Array(n), qy:new Float64Array(n), corner:Uint8Array.from(flags), fl:new Uint8Array(n),
+    inf:0, infV:0, user:1, puff:0, sf:1, minx:0,maxx:0,miny:0,maxy:0,cx:0,cy:0, rad:0
+  };
+  let mx=0,my=0; for(let i=0;i<n;i++){ mx+=b.x[i]; my+=b.y[i]; } mx/=n; my/=n;
+  for(let i=0;i<n;i++){ b.qx[i]=b.x[i]-mx; b.qy[i]=b.y[i]-my; b.rad=Math.max(b.rad,Math.hypot(b.qx[i],b.qy[i])); }
+  for (const c of cs){ c.A0=signedArea(b,c); }
+  updBounds(b);
+  return b;
+}
+function signedArea(b,c){ let A=0; const {s,n}=c; for(let k=0;k<n;k++){ const i=s+k, j=s+(k+1)%n; A+=b.x[i]*b.y[j]-b.x[j]*b.y[i]; } return A/2; }
+function updBounds(b){
+  let a=1e9,c=-1e9,d=1e9,e=-1e9,sx=0,sy=0; const x=b.x,y=b.y;
+  for(let i=0;i<b.n;i++){ const px=x[i],py=y[i]; if(px<a)a=px; if(px>c)c=px; if(py<d)d=py; if(py>e)e=py; sx+=px; sy+=py; }
+  b.minx=a; b.maxx=c; b.miny=d; b.maxy=e; b.cx=sx/b.n; b.cy=sy/b.n;
+}
+
+function colorFor(i){
+  if (P.palette==='unica') return P.color;
+  const c = PALETTES[P.palette].colors; return c[i % c.length];
+}
+function applyColors(){ bodies.forEach((b,i) => b.color = colorFor(i)); }
+
+function layoutAt(size){
+  const font = currentFont, sc = size/font.unitsPerEm, lines = P.text.split('\n');
+  const defs=[]; const lineH = size*1.0;
+  lines.forEach((line,li) => {
+    const gl = font.stringToGlyphs(line); let x=0; const row=[];
+    gl.forEach((g,gi) => {
+      row.push({g,x});
+      const kern = gi<gl.length-1 ? font.getKerningValue(g,gl[gi+1])*sc : 0;
+      x += g.advanceWidth*sc + (P.track+1.7*P.puff)*size + kern;
+    });
+    const w = x - (P.track+1.7*P.puff)*size;
+    row.forEach(r => defs.push({g:r.g, x:r.x-w/2, y:li*lineH, ch:line}));
+  });
+  const items=[]; let minx=1e9,maxx=-1e9,miny=1e9,maxy=-1e9;
+  defs.forEach(d => {
+    const path = d.g.getPath(d.x, d.y, size); const cont = flatten(path.commands);
+    if (!cont.length) return;
+    cont.forEach(c => c.forEach(p => { if(p[0]<minx)minx=p[0]; if(p[0]>maxx)maxx=p[0]; if(p[1]<miny)miny=p[1]; if(p[1]>maxy)maxy=p[1]; }));
+    items.push(cont);
+  });
+  return {items, minx,maxx,miny,maxy};
+}
+
+function buildBodies(animateIn){
+  if (!currentFont) return;
+  if (!userSized) setSlider('size', 260);
+  let L = layoutAt(P.size);
+  if (!L.items.length) { bodies.length=0; return; }
+  const w=L.maxx-L.minx, h=L.maxy-L.miny;
+  const f = Math.min(W*0.86/w, H*0.62/h);
+  if (!userSized) {
+    const ns = clamp(Math.floor(P.size*Math.min(f,1.6)), 40, 700);
+    if (ns!==P.size) { setSlider('size', ns); L = layoutAt(P.size); }
+  }
+  const dx = W/2-(L.minx+L.maxx)/2, dy = H/2-(L.miny+L.maxy)/2;
+  const keepInf = animateIn ? 0 : 1;
+  bodies.length = 0;
+  L.items.forEach((cont,i) => {
+    cont.forEach(c => c.forEach(p => { p[0]+=dx; p[1]+=dy; }));
+    const b = makeBody(cont, colorFor(i), i);
+    b.inf = animateIn ? 0 : globalTarget*keepInf; b.user = 1;
+    bodies.push(b);
+  });
+}
+
+/* ═════════════ física ═════════════ */
+const SD = {qx:0,qy:0,i:0,j:0,t:0,inside:false,d:0};
+function sdBody(b,px,py){
+  let best=Infinity, inside=false; const x=b.x,y=b.y;
+  for (const c of b.cs){
+    const s=c.s,n=c.n; let ai=s+n-1, ax=x[ai], ay=y[ai];
+    for (let k=0;k<n;k++){
+      const bi=s+k, bx=x[bi], by=y[bi];
+      if ((ay>py)!==(by>py) && px<(bx-ax)*(py-ay)/(by-ay)+ax) inside=!inside;
+      const ex=bx-ax, ey=by-ay, l2=ex*ex+ey*ey;
+      let t = l2>0 ? ((px-ax)*ex+(py-ay)*ey)/l2 : 0; t = t<0?0:t>1?1:t;
+      const qx=ax+ex*t, qy=ay+ey*t, dx=px-qx, dy=py-qy, d2=dx*dx+dy*dy;
+      if (d2<best){ best=d2; SD.qx=qx; SD.qy=qy; SD.i=ai; SD.j=bi; SD.t=t; }
+      ax=bx; ay=by; ai=bi;
+    }
+  }
+  SD.inside=inside; const d=Math.sqrt(best); SD.d = inside?-d:d; return SD.d;
+}
+function collide(A,B,margin){
+  const bx0=B.minx-margin, bx1=B.maxx+margin, by0=B.miny-margin, by1=B.maxy+margin;
+  for (let i=0;i<A.n;i++){
+    const px=A.x[i], py=A.y[i];
+    if (px<bx0||px>bx1||py<by0||py>by1) continue;
+    const d = sdBody(B,px,py);
+    if (d>=margin) continue;
+    let nx,ny;
+    if (SD.inside){ nx=SD.qx-px; ny=SD.qy-py; } else { nx=px-SD.qx; ny=py-SD.qy; }
+    let l=Math.hypot(nx,ny);
+    if (l<1e-5){ nx=px-B.cx; ny=py-B.cy; l=Math.hypot(nx,ny)||1; }
+    nx/=l; ny/=l;
+    const pen=(margin-d)*0.5, t=SD.t, a=SD.i, c=SD.j;
+    A.x[i]+=nx*pen; A.y[i]+=ny*pen;
+    B.x[a]-=nx*pen*(1-t); B.y[a]-=ny*pen*(1-t); B.x[c]-=nx*pen*t; B.y[c]-=ny*pen*t;
+  }
+}
+function shapeMatch(b,k){
+  const n=b.n,x=b.x,y=b.y,qx=b.qx,qy=b.qy; let cx=0,cy=0;
+  for(let i=0;i<n;i++){ cx+=x[i]; cy+=y[i]; } cx/=n; cy/=n;
+  let sxx=0,sxy=0;
+  for(let i=0;i<n;i++){ const px=x[i]-cx, py=y[i]-cy; sxx+=qx[i]*px+qy[i]*py; sxy+=qx[i]*py-qy[i]*px; }
+  const th=Math.atan2(sxy,sxx), cs=Math.cos(th), sn=Math.sin(th);
+  for(let i=0;i<n;i++){
+    x[i]+=(cx+cs*qx[i]-sn*qy[i]-x[i])*k;
+    y[i]+=(cy+sn*qx[i]+cs*qy[i]-y[i])*k;
+  }
+}
+function areaConstraint(b,k){
+  const x=b.x,y=b.y;
+  for (const c of b.cs){
+    if (Math.abs(c.A0)<4) continue;
+    const s=c.s,n=c.n; const A=signedArea(b,c); const C=A-c.A0;
+    let S=0;
+    for(let m=0;m<n;m++){
+      const p=s+(m+n-1)%n, q=s+(m+1)%n;
+      const gx=0.5*(y[q]-y[p]), gy=0.5*(x[p]-x[q]); S+=gx*gx+gy*gy;
+    }
+    if (S<1e-9) continue;
+    const lam=-C/S*k;
+    // calcula gradientes antes de mover (usa cópias dos vizinhos originais)
+    const gxs=new Float64Array(n), gys=new Float64Array(n);
+    for(let m=0;m<n;m++){ const p=s+(m+n-1)%n, q=s+(m+1)%n; gxs[m]=0.5*(y[q]-y[p]); gys[m]=0.5*(x[p]-x[q]); }
+    for(let m=0;m<n;m++){ x[s+m]+=lam*gxs[m]; y[s+m]+=lam*gys[m]; }
+  }
+}
+function walls(b,m){
+  const x=b.x,y=b.y,fl=b.fl,xr=W-m,yb=H-m;
+  for(let i=0;i<b.n;i++){
+    if (x[i]<m){ x[i]=m; fl[i]|=1; } else if (x[i]>xr){ x[i]=xr; fl[i]|=2; }
+    if (y[i]<m){ y[i]=m; fl[i]|=4; } else if (y[i]>yb){ y[i]=yb; fl[i]|=8; }
+  }
+}
+
+// interação
+const ptr = {x:0,y:0,down:false,shift:false,inside:false};
+let grab = null, holdBody = null;
+
+function hitBody(x,y){
+  for (let k=bodies.length-1;k>=0;k--){
+    const b=bodies[k];
+    if (x<b.minx-b.puff-8||x>b.maxx+b.puff+8||y<b.miny-b.puff-8||y>b.maxy+b.puff+8) continue;
+    if (sdBody(b,x,y) < b.puff+6) return b;
+  }
+  return null;
+}
+function startGrab(b,x,y){
+  const sig = Math.max(40, P.size*0.3), w=new Float32Array(b.n);
+  let sw=0,gx=0,gy=0;
+  for(let i=0;i<b.n;i++){ const d2=(b.x[i]-x)**2+(b.y[i]-y)**2; w[i]=0.22+0.78*Math.exp(-d2/(2*sig*sig)); sw+=w[i]; gx+=w[i]*b.x[i]; gy+=w[i]*b.y[i]; }
+  gx/=sw; gy/=sw;
+  grab = {b,w,sw,offx:gx-x,offy:gy-y};
+}
+function pop(b,x,y){
+  b.user=0; b.inf=Math.min(b.inf,0.25); b.infV=-2;
+  const u=P.size/300;
+  for(let i=0;i<b.n;i++){
+    let dx=b.x[i]-x, dy=b.y[i]-y; const d=Math.hypot(dx,dy)||1;
+    const f=1100*u*P.force*(0.4+Math.exp(-d/(P.size*0.6)));
+    b.vx[i]+=dx/d*f; b.vy[i]+=dy/d*f;
+  }
+}
+function shake(){
+  const u=P.size/300;
+  bodies.forEach(b => {
+    const ang=Math.random()*Math.PI*2, f=(700+Math.random()*700)*u*P.force, w=(Math.random()-0.5)*14*P.force;
+    for(let i=0;i<b.n;i++){
+      b.vx[i]+=Math.cos(ang)*f - b.qy[i]*w; b.vy[i]+=Math.sin(ang)*f - 700*u*P.force*0.4 + b.qx[i]*w;
+    }
+  });
+}
+
+function substep(h){
+  const u=P.size/300, g=P.gravity*1900*u, ga=P.gdir*Math.PI/180, gx=g*Math.cos(ga), gy=g*Math.sin(ga);
+  const Kb=P.layout*P.layout*1400, zeta=0.1+0.6*P.damp, d0=0.04+0.7*P.damp;
+  const blowing = ptr.down && tool==='blow' && ptr.inside;
+
+  for (const b of bodies){
+    const K = Kb*Math.max(0.15,b.sf);
+    const damp = Math.exp(-(d0+2*zeta*Math.sqrt(K))*h);
+    const isGrab = grab && grab.b===b;
+    let tx=0,ty=0,gcx=0,gcy=0;
+    if (isGrab){
+      for(let i=0;i<b.n;i++){ gcx+=grab.w[i]*b.x[i]; gcy+=grab.w[i]*b.y[i]; }
+      gcx/=grab.sw; gcy/=grab.sw; tx=ptr.x+grab.offx-gcx; ty=ptr.y+grab.offy-gcy;
+    }
+    const R = Math.max(150,P.size*0.9);
+    for(let i=0;i<b.n;i++){
+      let ax=gx+K*(b.hx[i]-b.x[i]), ay=gy+K*(b.hy[i]-b.y[i]);
+      if (isGrab){ const w=grab.w[i]; ax+=w*260*tx; ay+=w*260*ty; b.vx[i]*=Math.exp(-w*7*h); b.vy[i]*=Math.exp(-w*7*h); }
+      if (blowing){
+        const dx=b.x[i]-ptr.x, dy=b.y[i]-ptr.y, d=Math.hypot(dx,dy);
+        if (d<R){ const f=(1-d/R)**2*8000*u*P.force/(d||1); ax+=dx*f; ay+=dy*f; }
+      }
+      b.vx[i]=(b.vx[i]+ax*h)*damp; b.vy[i]=(b.vy[i]+ay*h)*damp;
+      b.ox[i]=b.x[i]; b.oy[i]=b.y[i]; b.x[i]+=b.vx[i]*h; b.y[i]+=b.vy[i]*h;
+    }
+  }
+
+  const kA = 0.03+0.9*P.pressure, softK = 0.012+0.88*Math.pow(1-P.soft,3);
+  for (let it=0; it<3; it++){
+    for (const b of bodies) updBounds(b);
+    for (let a=0;a<bodies.length;a++) for (let c=a+1;c<bodies.length;c++){
+      const A=bodies[a], B=bodies[c];
+      const m = (A.puff+B.puff)*0.9;
+      if (A.maxx+m<B.minx||B.maxx+m<A.minx||A.maxy+m<B.miny||B.maxy+m<A.miny) continue;
+      collide(A,B,m); collide(B,A,m);
+    }
+    for (const b of bodies){
+      areaConstraint(b, kA*(0.3+0.7*b.sf));
+      shapeMatch(b, softK*b.sf);
+      walls(b, b.puff+1);
+    }
+  }
+
+  const inv=1/h, e=P.bounce*0.8, thr=30*u;
+  for (const b of bodies){
+    for(let i=0;i<b.n;i++){
+      let nvx=(b.x[i]-b.ox[i])*inv, nvy=(b.y[i]-b.oy[i])*inv; const f=b.fl[i];
+      if (f){
+        const ovx=b.vx[i], ovy=b.vy[i];
+        if ((f&1)&&ovx<-thr) nvx=-ovx*e; if ((f&2)&&ovx>thr) nvx=-ovx*e;
+        if ((f&4)&&ovy<-thr) nvy=-ovy*e; if ((f&8)&&ovy>thr) nvy=-ovy*e;
+        if (f&12) nvx*=0.97; if (f&3) nvy*=0.97;
+        b.fl[i]=0;
+      }
+      b.vx[i]=nvx; b.vy[i]=nvy;
+    }
+  }
+}
+
+function step(dt){
+  dt = Math.min(dt, 1/30);
+  for (const b of bodies){
+    if (holdBody===b && ptr.down && tool==='inflate') b.user = clamp(b.user + (ptr.shift?-1:1)*dt*0.8*P.force, 0, 2.2);
+    const T = globalTarget*b.user;
+    b.infV += ((T-b.inf)*70 - b.infV*7)*dt; b.inf += b.infV*dt;
+    b.puff = Math.max(0,b.inf)*P.puff*P.size;
+    b.sf = Math.pow(clamp(b.inf,0.03,1),1.2);
+  }
+  const SUB=2; for(let s=0;s<SUB;s++) substep(dt/SUB);
+}
+
+/* ═════════════ máscara 2D ═════════════ */
+function tracePath(c, b, ct){
+  const x=b.x,y=b.y,s=ct.s,n=ct.n,cr=b.corner;
+  const X=k=>x[s+(k+n)%n], Y=k=>y[s+(k+n)%n], C=k=>cr[s+(k+n)%n];
+  const inX=k=>C(k)?X(k):(X(k-1)+X(k))/2, inY=k=>C(k)?Y(k):(Y(k-1)+Y(k))/2;
+  const outX=k=>C(k)?X(k):(X(k)+X(k+1))/2, outY=k=>C(k)?Y(k):(Y(k)+Y(k+1))/2;
+  const ops=[['M',outX(0),outY(0)]];
+  for(let k=1;k<n;k++){ ops.push(['L',inX(k),inY(k)]); if(!C(k)) ops.push(['Q',X(k),Y(k),outX(k),outY(k)]); }
+  ops.push(['L',inX(0),inY(0)]); if(!C(0)) ops.push(['Q',X(0),Y(0),outX(0),outY(0)]);
+  ops.push(['Z']);
+  return ops;
+}
+const cv = $('cv'), ctx = cv.getContext('2d');
+let RS = 1;                       // escala de render (pixels por px CSS)
+function draw(sc, transparent){
+  ctx.setTransform(1,0,0,1,0,0);
+  if (transparent) ctx.clearRect(0,0,cv.width,cv.height);
+  else { ctx.fillStyle = P.bg; ctx.fillRect(0,0,cv.width,cv.height); }
+  ctx.setTransform(sc,0,0,sc,0,0); ctx.lineJoin='round'; ctx.lineCap='round';
+  for (const b of bodies){
+    ctx.beginPath();
+    for (const ct of b.cs) for (const o of tracePath(ctx,b,ct)){
+      if (o[0]==='M') ctx.moveTo(o[1],o[2]); else if (o[0]==='L') ctx.lineTo(o[1],o[2]);
+      else if (o[0]==='Q') ctx.quadraticCurveTo(o[1],o[2],o[3],o[4]); else ctx.closePath();
+    }
+    ctx.fillStyle = ctx.strokeStyle = b.color;
+    ctx.fill('evenodd');
+    if (b.puff>0.3){ ctx.lineWidth=b.puff*2; ctx.stroke(); }
+  }
+}
+
+/* ═════════════ tamanho do palco ═════════════ */
+const stage = $('stage');
+let lastW=0,lastH=0;
+function fit(){
+  const r = stage.getBoundingClientRect(); const nw=Math.max(200,Math.round(r.width)), nh=Math.max(200,Math.round(r.height));
+  if (nw===lastW && nh===lastH) return;
+  const dx=(nw-lastW)/2, dy=(nh-lastH)/2;
+  if (lastW) bodies.forEach(b => { for(let i=0;i<b.n;i++){ b.x[i]+=dx; b.y[i]+=dy; b.hx[i]+=dx; b.hy[i]+=dy; } });
+  lastW=nw; lastH=nh; W=nw; H=nh;
+  if (!userSized && bodies.length) scheduleRebuild(false);
+  RS = Math.min(window.devicePixelRatio||1, 2);
+  cv.width = Math.round(W*RS); cv.height = Math.round(H*RS);
+}
+new ResizeObserver(fit).observe(stage);
+
+/* ═════════════ ponteiro ═════════════ */
+function toWorld(e){ const r=cv.getBoundingClientRect(); return [e.clientX-r.left, e.clientY-r.top]; }
+cv.addEventListener('pointerdown', e => {
+  const [x,y]=toWorld(e); ptr.x=x; ptr.y=y; ptr.down=true; ptr.inside=true; ptr.shift=e.shiftKey||e.button===2;
+  try { cv.setPointerCapture(e.pointerId); } catch (err) {}
+  const b = hitBody(x,y);
+  if (tool==='drag' && b){ startGrab(b,x,y); cv.classList.add('dragging'); }
+  else if (tool==='inflate') holdBody = b;
+});
+cv.addEventListener('pointermove', e => {
+  const [x,y]=toWorld(e); ptr.x=x; ptr.y=y; ptr.inside=true; ptr.shift=e.shiftKey;
+  if (!ptr.down && tool==='drag') cv.classList.toggle('over-body', !!hitBody(x,y));
+  if (ptr.down && tool==='inflate' && !holdBody) holdBody = hitBody(x,y);
+});
+const endPtr = () => { ptr.down=false; grab=null; holdBody=null; cv.classList.remove('dragging'); };
+cv.addEventListener('pointerup', endPtr); cv.addEventListener('pointercancel', endPtr);
+cv.addEventListener('contextmenu', e => e.preventDefault());
+cv.addEventListener('dblclick', e => { if (tool==='inflate'){ const [x,y]=toWorld(e); const b=hitBody(x,y); if(b) pop(b,x,y); } });
+
+/* ═════════════ exportação ═════════════ */
+function download(blob,name){ const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),4000); }
+function stamp(){ return 'inflate-type-'+new Date().toISOString().slice(11,19).replace(/:/g,''); }
+
+$('btn-png').addEventListener('click', () => {
+  let sc = +$('exscale').value; sc = Math.min(sc, 4096/Math.max(W,H));
+  cv.width = Math.round(W*sc); cv.height = Math.round(H*sc);
+  draw(sc, $('extransp').checked);
+  cv.toBlob(bl => download(bl, stamp()+'.png'), 'image/png');
+  cv.width = Math.round(W*RS); cv.height = Math.round(H*RS);
+});
+
+$('btn-svg').addEventListener('click', () => {
+  const parts=[];
+  parts.push(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">`);
+  parts.push(`<rect width="${W}" height="${H}" fill="${P.bg}"/>`);
+  const f = v => v.toFixed(2);
+  for (const b of bodies){
+    let d=''; for (const ct of b.cs) for (const o of tracePath(null,b,ct)){
+      if (o[0]==='M') d+=`M${f(o[1])} ${f(o[2])}`; else if (o[0]==='L') d+=`L${f(o[1])} ${f(o[2])}`;
+      else if (o[0]==='Q') d+=`Q${f(o[1])} ${f(o[2])} ${f(o[3])} ${f(o[4])}`; else d+='Z';
+    }
+    parts.push(`<path d="${d}" fill="${b.color}" fill-rule="evenodd" stroke="${b.color}" stroke-width="${f(b.puff*2)}" stroke-linejoin="round"/>`);
+  }
+  parts.push('</svg>');
+  download(new Blob([parts.join('\n')],{type:'image/svg+xml'}), stamp()+'.svg');
+});
+
+let rec=null;
+$('btn-rec').addEventListener('click', () => {
+  if (rec) { rec.stop(); return; }
+  if (!window.MediaRecorder) { say('Gravação de vídeo não é suportada neste navegador.'); return; }
+  const mime = ['video/mp4;codecs=avc1','video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm'].find(m=>MediaRecorder.isTypeSupported(m));
+  const chunks=[]; rec = new MediaRecorder(cv.captureStream(60), {mimeType:mime, videoBitsPerSecond:12e6});
+  rec.ondataavailable = e => e.data.size && chunks.push(e.data);
+  rec.onstop = () => { download(new Blob(chunks,{type:mime.split(';')[0]}), stamp()+(mime.startsWith('video/mp4')?'.mp4':'.webm')); rec=null;
+    $('btn-rec').classList.remove('on'); $('btn-rec').textContent='● Vídeo'; };
+  rec.start(); $('btn-rec').classList.add('on'); $('btn-rec').textContent='■ Parar';
+});
+
+let gifBusy=false;
+async function loadGifLib(){
+  if (window.GIF) return;
+  await new Promise((ok,err)=>{ const s=document.createElement('script'); s.src='https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.js'; s.onload=ok; s.onerror=err; document.head.appendChild(s); });
+}
+$('btn-gif').addEventListener('click', async () => {
+  if (gifBusy) return; gifBusy=true; const btn=$('btn-gif');
+  try {
+    btn.textContent='Preparando…';
+    await loadGifLib();
+    const wtxt = await (await fetch('https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.worker.js')).text();
+    const workerUrl = URL.createObjectURL(new Blob([wtxt],{type:'text/javascript'}));
+    const gw = Math.min(520, W), gh = Math.round(gw*H/W);
+    const small = document.createElement('canvas'); small.width=gw; small.height=gh; const sctx=small.getContext('2d');
+    const gif = new GIF({workers:2, quality:8, width:gw, height:gh, workerScript:workerUrl});
+    const FPS=20, N=FPS*3; let k=0;
+    await new Promise(res => {
+      const tick = () => { sctx.drawImage(cv,0,0,gw,gh); gif.addFrame(sctx,{copy:true,delay:1000/FPS}); btn.textContent=`Gravando ${++k}/${N}`;
+        if (k>=N) res(); else setTimeout(tick,1000/FPS); };
+      tick();
+    });
+    btn.textContent='Codificando…';
+    gif.on('finished', bl => { download(bl, stamp()+'.gif'); btn.textContent='GIF 3s'; gifBusy=false; });
+    gif.render();
+  } catch (err) { say('Não consegui gerar o GIF (precisa de internet para carregar o codificador).'); btn.textContent='GIF 3s'; gifBusy=false; }
+});
+
+/* ═════════════ loop ═════════════ */
+let last=performance.now();
+function frame(t){
+  const dt=(t-last)/1000; last=t;
+  if (bodies.length) step(dt||1/60);
+  draw(RS, false);
+  requestAnimationFrame(frame);
+}
+
+(async function init(){
+  fit();
+  await loadFont(P.font);
+  buildBodies(true);
+  requestAnimationFrame(frame);
+  window.__inflate = {P, bodies, shake, step, get W(){return W}, get H(){return H}};
+})();
+})();
+</script>
+</body>
+</html>
