@@ -154,7 +154,7 @@
       <div class="row"><label>Paleta</label>
         <select id="palette" style="width:150px"></select></div>
       <div class="row"><label>Cor</label><input type="color" id="color" value="#e55ab6"></div>
-      <div class="row"><label>Fundo</label><input type="color" id="bg" value="#0b0b0d"></div>
+      <div class="row"><label>Fundo</label><input type="color" id="bg" value="#ffffff"></div>
       <div class="row"><label>Inflar (espessura)</label><input type="range" id="puff" min="0" max="0.25" step="0.002" value="0.085"><span class="v" id="puff-v"></span></div>
     </div>
   </details>
@@ -189,10 +189,10 @@ const clamp = (v,a,b) => v<a?a:v>b?b:v;
 
 /* ═════════════ parâmetros ═════════════ */
 const P = {
-  text:'INFLADO', font:'TitanOne-Regular.ttf', size:222, track:-0.05, res:40,
-  palette:'preset4', color:'#e55ab6', bg:'#0b0b0d',
+  text:'INFLADO', font:'AmoverDemo.otf', size:544, track:-0.05, res:40,
+  palette:'preset5', color:'#e55ab6', bg:'#ffffff',
   puff:0.085,
-  gravity:2, gdir:335, layout:0, soft:0.5, pressure:0.12, bounce:1, damp:0.03, force:0.85
+  gravity:0, gdir:180, layout:0, soft:0.13, pressure:1, bounce:1, damp:0, force:0.85
 };
 const PAL_GROUPS = [
   ['Padrão', [['neon','Neon',['#ff2d95','#00e5ff','#c6ff00','#ff9100','#7c4dff']]]],
@@ -221,7 +221,7 @@ const PAL_GROUPS = [
 const PALETTES = {};
 PAL_GROUPS.forEach(g => g[1].forEach(([k,name,colors,bg]) => { PALETTES[k] = {colors, bg}; }));
 const FONTS = [
-  ['Titan One','TitanOne-Regular.ttf'],['Lilita One','LilitaOne-Regular.ttf'],['Paytone One','PaytoneOne-Regular.ttf'],
+  ['Amover Demo','AmoverDemo.otf'],['Titan One','TitanOne-Regular.ttf'],['Lilita One','LilitaOne-Regular.ttf'],['Paytone One','PaytoneOne-Regular.ttf'],
   ['Sniglet ExtraBold','Sniglet-ExtraBold.ttf'],['Bubblegum Sans','BubblegumSans-Regular.ttf'],['Chango','Chango-Regular.ttf'],
   ['Modak','Modak-Regular.ttf'],['Bowlby One','BowlbyOne-Regular.ttf'],['Rammetto One','RammettoOne-Regular.ttf'],
   ['Archivo Black','ArchivoBlack-Regular.ttf'],['Alfa Slab One','AlfaSlabOne-Regular.ttf'],['Rubik Mono One','RubikMonoOne-Regular.ttf'],
@@ -229,7 +229,7 @@ const FONTS = [
 ];
 let tool = 'drag';
 let globalTarget = 1;          // 1 = inflado, 0 = murcho
-let bgCustom = false;
+let bgCustom = true;   // fundo padrão fixo (branco); só segue o tema se bgCustom for false
 
 /* ═════════════ UI ═════════════ */
 const SLIDERS = {
@@ -283,7 +283,6 @@ $('bg').addEventListener('input', e => { P.bg = e.target.value; bgCustom = true;
 document.addEventListener('ui-theme-change', e => {
   if (!bgCustom) { P.bg = e.detail.theme==='light' ? '#f0f0ee' : '#0b0b0d'; $('bg').value = P.bg; }
 });
-if (document.body.getAttribute('data-theme')==='light') { P.bg='#f0f0ee'; $('bg').value=P.bg; }
 
 function setTool(t){
   tool = t;
